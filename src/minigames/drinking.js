@@ -111,7 +111,7 @@ export class Drinking extends MiniGame {
     await seq(0.45, (e) => { hand.position.lerpVectors(rest, glassLocal(), e); hand.rotation.set(-0.3 * e, 0, 0); });
     // grab
     hand.add(glass); glass.position.set(0, -0.03, 0); glass.rotation.set(0, 0, 0);
-    const mouth = new THREE.Vector3(0.07, -0.13, -0.26);
+    const mouth = new THREE.Vector3(0.07, -0.1, -0.26);
     const grabPos = hand.position.clone();
     await seq(0.45, (e) => { hand.position.lerpVectors(grabPos, mouth, e); hand.rotation.set(-0.3 + 0.1 * e, 0, 0); });
     // tilt & drain
@@ -144,6 +144,7 @@ export class Drinking extends MiniGame {
     let res;
     try { res = await this.api.step(this.round.roundId); }
     catch (e) { this.finish({ win: false, title: 'Bar closed', line: String(e.message) }); return; }
+    this.hud.setDialogue({});
     await this.chug(this.glasses[0], !res.survived);
     if (!res.survived) {
       await this.wait(0.6);

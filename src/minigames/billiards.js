@@ -51,6 +51,9 @@ export class Billiards extends MiniGame {
     this.cx = pool.cx; this.cz = pool.cz; this.ty = pool.y + 0.02;
     this.player.enabled = false;
     this.bar.poolDecor.visible = false;
+    // the table's walk-around collider would pin you at the rail; the ring clamp keeps you off the table instead
+    this.tableCollider = this.bar.colliders.find((c) => this.cx > c.minX && this.cx < c.maxX && this.cz > c.minZ && this.cz < c.maxZ);
+    if (this.tableCollider) this.bar.colliders = this.bar.colliders.filter((c) => c !== this.tableCollider);
     this.state = P.rackState();
     this.mustWin = this.round.win ? 'you' : 'bot';
     this.skill = this.round.flavour?.botSkill ?? 0.6;
@@ -449,6 +452,7 @@ export class Billiards extends MiniGame {
     super.dispose();
     this.camera.remove(this.handCue); this.camera.remove(this.handL);
     this.bar.poolDecor.visible = true;
+    if (this.tableCollider) this.bar.colliders.push(this.tableCollider);
     this.hud.setPower(null);
   }
 }
