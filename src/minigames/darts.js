@@ -1,8 +1,9 @@
 /**
- * Darts: the regular throws three darts first, then you throw three. Highest total wins (ties go to the house).
+ * Darts: you throw three darts, then Fergus answers. Highest total wins; ties replay the leg.
  * Throw = a swipe. Angle -> left/right, speed -> high/low, wobble -> scatter radius.
- * The bot's total comes from the round's flavour; your darts are nudged only when a landing
- * would contradict the predetermined result.
+ * Your darts land exactly where you threw them. Fergus simply throws whatever the round's result
+ * needs: just under your total if you are meant to win, just over it if you are not. If the
+ * result cannot be reached (you scored 0 and must win, or 180 and must lose) the leg is replayed.
  */
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
@@ -59,17 +60,34 @@ export class Darts extends MiniGame {
     this.bot.lookAt(new THREE.Vector3(b.pos.x, 0, b.pos.z));
     this.group.add(this.bot.root);
 
-    this.botTotal = this.round.flavour?.botTotal ?? 80;
-    this.botDarts = this.planBotDarts(this.botTotal);
-    this.you = 0; this.bot.score = 0;
     this.darts = [];
-    this.phase = 'bot';
-    this.throwIdx = 0;
+    this.leg = 0;
     this.busy = false;
-    this.hud.setScore(`You <em>0</em> · Fergus <em>0</em>`, 'Fergus throws first');
     this.hud.setHints(`<kbd>swipe up</kbd> to throw · angle = left/right · speed = high/low · keep it straight`);
-    this.hud.showToast('Fergus steps up', 'three darts each, highest total wins', 2200);
-    this.after(1.4, () => this.botThrow());
+    this.hud.showToast('Your throw', 'three darts each, highest total wins', 2200);
+    this.startLeg();
+  }
+
+  startLeg() {
+    this.clearDarts();
+    this.leg++;
+    this.you = 0; this.bot.score = 0;
+    this.phase = 'you';
+    this.throwIdx = 0;
+    this.hud.setScore(`You <em>0</em> · Fergus <em>0</em>`, this.leg > 1 ? `leg ${this.leg} · your throw` : 'your throw');
+  }
+
+  /** The total Fergus needs this leg given yours. null = cannot be done, replay. */
+  botTarget(yours) {
+    if (this.round.win) {
+      if (yours <= 0) return null;
+      const lo = Math.max(0, yours - 45);
+      const t = Math.max(lo, yours - 1 - Math.floor(Math.random() * Math.min(30, yours)));
+      return Math.max(0, Math.min(yours - 1, t));
+    }
+    if (yours >= 180) return null;
+    const hi = Math.min(180, yours + 48);
+    return Math.min(hi, yours + 1 + Math.floor(Math.random() * 30));
   }
 
   /** Split the bot's total into three realistic darts (last one is "clutch"). */
@@ -97,28 +115,40 @@ export class Darts extends MiniGame {
     return [d1, d1, d1];
   }
 
+  startBot() {
+    this.phase = 'bot';
+    this.throwIdx = 0;
+    const target = this.botTarget(this.you);
+    this.botDarts = target == null ? [this.missPoint(), this.missPoint(), this.missPoint()] : this.planBotDarts(target);
+    this.hud.setScore(`You <em>${this.you}</em> · Fergus <em>0</em>`, `Fergus needs ${this.round.win ? 'to beat' : 'at least'} ${this.you + (this.round.win ? 0 : 1)}`);
+    this.hud.showToast('Fergus steps up', `needs ${this.you + 1} to win`, 1500);
+    this.clearDarts();
+    this.after(1.2, () => this.botThrow());
+  }
+
+  missPoint() { const a = Math.random() * Math.PI * 2; const r = 1.1 + Math.random() * 0.25; return { x: Math.sin(a) * r * this.R, y: Math.cos(a) * r * this.R }; }
+
   botThrow() {
     if (this.done) return;
     const i = this.throwIdx;
     const pt = this.botDarts[i];
-    this.bot.punchArm = 1; this.bot.punch();
+    this.bot.throwDart();
     const from = this.bot.root.position.clone().add(new THREE.Vector3(0.2, 1.4, -0.2));
-    this.flyDart(from, pt, 0xdd3333, () => {
+    this.after(0.35, () => this.flyDart(from, pt, 0xdd3333, () => {
       const s = scoreAt(pt.x, pt.y, this.R);
       this.bot.score += s.score;
-      this.hud.setScore(`You <em>0</em> · Fergus <em>${this.bot.score}</em>`, `Fergus: ${s.label}`);
+      this.hud.setScore(`You <em>${this.you}</em> · Fergus <em>${this.bot.score}</em>`, `Fergus: ${s.label}`);
       this.throwIdx++;
       if (this.throwIdx < 3) this.after(0.9, () => this.botThrow());
-      else this.after(1.1, () => this.startPlayer());
-    });
+      else this.after(1.2, () => this.endLeg());
+    }));
   }
 
-  startPlayer() {
-    this.clearDarts();
-    this.phase = 'you';
-    this.throwIdx = 0;
-    this.hud.setScore(`You <em>0</em> · Fergus <em>${this.bot.score}</em>`, `your throw · beat ${this.bot.score}`);
-    this.hud.showToast(`Beat ${this.bot.score}`, 'swipe to throw', 1600);
+  endLeg() {
+    if (this.you > this.bot.score) return this.conclude(true);
+    if (this.bot.score > this.you) return this.conclude(false);
+    this.hud.showToast(this.you === 0 ? 'Nobody troubled the board' : 'Level', 'play the leg again', 1800);
+    this.after(1.6, () => this.startLeg());
   }
 
   update(dt) {
@@ -147,17 +177,7 @@ export class Darts extends MiniGame {
     const ang = Math.random() * Math.PI * 2, rr = Math.random() * scatter;
     bx += Math.cos(ang) * rr; by += Math.sin(ang) * rr;
     bx = THREE.MathUtils.clamp(bx, -0.3, 0.3); by = THREE.MathUtils.clamp(by, -0.3, 0.3);
-    // outcome steering: only ever intervene when the landing would contradict the round's result
-    const left = 2 - this.throwIdx;                         // darts remaining after this one
-    const score = scoreAt(bx, by, this.R).score;
-    let pt = { x: bx, y: by };
-    if (this.round.win) {
-      const needMin = Math.max(0, (this.bot.score + 1 - this.you) - 60 * left);
-      if (score < needMin) pt = nearestPoint(bx, by, this.R, (s) => s >= needMin);
-    } else {
-      const allowMax = Math.max(0, this.bot.score - 1 - this.you);
-      if (score > allowMax) pt = nearestPoint(bx, by, this.R, (s) => s <= allowMax);
-    }
+    const pt = { x: bx, y: by };
     const from = this.camera.localToWorld(new THREE.Vector3(0.25, -0.2, -0.3));
     this.flyDart(from, pt, 0x3355dd, () => {
       const s = scoreAt(pt.x, pt.y, this.R);
@@ -165,12 +185,11 @@ export class Darts extends MiniGame {
       this.throwIdx++;
       this.hud.setScore(`You <em>${this.you}</em> · Fergus <em>${this.bot.score}</em>`, `${s.label}${this.throwIdx < 3 ? ` · ${3 - this.throwIdx} left` : ''}`);
       this.busy = false;
-      if (this.throwIdx >= 3) this.after(1.2, () => this.conclude());
+      if (this.throwIdx >= 3) { this.busy = true; this.after(1.2, () => this.startBot()); }
     });
   }
 
-  conclude() {
-    const win = this.you > this.bot.score;
+  conclude(win) {
     const lines = win
       ? ['"Lucky arrows," Fergus mutters, and buys the round.', '"Nobody beats me on a Tuesday." It is Thursday.']
       : ['"Practice makes perfect. You should try it."', 'Fergus chalks it up without looking at you.'];

@@ -30,17 +30,20 @@ export class Pickup extends MiniGame {
 
   ladder() { return { values: this.round.ladder, done: this.steps }; }
 
+  beat() { return ROSE.beats[Math.min(this.steps, ROSE.beats.length - 1)]; }
+
   offer() {
     this.busy = false;
-    const pair = ROSE.lines[this.steps % ROSE.lines.length];
+    const beat = this.beat();
     const cur = this.steps > 0 ? this.round.ladder[this.steps - 1] : 0;
     const stake = this.round.stake;
     const next = this.round.ladder[this.steps];
+    const text = this.lastLine ? `${this.lastLine} <span style="color:var(--ink-dim)">${beat.prompt}</span>` : `${ROSE.open} <span style="color:var(--ink-dim)">${beat.prompt}</span>`;
     this.hud.setDialogue({
-      who: 'Rose', text: this.lastLine || ROSE.open, ladder: this.ladder(),
+      who: 'Rose', text, ladder: this.ladder(),
       choices: [
-        [{ label: `“${pair[0]}”`, onClick: () => this.say(pair[0]) }],
-        [{ label: `“${pair[1]}”`, onClick: () => this.say(pair[1]) }],
+        [{ label: `“${beat.options[0].say}”`, onClick: () => this.say(0) }],
+        [{ label: `“${beat.options[1].say}”`, onClick: () => this.say(1) }],
         [{ label: this.steps > 0 ? `“${ROSE.playerCashout}” <small>(take ${(cur * stake).toFixed(2)})</small>` : `“${ROSE.playerCashout}”`, cls: 'danger', disabled: this.steps < 1, onClick: () => this.cashOut() }],
       ],
     });
@@ -48,10 +51,11 @@ export class Pickup extends MiniGame {
     this.hud.setHints(`<kbd>1</kbd> <kbd>2</kbd> choose a line · <kbd>esc</kbd> leave together`);
   }
 
-  async say(line) {
+  async say(idx) {
     if (this.busy || this.done) return;
     this.busy = true;
-    this.hud.setDialogue({ who: 'You', text: `“${line}”`, ladder: this.ladder() });
+    const opt = this.beat().options[idx];
+    this.hud.setDialogue({ who: 'You', text: `“${opt.say}”`, ladder: this.ladder() });
     let res;
     try { res = await this.api.step(this.round.roundId); }
     catch (e) { this.finish({ win: false, title: 'Bar closed', line: String(e.message) }); return; }
@@ -76,7 +80,7 @@ export class Pickup extends MiniGame {
       this.finish({ win: true, title: 'She asked you', line: ROSE.max, payout: res.payout });
       return;
     }
-    this.lastLine = ROSE.good[Math.min(this.steps - 1, ROSE.good.length - 1)];
+    this.lastLine = opt.reply;
     this.offer();
   }
 
@@ -98,17 +102,16 @@ export class Pickup extends MiniGame {
   update(dt) {
     super.update(dt);
     if (!this.busy) {
-      const pair = ROSE.lines[this.steps % ROSE.lines.length];
-      if (this.input.justPressed('Digit1')) this.say(pair[0]);
-      if (this.input.justPressed('Digit2')) this.say(pair[1]);
+      if (this.input.justPressed('Digit1')) this.say(0);
+      if (this.input.justPressed('Digit2')) this.say(1);
       if (this.input.justPressed('Escape')) this.cashOut();
     }
     // lean in a touch as things warm up
     const lean = (this.rose.mood - 0.45) * 0.25;
     const target = this.eye.clone().addScaledVector(new THREE.Vector3().subVectors(this.face, this.eye).setY(0).normalize(), lean);
-    this.camera.position.lerp(target, Math.min(1, dt * 2));
-    this.camera.lookAt(this.face);
-    this.camera.rotation.z = Math.sin(this.t * 0.8) * 0.004;
+    this.stand = this.stand || this.eye.clone();
+    this.stand.lerp(target, Math.min(1, dt * 2));
+    this.idleCam(this.stand, this.face, dt);
   }
 
   dispose() {

@@ -113,6 +113,7 @@ export class Patron {
   punch() { this.acts.punch = 0; this.punchArm = this.punchArm === 1 ? 0 : 1; }
   drink() { this.acts.drink = 0; }
   stagger() { this.acts.stagger = 0; }
+  hit(side = 1) { this.acts.hit = 0; this.hitSide = side; }
   laugh() { this.acts.laugh = 0; }
   gesture() { this.acts.gesture = 0; this.gestureArm = this.rnd() < 0.5 ? 0 : 1; }
   nod() { this.acts.nod = 0; }
@@ -156,9 +157,12 @@ export class Patron {
         tg.mouth = 0.6 + m * 1.2;
         break;
       }
-      case 'fight':
-        tg.lx = tg.rx = -1.2; tg.lz = 0.35; tg.rz = -0.35; tg.lf = tg.rf = -1.9; tg.torsoX = 0.12;
+      case 'fight': {
+        const sh = Math.sin(t * 4.2);
+        tg.lx = -1.25 + sh * 0.05; tg.rx = -1.15 - sh * 0.05; tg.lz = 0.4; tg.rz = -0.4; tg.lf = -2.0; tg.rf = -2.1; tg.torsoX = 0.14;
+        tg.torsoZ = sh * 0.04; tg.bodyY = Math.abs(Math.sin(t * 4.2)) * 0.012; tg.hipL = -0.15 + sh * 0.08; tg.hipR = 0.1 - sh * 0.08; tg.neckX = 0.1;
         break;
+      }
       case 'lean': // over a pool table, cue in the right hand
         tg.torsoX = 0.85; tg.neckX = -0.6;
         tg.lx = -1.6; tg.lf = -0.4; tg.lz = 0.5; tg.rx = -0.9; tg.rf = -0.9; tg.rz = -0.2;
@@ -208,15 +212,24 @@ export class Patron {
     }
     // ---- one-shots ----
     let k;
-    if ((k = this.act('punch', dt, 4)) >= 0) {
-      const e = Math.sin(k * Math.PI), a = this.punchArm ? 'r' : 'l';
-      tg[a + 'x'] = -1.2 - e * 0.6; tg[a + 'f'] = -1.9 + e * 1.9; tg[a + 'z'] = (this.punchArm ? -1 : 1) * 0.1;
-      tg.torsoY += (this.punchArm ? -1 : 1) * e * 0.35;
+    if ((k = this.act('punch', dt, 2.4)) >= 0) {
+      // 0-0.35 wind up (arm back, shoulders turn), 0.35-0.55 snap out, 0.55-1 recover
+      const a = this.punchArm ? 'r' : 'l', sgn = this.punchArm ? -1 : 1;
+      const wind = k < 0.35 ? k / 0.35 : k < 0.55 ? 1 - (k - 0.35) / 0.2 : 0;
+      const ext = k < 0.35 ? 0 : k < 0.55 ? (k - 0.35) / 0.2 : 1 - (k - 0.55) / 0.45;
+      tg[a + 'x'] = -1.2 + wind * 0.5 - ext * 0.85; tg[a + 'f'] = -2.0 + ext * 2.0 - wind * 0.2; tg[a + 'z'] = sgn * (0.4 - ext * 0.3);
+      tg.torsoY += sgn * (wind * -0.35 + ext * 0.45); tg.torsoX += ext * 0.12; tg.hipL += ext * sgn * 0.1; tg.hipR -= ext * sgn * 0.1;
+    }
+    if ((k = this.act('hit', dt, 2.6)) >= 0) {
+      const e = Math.sin(k * Math.PI);
+      tg.neckX -= e * 0.55; tg.neckZ += this.hitSide * e * 0.3; tg.torsoX -= e * 0.25; tg.torsoY += this.hitSide * e * 0.35; tg.torsoZ += this.hitSide * e * 0.15;
+      tg.lx += e * 0.4; tg.rx += e * 0.4;
     }
     if ((k = this.act('drink', dt, 1.1)) >= 0) {
       const e = Math.sin(k * Math.PI);
-      tg.rx = -0.9 - e * 1.1; tg.rf = -1.6 - e * 0.9; tg.rz = -0.5 * e; tg.neckX -= e * 0.5;
-    }
+      tg.rx = -0.9 - e * 1.15; tg.rf = -1.6 - e * 0.95; tg.rz = -0.45 * e; tg.neckX -= e * 0.5;
+      tg.handR = -e * 1.1;
+    } else tg.handR = 0;
     if ((k = this.act('stagger', dt, 3)) >= 0) { const e = Math.sin(k * Math.PI); tg.torsoX -= e * 0.3; tg.neckX -= e * 0.4; }
     if ((k = this.act('laugh', dt, 0.9)) >= 0) {
       const e = Math.sin(k * Math.PI);
@@ -256,6 +269,7 @@ export class Patron {
     this.neck.rotation.set(c.neckX, c.neckY, c.neckZ);
     L.pivot.rotation.x = c.lx; R.pivot.rotation.x = c.rx; L.pivot.rotation.z = c.lz; R.pivot.rotation.z = c.rz;
     L.fore.rotation.x = c.lf; R.fore.rotation.x = c.rf;
+    R.hand.rotation.x = c.handR || 0;
     this.mouth.scale.x = c.mouth;
     this.body.rotation.x = c.bodyTilt;
     this.body.position.y = c.bodyY;

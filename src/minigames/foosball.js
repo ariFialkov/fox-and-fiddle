@@ -66,8 +66,8 @@ export class Foosball extends MiniGame {
     this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 14, 10), new THREE.MeshStandardMaterial({ color: 0xf4efe0, roughness: 0.4 }));
     this.ballMesh.castShadow = true; this.group.add(this.ballMesh);
     this.opp = new Patron({ name: 'Nadia', female: true, shirt: 0xd93b2b, height: 0.98, seed: 909 });
-    this.opp.root.position.set(this.cx, 0, this.cz - W / 2 - 0.55);
-    this.opp.lookAt(new THREE.Vector3(this.cx, 0, this.cz)); this.group.add(this.opp.root);
+    this.opp.root.position.set(this.cx + 0.1, 0, this.cz - W / 2 - 0.55);
+    this.opp.lookAt(new THREE.Vector3(this.cx, 0, this.cz)); this.opp.pose = 'foos'; this.group.add(this.opp.root);
 
     this.placeCamera();
     this.serve(this.mustWin ? 1 : -1);
@@ -77,10 +77,12 @@ export class Foosball extends MiniGame {
     this.hud.showToast('First to three', 'Nadia has not lost since 2019', 2000);
   }
 
+  /** Top-front view from behind your own goal, like a spectator leaning on the score beads. */
   placeCamera() {
     const portrait = innerHeight > innerWidth;
-    const pos = new THREE.Vector3(this.cx, this.ty + (portrait ? 1.5 : 0.95), this.cz + (portrait ? 0.8 : 0.72));
-    this.setCamera(pos, new THREE.Vector3(this.cx, this.ty, this.cz - 0.06));
+    const back = portrait ? 1.25 : 1.05, up = portrait ? 1.35 : 0.95;
+    const pos = new THREE.Vector3(this.cx - L / 2 - back, this.ty + up, this.cz);
+    this.setCamera(pos, new THREE.Vector3(this.cx + 0.12, this.ty - 0.02, this.cz));
   }
 
   selectKey(key) {
@@ -123,8 +125,8 @@ export class Foosball extends MiniGame {
     if (inp.wheel) r.w += -inp.wheel * 0.09;
     const p = inp.pointer;
     if (this.isTouch) {
-      if (p.down) { r.s += p.dx * 0.0012; if (Math.abs(p.dy) > 2) r.w += -p.dy * 0.045; }
-    } else if (p.dx) r.s += p.dx * 0.0011;
+      if (p.down) { r.s -= p.dx * 0.0012; if (Math.abs(p.dy) > 2) r.w += -p.dy * 0.045; }
+    } else if (p.dx) r.s -= p.dx * 0.0011;
     r.s = THREE.MathUtils.clamp(r.s, -r.slide, r.slide);
   }
 

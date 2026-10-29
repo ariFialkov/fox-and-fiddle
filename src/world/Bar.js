@@ -35,7 +35,7 @@ export class Bar {
       brass: new THREE.MeshStandardMaterial({ color: 0xb08d3a, metalness: 0.9, roughness: 0.3 }),
       leather: new THREE.MeshStandardMaterial({ color: 0x5a1f1a, roughness: 0.7 }),
       felt: new THREE.MeshStandardMaterial({ map: T.felt('#1f6b3a'), roughness: 1 }),
-      glass: new THREE.MeshPhysicalMaterial({ color: 0xcfe8d8, transmission: 0.6, roughness: 0.1, thickness: 0.2, transparent: true, opacity: 0.7 }),
+      glass: new THREE.MeshPhysicalMaterial({ color: 0xdfeee6, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
       black: new THREE.MeshStandardMaterial({ color: 0x151210, roughness: 0.9 }),
     };
     this.build();
@@ -185,15 +185,38 @@ export class Bar {
     return g;
   }
 
-  glass(x, y, z, pint = true, group = this.group) {
+  /** A glass with a liquid in it. spec: { color, fill 0..1, foam, garnish: 'lime'|'olive'|null, opacity } */
+  glass(x, y, z, pint = true, group = this.group, spec = {}) {
     const g = new THREE.Group(); g.position.set(x, y, z);
     const h = pint ? 0.16 : 0.09, r = pint ? 0.04 : 0.035;
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, h, 12, 1, true), this.mats.glass); m.position.y = h / 2;
-    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.92, r * 0.8, h * 0.7, 12), new THREE.MeshStandardMaterial({ color: pint ? 0xd89a2a : 0xa85a1a, roughness: 0.2, transparent: true, opacity: 0.85 }));
-    liquid.position.y = h * 0.36;
-    g.add(m, liquid); g.userData.liquid = liquid; g.userData.h = h;
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, h, 14, 1, true), this.mats.glass); m.position.y = h / 2; m.renderOrder = 2;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.86, r * 0.86, 0.006, 14), this.mats.glass); base.position.y = 0.003; base.renderOrder = 2;
+    const fill = spec.fill ?? 0.8;
+    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.9, r * 0.8, h * fill, 14), new THREE.MeshStandardMaterial({ color: spec.color ?? (pint ? 0xd89a2a : 0xa85a1a), roughness: 0.15, transparent: true, opacity: spec.opacity ?? 0.92 }));
+    liquid.position.y = 0.006 + h * fill / 2; liquid.renderOrder = 1;
+    g.add(m, base, liquid); g.userData.liquid = liquid; g.userData.h = h; g.userData.fill = fill; g.userData.r = r;
+    if (spec.foam) {
+      const foam = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.9, r * 0.9, 0.012, 14), new THREE.MeshStandardMaterial({ color: 0xfff4dc, roughness: 0.9 }));
+      foam.position.y = 0.006 + h * fill + 0.006; g.add(foam); g.userData.foam = foam;
+    }
+    if (spec.garnish === 'lime') {
+      const lime = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.006, 12, 1, false, 0, Math.PI * 0.9), new THREE.MeshStandardMaterial({ color: 0x9bd44a, roughness: 0.6, side: THREE.DoubleSide }));
+      lime.position.set(r * 0.8, h + 0.004, 0); lime.rotation.set(Math.PI / 2, 0, 0.5); g.add(lime);
+    } else if (spec.garnish === 'olive') {
+      const olive = new THREE.Mesh(new THREE.SphereGeometry(0.009, 8, 6), new THREE.MeshStandardMaterial({ color: 0x5a6b2a, roughness: 0.6 }));
+      olive.position.set(0, 0.006 + h * fill - 0.01, 0); g.add(olive);
+    } else if (spec.garnish === 'straw') {
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, h * 1.3, 6), new THREE.MeshStandardMaterial({ color: 0xd62828 }));
+      straw.position.set(r * 0.4, h * 0.65, 0); straw.rotation.z = 0.25; g.add(straw);
+    }
     group.add(g);
     return g;
+  }
+  /** Scale a glass's liquid down to `k` of its original fill. */
+  setGlassLevel(g, k) {
+    const l = g.userData.liquid, h = g.userData.h, fill = g.userData.fill;
+    l.scale.y = Math.max(0.02, k); l.position.y = 0.006 + h * fill * Math.max(0.02, k) / 2;
+    if (g.userData.foam) { g.userData.foam.position.y = 0.006 + h * fill * Math.max(0.02, k) + 0.006; g.userData.foam.visible = k > 0.05; }
   }
 
   buildPoolTable() {
@@ -413,9 +436,13 @@ export class Bar {
     for (const t of this.tables) pendant(t.x, 2.2, t.z, 0xffa050, 3.5, 5);
     pendant(this.foos.cx, 2.2, this.foos.cz, 0xffc080, 4, 5);
     pendant(-3.6, 2.4, 4.0, 0xffb060, 3.5, 6); pendant(5.6, 2.3, 3.6, 0xffb060, 3, 6);
+    // wall lamp over the coat rack so the entrance reads
+    const sconce = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 2.5, side: THREE.DoubleSide }));
+    sconce.position.set(ROOM.minX + 0.08, 2.2, 4.4); sconce.rotation.y = Math.PI / 2; this.group.add(sconce);
+    const sconceL = new THREE.PointLight(0xffc080, 6, 5, 2); sconceL.position.set(ROOM.minX + 0.35, 2.1, 4.4); this.group.add(sconceL);
     // dartboard spot
-    const spot = new THREE.SpotLight(0xfff0d0, low ? 10 : 18, 6, 0.5, 0.5, 1.5);
-    spot.position.set(ROOM.maxX - 1.4, 3.1, this.dartboard.pos.z); spot.target.position.copy(this.dartboard.pos);
+    const spot = new THREE.SpotLight(0xfff0d0, low ? 3 : 4.5, 6, 0.7, 0.9, 1.2);
+    spot.position.set(ROOM.maxX - 1.6, 3.0, this.dartboard.pos.z); spot.target.position.copy(this.dartboard.pos);
     this.group.add(spot, spot.target);
     // neon glow
     const neonL = new THREE.PointLight(0xff5a8c, low ? 4 : 8, 6, 2); neonL.position.set(-0.5, 2.7, ROOM.minZ + 0.6); this.group.add(neonL);

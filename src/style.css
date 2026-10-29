@@ -142,3 +142,8 @@ button.icon { background: var(--panel); border: 1px solid var(--panel-edge); col
   .healthbars { top: calc(110px + var(--safe-t)); }
   .toast h1 { font-size: 30px; }
 }
+
+/* floating hit numbers */
+.floaty { position: absolute; transform: translate(-50%, -50%); font-weight: 800; font-size: 20px; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 12px rgba(255,160,60,0.6); pointer-events: none; font-family: var(--sans); }
+.floaty.big { font-size: 28px; color: #ffd36a; }
+.floaty.you { color: #ff7a6a; font-size: 24px; }

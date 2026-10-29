@@ -398,7 +398,8 @@ const ACTS = {
       // prefer a table that already has someone
       const busyTables = new Set(dir.npcs.filter((o) => o !== n && o.activity === 'tableSit').map((o) => dir.bar.chairs[o.data.chair].table));
       const pref = chairs.filter((i) => busyTables.has(dir.bar.chairs[i].table));
-      const i = (pref.length && Math.random() < 0.7 ? pref : chairs)[Math.floor(Math.random() * (pref.length && Math.random() < 0.7 ? pref : chairs).length)];
+      const pool = pref.length && Math.random() < 0.7 ? pref : chairs;
+      const i = pool[Math.floor(Math.random() * pool.length)];
       n.data.chair = i;
       const c = dir.bar.chairs[i];
       const seat = new THREE.Vector3(c.x, 0, c.z);

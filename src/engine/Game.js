@@ -48,7 +48,8 @@ export class Game {
     this.input = new Input(this.canvas, this.uiRoot);
     this.bar = new Bar(this.scene, { lowEnd: this.lowEnd });
     this.player = new Player(this.camera, this.bar);
-    this.npcs = new NpcDirector(this.bar, this.scene, this.player);
+    try { this.npcs = new NpcDirector(this.bar, this.scene, this.player); }
+    catch (e) { console.error('npc director failed to start', e); this.npcs = { update() {}, suspend() {}, resume() {}, npcs: [] }; }
 
     if (!this.lowEnd) {
       this.composer = new EffectComposer(r);
@@ -93,26 +94,25 @@ export class Game {
     const coat = this.bar.playerCoat;
     const hook = this.bar.coatHook;
     const ease = (a, b, x) => THREE.MathUtils.smoothstep(x, a, b);
-    // 0-1.2s: fade in, step inside.  1.2-3.2: walk to the rack, turning to face it.
-    // 3.2-4.6: coat goes up on the hook.  4.6-5.8: turn to face the room. then control.
-    this.hud.setBlackout(1 - ease(0.2, 1.4, t));
-    const k1 = ease(0.3, 3.4, t);
+    // 0-0.8s: fade in, step inside.  0.3-2.0: walk to the rack, turning to face it.
+    // 1.9-2.7: coat goes up on the hook.  2.7-3.6: turn to face the room. then control.
+    this.hud.setBlackout(1 - ease(0.1, 0.9, t));
+    const k1 = ease(0.2, 2.0, t);
     const start = new THREE.Vector3(-5, 0, 5.0), rackSpot = new THREE.Vector3(-5.95, 0, 4.35);
     this.player.pos.lerpVectors(start, rackSpot, k1);
     const yawRack = Math.atan2(-(hook.x - rackSpot.x), -(hook.z - rackSpot.z));
     const yawRoom = Math.atan2(-(1.0 - rackSpot.x), -(0.5 - rackSpot.z));
-    const k2 = ease(1.6, 3.4, t), k3 = ease(4.6, 5.9, t);
+    const k2 = ease(0.9, 2.0, t), k3 = ease(2.7, 3.6, t);
     this.player.yaw = THREE.MathUtils.lerp(THREE.MathUtils.lerp(0, yawRack, k2), yawRoom, k3);
-    this.player.pitch = THREE.MathUtils.lerp(0, -0.12, k2) * (1 - k3);
-    this.player.bobT += dt * 7 * (k1 < 1 ? 1 : 0);
-    this.player.moving = k1 < 1 ? 1 : 0;
+    this.player.pitch = THREE.MathUtils.lerp(0, -0.18, k2) * (1 - k3);
+    this.player.vel.set(0, 0, k1 < 1 ? -this.player.speed * 0.6 : 0);
     this.player.applyCamera(dt);
     // coat: carried low in front of the camera, then placed on the hook
-    const kc = ease(3.3, 4.5, t);
+    const kc = ease(1.9, 2.7, t);
     const carried = cam.localToWorld(new THREE.Vector3(0.3, -0.5, -0.6));
     coat.position.lerpVectors(carried, new THREE.Vector3(hook.x, hook.y - 0.35, hook.z + 0.1), kc);
     coat.rotation.set(0, this.player.yaw, 0.4 * (1 - kc));
-    if (t > 5.9) this.beginWalk(true);
+    if (t > 3.6) this.beginWalk(true);
   }
 
   beginWalk(welcome = false) {
@@ -210,7 +210,7 @@ export class Game {
       requestAnimationFrame(tick);
       const dt = Math.min(0.05, this.clock.getDelta()) * this.timeScale;
       this.time += dt;
-      this.npcs.update(dt);
+      try { this.npcs.update(dt); } catch (e) { if (!this._npcErr) { this._npcErr = true; console.error('npc update error', e); } }
       this.bar.update(dt, this.time);
       if (this.state === 'intro') this.updateIntro(dt);
       else if (this.state === 'walk') this.updateWalk(dt);

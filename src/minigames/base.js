@@ -45,6 +45,19 @@ export class MiniGame {
       step();
     });
   }
+  /**
+   * Place the camera at a standing/sitting pose with idle breathing layered on, so first-person
+   * mini-games keep the same living feel as walking around. Call every frame.
+   */
+  idleCam(pos, lookAt, dt, amount = 1) {
+    const t = this.t;
+    const c = this.camera;
+    const breath = Math.sin(t * 1.1) * 0.006 * amount;
+    c.position.set(pos.x, pos.y + breath, pos.z);
+    c.lookAt(lookAt);
+    c.rotateX(Math.sin(t * 1.1 + 0.4) * 0.004 * amount);
+    c.rotateZ(Math.sin(t * 0.8) * 0.003 * amount);
+  }
   /** Player's view through a mini-game: the Game loop no longer drives the camera, we do. */
   setCamera(pos, lookAt) { this.camera.position.copy(pos); this.camera.lookAt(lookAt); }
 }
