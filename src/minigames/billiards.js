@@ -212,9 +212,13 @@ export class Billiards extends MiniGame {
     const wantYaw = Math.atan2(-(target.x - p.pos.x), -(target.z - p.pos.z));
     p.yaw = turnToward(p.yaw, wantYaw, 3.5 * dt);
     const fwd = p.forward(), rgt = p.right();
-    const want = fwd.multiplyScalar(a.y).add(rgt.multiplyScalar(a.x));
+    let want = fwd.multiplyScalar(a.y).add(rgt.multiplyScalar(a.x));
     if (want.length() > 1) want.normalize();
     want.multiplyScalar(p.speed * 0.8);
+    if (this.shove) {
+      const to = new THREE.Vector3(this.shove.x - p.pos.x, 0, this.shove.z - p.pos.z);
+      if (to.length() < 0.12) this.shove = null; else want = to.normalize().multiplyScalar(p.speed * 0.7);
+    }
     p.vel.x = THREE.MathUtils.damp(p.vel.x, want.x, 9, dt); p.vel.z = THREE.MathUtils.damp(p.vel.z, want.z, 9, dt);
     const nx = p.pos.x + p.vel.x * dt, nz = p.pos.z + p.vel.z * dt;
     // keep within a ring around the table
@@ -366,6 +370,16 @@ export class Billiards extends MiniGame {
     this.sharkSpot = this.standSpot(cue, pick.shot.angle, 0.8);
     this.sharkState = 'approach'; this.sharkT = 0;
     this.shark.pose = 'idle';
+    // if you are standing where he needs to be, he waves you aside and you step round
+    const p = this.player.pos;
+    if (Math.hypot(p.x - this.sharkSpot.x, p.z - this.sharkSpot.z) < 1.3) {
+      const dir = new THREE.Vector3(Math.cos(pick.shot.angle), 0, Math.sin(pick.shot.angle));
+      const side = new THREE.Vector3(-dir.z, 0, dir.x);
+      const cand = [this.sharkSpot.clone().addScaledVector(side, 1.5), this.sharkSpot.clone().addScaledVector(side, -1.5)];
+      const ok = (q) => { const du = Math.max(0, Math.abs(q.x - this.cx) - P.L / 2), dv = Math.max(0, Math.abs(q.z - this.cz) - P.W / 2); const d = Math.hypot(du, dv); return d > 0.62 && d < 1.9 && !this.player.blocked(q.x, q.z, 'player'); };
+      this.shove = cand.find(ok) || cand[0];
+      this.hud.showToast('"Mind."', 'Shark needs that spot', 1400);
+    }
   }
   updateShark(dt) {
     const s = this.shark, st = this.sharkState;
