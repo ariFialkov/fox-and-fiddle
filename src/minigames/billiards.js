@@ -368,12 +368,39 @@ export class Billiards extends MiniGame {
   }
 
   // ---------- Shark ----------
+  /** Waypoints around the table (never through it) from `from` to `to`. */
+  ringPath(from, to) {
+    const hx = P.L / 2 + 0.5, hz = P.W / 2 + 0.5;
+    const inside = (q) => Math.abs(q.x - this.cx) < hx - 0.05 && Math.abs(q.z - this.cz) < hz - 0.05;
+    const crosses = () => {
+      const n = 20;
+      for (let i = 1; i < n; i++) { const q = from.clone().lerp(to, i / n); if (inside(q)) return true; }
+      return false;
+    };
+    if (!crosses()) return [to.clone()];
+    // perimeter parameterisation of the expanded rectangle, clockwise from the (-x,-z) corner
+    const corners = [new THREE.Vector3(this.cx - hx, 0, this.cz - hz), new THREE.Vector3(this.cx + hx, 0, this.cz - hz), new THREE.Vector3(this.cx + hx, 0, this.cz + hz), new THREE.Vector3(this.cx - hx, 0, this.cz + hz)];
+    const perim = (q) => { // nearest side index + progress
+      const dx = q.x - this.cx, dz = q.z - this.cz;
+      const side = Math.abs(dx) / hx > Math.abs(dz) / hz ? (dx > 0 ? 1 : 3) : (dz > 0 ? 2 : 0);
+      return side;
+    };
+    const sa = perim(from), sb = perim(to);
+    const cw = [], ccw = [];
+    for (let s = sa; s !== sb; s = (s + 1) % 4) cw.push(corners[(s + 1) % 4]);
+    for (let s = sa; s !== sb; s = (s + 3) % 4) ccw.push(corners[s]);
+    const len = (pts) => { let l = 0, prev = from; for (const p of [...pts, to]) { l += prev.distanceTo(p); prev = p; } return l; };
+    const path = len(cw) <= len(ccw) ? cw : ccw;
+    return [...path.map((c) => c.clone()), to.clone()];
+  }
+
   botTurn() {
     if (this.done) return;
     const pick = P.botShot(this.state, this.skill, this.mustWin);
     this.botShotPlan = pick;
     const cue = this.ball(0);
     this.sharkSpot = this.standSpot(cue, pick.shot.angle, 0.8);
+    this.sharkPath = this.ringPath(this.shark.root.position, this.sharkSpot);
     this.sharkState = 'approach'; this.sharkT = 0;
     this.shark.pose = 'idle';
     // if you are standing where he needs to be, he waves you aside and you step round
@@ -392,7 +419,7 @@ export class Billiards extends MiniGame {
     const pos = s.root.position;
     const moveTo = (target, speed) => {
       const dx = target.x - pos.x, dz = target.z - pos.z, d = Math.hypot(dx, dz);
-      if (d < 0.05) { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); return true; }
+      if (d < (target === this.sharkSpot || target === this.sharkRest ? 0.05 : 0.2)) { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); return true; }
       // never walk through the player: wait for them to step aside
       const pp = this.player.pos;
       if (Math.hypot(pp.x - (pos.x + dx / d * 0.5), pp.z - (pos.z + dz / d * 0.5)) < 0.55) { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); return false; }
@@ -407,7 +434,8 @@ export class Billiards extends MiniGame {
     if (st === 'rest') { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); faceBall(); return; }
     this.sharkT += dt;
     if (st === 'approach') {
-      if (moveTo(this.sharkSpot, 1.1)) { this.sharkState = 'settle'; this.sharkT = 0; }
+      const next = this.sharkPath[0];
+      if (moveTo(next, 1.1)) { this.sharkPath.shift(); if (!this.sharkPath.length) { this.sharkState = 'settle'; this.sharkT = 0; } }
       return;
     }
     const plan = this.botShotPlan;
@@ -439,12 +467,13 @@ export class Billiards extends MiniGame {
       if (this.sharkT > 0.5) {
         s.hold(this.sharkCue, 1, [0, -0.05, 0.02], [0, 0, 0]);
         this.sharkCue.rotation.set(-Math.PI / 2, 0, 0); this.sharkCue.position.set(0, -0.05, 0.02);
-        this.sharkState = 'retreat'; this.sharkT = 0;
+        this.sharkState = 'retreat'; this.sharkT = 0; this.sharkPath = this.ringPath(pos, this.sharkRest);
       }
       return;
     }
     if (st === 'retreat') {
-      if (moveTo(this.sharkRest, 1.0)) { this.sharkState = 'rest'; }
+      const next = this.sharkPath[0];
+      if (moveTo(next, 1.0)) { this.sharkPath.shift(); if (!this.sharkPath.length) this.sharkState = 'rest'; }
     }
   }
 
