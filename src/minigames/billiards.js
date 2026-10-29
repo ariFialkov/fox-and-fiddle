@@ -222,7 +222,10 @@ export class Billiards extends MiniGame {
     p.vel.x = THREE.MathUtils.damp(p.vel.x, want.x, 9, dt); p.vel.z = THREE.MathUtils.damp(p.vel.z, want.z, 9, dt);
     const nx = p.pos.x + p.vel.x * dt, nz = p.pos.z + p.vel.z * dt;
     // keep within a ring around the table
-    const ringOk = (x, z) => { const du = Math.max(0, Math.abs(x - this.cx) - P.L / 2), dv = Math.max(0, Math.abs(z - this.cz) - P.W / 2); const d = Math.hypot(du, dv); return d > 0.62 && d < 1.9; };
+    // keep within a ring around the table; moves that bring you back into the ring are always allowed
+    const ringD = (x, z) => { const du = Math.max(0, Math.abs(x - this.cx) - P.L / 2), dv = Math.max(0, Math.abs(z - this.cz) - P.W / 2); return Math.hypot(du, dv); };
+    const dNow = ringD(p.pos.x, p.pos.z);
+    const ringOk = (x, z) => { const d = ringD(x, z); return (d > 0.62 || d > dNow) && (d < 1.9 || d < dNow); };
     if (ringOk(nx, p.pos.z) && !p.blocked(nx, p.pos.z, 'player')) p.pos.x = nx; else p.vel.x *= 0.2;
     if (ringOk(p.pos.x, nz) && !p.blocked(p.pos.x, nz, 'player')) p.pos.z = nz; else p.vel.z *= 0.2;
     const dy = target.y - 1.62, dxz = Math.hypot(target.x - p.pos.x, target.z - p.pos.z);
@@ -387,6 +390,9 @@ export class Billiards extends MiniGame {
     const moveTo = (target, speed) => {
       const dx = target.x - pos.x, dz = target.z - pos.z, d = Math.hypot(dx, dz);
       if (d < 0.05) { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); return true; }
+      // never walk through the player: wait for them to step aside
+      const pp = this.player.pos;
+      if (Math.hypot(pp.x - (pos.x + dx / d * 0.5), pp.z - (pos.z + dz / d * 0.5)) < 0.55) { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); return false; }
       const stp = Math.min(d, speed * dt);
       pos.x += dx / d * stp; pos.z += dz / d * stp;
       s.walk = THREE.MathUtils.damp(s.walk, 0.9, 8, dt); s.walkPhase += speed * dt / 0.36 * Math.PI;
