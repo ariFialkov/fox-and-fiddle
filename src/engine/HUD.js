@@ -34,9 +34,10 @@ export class HUD {
     this.power = h('div', 'powerbar', '<i></i>');
     this.actions = h('div', 'mobile-actions');
     this.rodTabs = h('div', 'rod-tabs');
+    this.modes = h('div', 'modes');
 
     root.append(this.vignette, this.hurt, this.blackout, this.crosshair, this.toast, this.prompt, this.panel, this.score,
-      this.hints, this.dialogue, this.health, this.power, this.actions, this.rodTabs, this.tl, this.tr, this.info, this.result);
+      this.hints, this.dialogue, this.health, this.power, this.actions, this.rodTabs, this.modes, this.tl, this.tr, this.info, this.result);
 
     api.onBalance((b) => { this.balance.querySelector('b').textContent = fmt(b); });
     this.balance.querySelector('b').textContent = fmt(api.balance);
@@ -157,6 +158,18 @@ export class HUD {
     this.rodTabs.classList.add('show');
   }
 
+  /** Horizontal toggle row (e.g. game mode). list of labels, selected index, callback. null hides. */
+  setModes(list, sel, onSel) {
+    this.modes.innerHTML = '';
+    if (!list) { this.modes.classList.remove('show'); return; }
+    list.forEach((l, i) => {
+      const b = h('button', i === sel ? 'sel' : '', l);
+      b.onclick = () => onSel(i);
+      this.modes.append(b);
+    });
+    this.modes.classList.add('show');
+  }
+
   /** Dialogue box with speaker line and buttons. ladder: {steps, done} optional. */
   setDialogue({ who, text, choices, ladder }) {
     if (!who && !text) { this.dialogue.classList.remove('show'); return; }
@@ -213,7 +226,7 @@ export class HUD {
 
   clearGameUI() {
     this.setScore(null); this.setHints(null); this.setCrosshair(false); this.setPower(null);
-    this.setHealth(null); this.setActions(null); this.setRodTabs(null); this.setDialogue({});
+    this.setHealth(null); this.setActions(null); this.setRodTabs(null); this.setModes(null); this.setDialogue({});
     this.setBlackout(0); this.setBlur(0);
   }
 }

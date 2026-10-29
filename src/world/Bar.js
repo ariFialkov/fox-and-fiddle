@@ -266,13 +266,13 @@ export class Bar {
     const { mats: M } = this;
     const z = -2.4, y = 1.73, x = ROOM.maxX - 0.05;
     const cab = this.box(0.08, 1.2, 1.1, M.darkWood, x - 0.02, y, z, { shadow: false });
-    const board = new THREE.Mesh(new THREE.CylinderGeometry(0.2255, 0.2255, 0.04, 40), new THREE.MeshStandardMaterial({ map: T.dartboard(), roughness: 0.9 }));
+    const board = new THREE.Mesh(new THREE.CylinderGeometry(0.2255, 0.2255, 0.04, 48), new THREE.MeshStandardMaterial({ map: T.dartboard(), roughness: 0.85, transparent: true }));
     // cylinder axis -> world -x (cap faces the room); extra local-Y turn so the 20 sits at the top
     board.rotation.set(0, Math.PI / 2, Math.PI / 2, 'ZYX');
     board.position.set(x - 0.08, y, z);
     this.group.add(board);
     // scoring radius: texture ring outer edge = 0.47 of the 0.451m texture span
-    this.dartboard = { pos: new THREE.Vector3(x - 0.1, y, z), normal: new THREE.Vector3(-1, 0, 0), R: 0.2255 * 0.94, x: x - 0.1 };
+    this.dartboard = { pos: new THREE.Vector3(x - 0.1, y, z), normal: new THREE.Vector3(-1, 0, 0), R: 0.2255 * 0.8, x: x - 0.1 }; // R = double-ring outer edge (texture ring at 0.40 of a 0.451m span)
     // oche (throw line) 2.37m from the board face
     const oche = this.box(0.04, 0.01, 0.9, new THREE.MeshStandardMaterial({ color: 0xd8d0b0 }), x - 0.1 - 2.37, 0.006, z, { shadow: false });
     oche.receiveShadow = false;
@@ -345,7 +345,7 @@ export class Bar {
       this.props.push({ mesh: this.glass(x - 0.05, 0.76, z + 0.25, false), kind: 'glass' });
     }
     // bottles on the bar counter are throwable too
-    for (let i = 0; i < 3; i++) this.props.push({ mesh: this.bottle(-3.5 + i * 2.6, this.barTopY, this.barZ + 0.2, i), kind: 'bottle' });
+    for (let i = 0; i < 3; i++) this.props.push({ mesh: this.bottle(-1.3 + i * 2.0, this.barTopY, this.barZ + 0.2, i), kind: 'bottle' });
   }
 
   chair(x, z, rot) {

@@ -116,35 +116,43 @@ export function felt(color = '#1f6b3a') {
 }
 
 export function dartboard() {
-  return make('dartboard', 1024, 1024, (ctx, w, h) => {
-    const cx = w / 2, cy = h / 2, R = w * 0.47;
-    ctx.fillStyle = '#111'; ctx.fillRect(0, 0, w, h);
+  return make('dartboard3', 2048, 2048, (ctx, w, h) => {
+    const cx = w / 2, cy = h / 2, R = w * 0.40;   // R = outer edge of the double ring
+    ctx.clearRect(0, 0, w, h);
+    // black surround with the number ring
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.2, 0, 7); ctx.fillStyle = '#121212'; ctx.fill();
+    const grd = ctx.createRadialGradient(cx, cy, R * 1.0, cx, cy, R * 1.2);
+    grd.addColorStop(0, 'rgba(255,255,255,0.06)'); grd.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.2, 0, 7); ctx.fillStyle = grd; ctx.fill();
     const nums = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
-    const rings = [[0.0, 0.037, null], [0.037, 0.094, null], [0.094, 0.58, 'single'], [0.58, 0.63, 'treble'], [0.63, 0.95, 'single'], [0.95, 1.0, 'double']];
+    const rings = [[0.094, 0.58, 'single'], [0.58, 0.63, 'treble'], [0.63, 0.95, 'single'], [0.95, 1.0, 'double']];
     for (let i = 0; i < 20; i++) {
       const a0 = -Math.PI / 2 - Math.PI / 20 + (i * Math.PI) / 10, a1 = a0 + Math.PI / 10;
       for (const [r0, r1, kind] of rings) {
-        if (!kind) continue;
         const even = i % 2 === 0;
-        let col;
-        if (kind === 'single') col = even ? '#1b1a17' : '#e8dcc0';
-        else col = even ? '#c0272d' : '#1f7a3f';
+        const col = kind === 'single' ? (even ? '#1c1a17' : '#efe4c9') : (even ? '#c8202a' : '#1f8a45');
         ctx.beginPath(); ctx.arc(cx, cy, R * r1, a0, a1); ctx.arc(cx, cy, R * r0, a1, a0, true); ctx.closePath();
         ctx.fillStyle = col; ctx.fill();
       }
-      // numbers
-      ctx.fillStyle = '#eee'; ctx.font = 'bold 44px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      // sisal texture hint on the cream segments
+      ctx.fillStyle = '#f4ebd6'; ctx.font = 'bold 120px Arial, Helvetica, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const am = (a0 + a1) / 2;
-      ctx.fillText(String(nums[i]), cx + Math.cos(am) * R * 1.06, cy + Math.sin(am) * R * 1.06);
+      ctx.save(); ctx.translate(cx + Math.cos(am) * R * 1.1, cy + Math.sin(am) * R * 1.1); ctx.rotate(am + Math.PI / 2);
+      ctx.fillText(String(nums[i]), 0, 0); ctx.restore();
     }
-    ctx.beginPath(); ctx.arc(cx, cy, R * 0.094, 0, 7); ctx.fillStyle = '#1f7a3f'; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx, cy, R * 0.037, 0, 7); ctx.fillStyle = '#c0272d'; ctx.fill();
-    ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
-    for (const [, r1] of rings) { ctx.beginPath(); ctx.arc(cx, cy, R * r1, 0, 7); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.094, 0, 7); ctx.fillStyle = '#1f8a45'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.037, 0, 7); ctx.fillStyle = '#c8202a'; ctx.fill();
+    // wires
+    ctx.strokeStyle = '#c9c9c9'; ctx.lineWidth = 5; ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 4;
+    for (const r of [0.037, 0.094, 0.58, 0.63, 0.95, 1.0]) { ctx.beginPath(); ctx.arc(cx, cy, R * r, 0, 7); ctx.stroke(); }
     for (let i = 0; i < 20; i++) {
       const a = -Math.PI / 2 - Math.PI / 20 + (i * Math.PI) / 10;
       ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * R * 0.094, cy + Math.sin(a) * R * 0.094); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.stroke();
     }
+    ctx.shadowBlur = 0;
+    // outer rim
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 18; ctx.beginPath(); ctx.arc(cx, cy, R * 1.195, 0, 7); ctx.stroke();
+    ctx.strokeStyle = '#8a8a8a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, R * 1.19, 0, 7); ctx.stroke();
   });
 }
 

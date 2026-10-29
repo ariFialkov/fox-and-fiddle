@@ -92,8 +92,16 @@ export class Player {
   /** Static colliders, room walls and (dynamic) patrons. `ignore` lets a patron test its own move. */
   blocked(x, z, ignore = null, radius = RADIUS) {
     if (x < ROOM.minX + radius || x > ROOM.maxX - radius || z < ROOM.minZ + radius || z > ROOM.maxZ - radius) return true;
+    const fromX0 = ignore ? ignore.root?.position.x ?? this.pos.x : this.pos.x;
+    const fromZ0 = ignore ? ignore.root?.position.z ?? this.pos.z : this.pos.z;
     for (const c of this.bar.colliders) {
-      if (x > c.minX - radius && x < c.maxX + radius && z > c.minZ - radius && z < c.maxZ + radius) return true;
+      if (x > c.minX - radius && x < c.maxX + radius && z > c.minZ - radius && z < c.maxZ + radius) {
+        // already inside this zone (pushed, seated, teleported): allow moves that get further out
+        const pen = (px, pz) => Math.min(px - (c.minX - radius), (c.maxX + radius) - px, pz - (c.minZ - radius), (c.maxZ + radius) - pz);
+        const was = pen(fromX0, fromZ0);
+        if (was > 0 && pen(x, z) < was) continue;
+        return true;
+      }
     }
     const fromX = ignore ? ignore.root?.position.x ?? this.pos.x : this.pos.x;
     const fromZ = ignore ? ignore.root?.position.z ?? this.pos.z : this.pos.z;

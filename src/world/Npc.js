@@ -223,12 +223,52 @@ export class NpcDirector {
   }
 
   // ---------- main update ----------
+  /**
+   * Anyone standing in the path of a patron who is "on business" (claimed by a mini-game and
+   * walking, or the player) steps aside, then drifts back to where they were.
+   */
+  yieldTo(n, dt) {
+    const p = n.patron;
+    if (p.pose === 'sit') return false;
+    const pos = p.root.position;
+    const movers = [];
+    for (const o of this.bar.patrons) if (o !== p && o.busy && o.walk > 0.2) movers.push({ pos: o.root.position, dir: new THREE.Vector3(0, 0, 1).applyQuaternion(o.root.quaternion) });
+    const pl = this.player; if (pl.vel.lengthSq() > 0.2) movers.push({ pos: pl.pos, dir: pl.vel.clone().normalize() });
+    let threat = null;
+    for (const m of movers) {
+      const to = new THREE.Vector3(pos.x - m.pos.x, 0, pos.z - m.pos.z); const d = to.length();
+      if (d < 1.1 && d > 0 && to.normalize().dot(m.dir) > 0.55) { threat = m; break; }
+    }
+    if (threat && !n.yield) {
+      const to = new THREE.Vector3(pos.x - threat.pos.x, 0, pos.z - threat.pos.z).normalize();
+      const side = new THREE.Vector3(-threat.dir.z, 0, threat.dir.x);
+      if (side.dot(to) < 0) side.negate();
+      const target = pos.clone().addScaledVector(side, 0.75).addScaledVector(threat.dir, 0.15);
+      if (!this.player.blocked(target.x, target.z, p, 0.28)) {
+        n.yield = { home: pos.clone(), face: n.face, path: n.path };
+        n.path = [target]; n.face = null;
+        if (Math.random() < 0.5) p.gesture();
+      }
+    }
+    if (n.yield) {
+      if (!threat && !n.path) {
+        // drift back to the spot we were holding
+        const h = n.yield.home;
+        if (Math.hypot(h.x - pos.x, h.z - pos.z) > 0.08) { n.path = [h.clone()]; }
+        else { n.face = n.yield.face; n.path = n.yield.path; n.yield = null; }
+      }
+      return true;
+    }
+    return false;
+  }
+
   update(dt) {
     this.t += dt;
     for (const n of this.npcs) {
       if (n.patron.busy) continue;
       if (!n.activity) { this.choose(n); continue; }
       n.timer += dt;
+      if (this.yieldTo(n, dt)) { this.walk(n, dt); continue; }
       this.walk(n, dt);
       const done = ACTS[n.activity].update(this, n, dt);
       if (done) { this.end(n); this.choose(n); }

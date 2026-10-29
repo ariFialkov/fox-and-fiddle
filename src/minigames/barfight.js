@@ -5,6 +5,8 @@
  * The fight starts one-on-one with Mick. Others only step in when the round needs them (or, if
  * you are fated to win, for a bit of flavour), and they come at you from the front one at a
  * time while the rest hang back and heckle.
+ * Hold Shift to block high (punches, smashes) and Z to block low (kicks); the regulars block
+ * too, and the one you are trading with keeps moving side to side like a boxer.
  */
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
@@ -23,7 +25,7 @@ export class BarFight extends MiniGame {
     this.fx = [];
     this.labels = [];
     const mick = this.bar.mick;
-    this.addEnemy(mick, { hp: 110, dmg: this.mustWin ? 7 : 11, rate: 1.7 });
+    this.addEnemy(mick, { hp: 110, dmg: this.mustWin ? 7 : 11, rate: 1.7, blockChance: this.mustWin ? 0.3 : 0.5 });
     // who might join, and when
     const extra = Math.min(this.bar.mates.length, flav.extraPatrons ?? 1);
     this.joinQueue = [];
@@ -58,14 +60,18 @@ export class BarFight extends MiniGame {
     this.boot.position.set(0.15, -0.9, -0.5); this.boot.visible = false; this.hands.add(this.boot);
     this.holdAnchor = new THREE.Group(); this.holdAnchor.position.set(0.22, -0.2, -0.4); this.hands.add(this.holdAnchor);
     this.kickT = -1; this.holdT = -1; this.held = null;
+    this.block = null; this.recoil = 0;
     this.flashTex = flashTexture();
 
     this.hud.setCrosshair(true);
-    this.hud.setHints(`<kbd>X</kbd> punch · <kbd>C</kbd> kick · hold <kbd>space</kbd> grab, release to throw · <kbd>space</kbd>+<kbd>X</kbd>/<kbd>C</kbd> smash`);
+    this.hud.setHints(`<kbd>X</kbd> punch · <kbd>C</kbd> kick · hold <kbd>shift</kbd> block high · hold <kbd>Z</kbd> block low · hold <kbd>space</kbd> grab, release to throw · <kbd>space</kbd>+<kbd>X</kbd>/<kbd>C</kbd> smash`);
     if (this.isTouch) {
+      this.touchBlock = null;
       this.hud.setActions([
         { label: 'punch', onDown: () => this.attack('punch') },
         { label: 'kick', onDown: () => this.attack('kick') },
+        { label: 'block ↑', onDown: () => { this.touchBlock = 'high'; }, onUp: () => { this.touchBlock = null; } },
+        { label: 'block ↓', onDown: () => { this.touchBlock = 'low'; }, onUp: () => { this.touchBlock = null; } },
         { label: 'grab', big: true, onDown: () => this.beginHold(), onUp: () => this.releaseHold() },
       ]);
     }
@@ -76,7 +82,7 @@ export class BarFight extends MiniGame {
 
   addEnemy(patron, opts) {
     patron.pose = 'fight'; patron.ko = 0; patron.stand(); patron.busy = true;
-    const e = { patron, hp: opts.hp, max: opts.hp, dmg: opts.dmg, rate: opts.rate, bruiser: !!opts.bruiser, cd: 1.2 + Math.random() * 0.6, stun: 0, ko: false, slot: this.enemies.length, yaw: 0 };
+    const e = { patron, hp: opts.hp, max: opts.hp, dmg: opts.dmg, rate: opts.rate, bruiser: !!opts.bruiser, cd: 1.2 + Math.random() * 0.6, stun: 0, ko: false, slot: this.enemies.length, yaw: 0, blockChance: opts.blockChance ?? (this.mustWin ? 0.3 : 0.55), blockT: 0, strafe: 0, strafeT: 0, kicker: Math.random() < 0.5 };
     const f = new THREE.Vector3(0, 0, 1).applyQuaternion(patron.root.quaternion); e.yaw = Math.atan2(f.x, f.z);
     this.enemies.push(e);
     return e;
@@ -97,11 +103,13 @@ export class BarFight extends MiniGame {
     for (const j of this.joinQueue) {
       if (!j.joined && j.when()) {
         j.joined = true; this.lastJoin = this.t;
-        this.addEnemy(j.patron, { hp: j.bruiser ? 150 : 80, dmg: j.bruiser ? 22 : (this.mustWin ? 6 : 10), rate: j.bruiser ? 1.4 : 1.9, bruiser: j.bruiser });
+        this.addEnemy(j.patron, { hp: j.bruiser ? 150 : 80, dmg: j.bruiser ? 22 : (this.mustWin ? 6 : 10), rate: j.bruiser ? 1.4 : 1.9, bruiser: j.bruiser, blockChance: j.bruiser ? 0.7 : (this.mustWin ? 0.25 : 0.5) });
         this.hud.showToast(`${j.patron.name} jumps in${j.bruiser ? '. He looks... sturdy.' : ''}`, '', 1500);
         this.updateHealth();
       }
     }
+    this.block = this.touchBlock || (inp.down('ShiftLeft') || inp.down('ShiftRight') ? 'high' : inp.down('KeyZ') ? 'low' : null);
+    this.recoil = Math.max(0, this.recoil - dt);
     if (inp.justPressed('Space')) this.beginHold();
     if (inp.justReleased('Space')) this.releaseHold();
     if (inp.justPressed('KeyX') || (inp.clicks.length && !this.isTouch)) this.attack('punch');
@@ -133,12 +141,24 @@ export class BarFight extends MiniGame {
         a.shoulder.rotation.set(wind * 0.3 - e2 * 0.5, -a.side * e2 * 0.35, a.side * (wind * 0.4));
         a.elbow.rotation.x = -wind * 0.6 + e2 * 0.6;
         if (k >= 1) a.t = -1;
+      } else if (this.block === 'high') {
+        // forearms up in front of the face
+        a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.16, -0.02, -0.32), Math.min(1, dt * 14));
+        a.shoulder.rotation.set(damp(a.shoulder.rotation.x, 0.9, 14, dt), damp(a.shoulder.rotation.y, -a.side * 0.5, 14, dt), damp(a.shoulder.rotation.z, a.side * 0.9, 14, dt));
+        a.elbow.rotation.x = damp(a.elbow.rotation.x, 1.1, 14, dt);
+      } else if (this.block === 'low') {
+        // arms drop low and the stance crouches
+        a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.26, -0.5, -0.3), Math.min(1, dt * 14));
+        a.shoulder.rotation.set(damp(a.shoulder.rotation.x, -0.4, 14, dt), 0, damp(a.shoulder.rotation.z, a.side * 0.2, 14, dt));
+        a.elbow.rotation.x = damp(a.elbow.rotation.x, 0.6, 14, dt);
       } else {
         a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.3, idleY, idleZ), Math.min(1, dt * 10));
         a.shoulder.rotation.set(damp(a.shoulder.rotation.x, 0, 10, dt), damp(a.shoulder.rotation.y, 0, 10, dt), damp(a.shoulder.rotation.z, 0, 10, dt));
         a.elbow.rotation.x = damp(a.elbow.rotation.x, 0, 10, dt);
       }
     }
+    // blocking low pulls the whole view down a touch
+    this.hands.position.y = damp(this.hands.position.y, this.block === 'low' ? -0.12 : 0, 12, dt);
     if (this.kickT >= 0) {
       this.kickT += dt / 0.55;
       const k = this.kickT, e = Math.sin(Math.min(1, k) * Math.PI);
@@ -169,6 +189,19 @@ export class BarFight extends MiniGame {
       const d = new THREE.Vector3(fwd.x * Math.cos(ang) - fwd.z * Math.sin(ang), 0, fwd.x * Math.sin(ang) + fwd.z * Math.cos(ang));
       target = this.player.pos.clone().addScaledVector(d, 2.1);
     }
+    // boxer footwork: the one trading with you keeps circling in bursts
+    if (engaged) {
+      e.strafeT -= dt;
+      if (e.strafeT <= 0) { e.strafe = Math.random() < 0.55 ? (Math.random() < 0.5 ? 1 : -1) : 0; e.strafeT = e.strafe ? 0.5 + Math.random() * 0.8 : 0.4 + Math.random() * 0.9; }
+      if (e.strafe && dist < 1.4) {
+        const sideV = new THREE.Vector3(-to.z, 0, to.x).normalize().multiplyScalar(e.strafe * 0.85 * dt);
+        const sx = p.root.position.x + sideV.x, sz = p.root.position.z + sideV.z;
+        if (!this.player.blocked(sx, sz, p, 0.28)) { p.root.position.x = sx; p.root.position.z = sz; p.walkPhase += 0.85 * dt / 0.36 * Math.PI; }
+        else e.strafe = -e.strafe;
+      }
+    }
+    e.blockT = Math.max(0, e.blockT - dt);
+    if (e.blockT <= 0) p.block = null;
     const dx = target.x - p.root.position.x, dz = target.z - p.root.position.z, d = Math.hypot(dx, dz);
     const near = engaged ? dist < 1.15 : d < 0.35;
     if (!near) {
@@ -191,20 +224,29 @@ export class BarFight extends MiniGame {
     }
     if (!engaged) return;
     e.cd -= dt;
-    if (dist < 1.3 && e.cd <= 0) {
+    if (dist < 1.3 && e.cd <= 0 && !p.block) {
       e.cd = e.rate * (0.8 + Math.random() * 0.5);
-      p.punch();
+      const kick = e.kicker && Math.random() < 0.35;
+      if (kick) p.kick(); else p.punch();
       const side = p.punchArm ? 1 : -1;
-      this.after(0.17, () => {
+      this.after(kick ? 0.2 : 0.17, () => {
         if (this.over || e.ko || e.stun > 0) return;
-        if (this.toPlayer(e).length() < 1.4) this.hurt(e.dmg, e, side);
+        if (this.toPlayer(e).length() < (kick ? 1.5 : 1.4)) this.hurt(e.dmg * (kick ? 1.3 : 1), e, side, kick ? 'low' : 'high');
       });
     }
   }
 
-  hurt(dmg, e, side = 1) {
+  hurt(dmg, e, side = 1, height = 'high') {
+    if (this.block === height) {
+      // blocked: a tenth of the damage, a jolt, and a short recoil for them
+      dmg *= 0.1; e.stun = Math.max(e.stun, 0.3);
+      this.hud.flashHurt(0.3); this.shake = 0.1;
+      this.floatLabel(this.player.eye().addScaledVector(this.player.forward(), 0.5).add(new THREE.Vector3(side * 0.15, 0.05, 0)), 'blocked', 'blk');
+      this.impact(this.player.eye().addScaledVector(this.player.forward(), 0.45).add(new THREE.Vector3(side * 0.12, height === 'low' ? -0.6 : -0.05, 0)));
+    }
     const floor = this.mustWin ? 6 : 0;
     this.hp = Math.max(floor, this.hp - dmg);
+    if (dmg < 1) { this.updateHealth(); return; }
     this.hud.flashHurt(0.9);
     this.shake = 0.28;
     this.camera.rotation.z += side * 0.08;
@@ -229,8 +271,11 @@ export class BarFight extends MiniGame {
   }
 
   attack(kind) {
-    if (this.over) return;
+    if (this.over || this.block || this.recoil > 0) return;
     if (this.held) { this.smash(); return; }
+    // they see it coming: the engaged enemy may raise a guard against this attack
+    const tgt = this.targetInFront(1.6, 0.5);
+    if (tgt && tgt.stun <= 0 && Math.random() < tgt.blockChance) { tgt.patron.block = kind === 'kick' ? 'low' : 'high'; tgt.blockT = 0.55; }
     if (kind === 'punch') {
       const arm = this.arms.find((a) => a.t < 0 || a.t > 0.7);
       if (!arm) return;
@@ -247,13 +292,22 @@ export class BarFight extends MiniGame {
     const e = this.targetInFront(kind === 'punch' ? 1.3 : 1.5);
     if (!e) return;
     const base = kind === 'punch' ? 11 + Math.random() * 6 : 17 + Math.random() * 8;
+    const guarded = e.patron.block === (kind === 'kick' ? 'low' : 'high');
+    if (guarded) {
+      const head = e.patron.root.position.clone().add(new THREE.Vector3(0, (kind === 'kick' ? 0.8 : 1.4) * e.patron.height, 0));
+      this.impact(head.clone().add(this.player.forward().multiplyScalar(-0.25)));
+      this.floatLabel(head.add(new THREE.Vector3(0, 0.3, 0)), 'blocked', 'blk');
+      this.recoil = 0.35; this.shake = Math.max(this.shake, 0.06);
+      e.patron.stagger();
+      return;
+    }
     this.damage(e, base * (this.mustWin ? 1.8 : 0.75), kind, side);
   }
 
   damage(e, amount, kind, side = 1) {
     const floor = e.bruiser && !this.mustWin ? 1 : 0;
     e.hp = Math.max(floor, e.hp - amount);
-    e.patron.hit(-side); e.stun = kind === 'kick' ? 0.75 : kind === 'smash' ? 0.9 : 0.4;
+    e.patron.hit(-side); e.patron.block = null; e.blockT = 0; e.stun = kind === 'kick' ? 0.75 : kind === 'smash' ? 0.9 : 0.4;
     const head = e.patron.root.position.clone().add(new THREE.Vector3(0, 1.5 * e.patron.height, 0));
     const hitPoint = head.clone().add(this.player.forward().multiplyScalar(-0.15)).add(new THREE.Vector3(0, kind === 'kick' ? -0.5 : -0.05, 0));
     this.impact(hitPoint);
@@ -345,7 +399,8 @@ export class BarFight extends MiniGame {
     this.arms[1].t = 0;
     this.after(0.15, () => {
       const e = this.targetInFront(1.35, 0.6);
-      if (e) { this.damage(e, 32 * (this.mustWin ? 1.5 : 0.8), 'smash'); this.hud.showToast('Over the head!', '', 900); }
+      if (e && e.patron.block === 'high') { this.floatLabel(e.patron.root.position.clone().add(new THREE.Vector3(0, 1.8, 0)), 'blocked', 'blk'); this.recoil = 0.4; }
+      else if (e) { this.damage(e, 32 * (this.mustWin ? 1.5 : 0.8), 'smash'); this.hud.showToast('Over the head!', '', 900); }
     });
     this.after(0.3, () => this.returnProp(pr));
   }
@@ -384,7 +439,7 @@ export class BarFight extends MiniGame {
     for (const l of this.labels) l.el.remove();
     if (this.held) this.returnProp(this.held);
     if (this.projectile) this.returnProp(this.projectile.pr);
-    for (const [p, pos] of this.origins) { p.root.position.copy(pos); p.ko = 0; p.pose = 'idle'; p.walk = 0; p.headTarget = null; p.stand(); }
+    for (const [p, pos] of this.origins) { p.root.position.copy(pos); p.ko = 0; p.pose = 'idle'; p.walk = 0; p.headTarget = null; p.block = null; p.stand(); }
   }
 }
 

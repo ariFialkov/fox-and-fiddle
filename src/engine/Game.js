@@ -132,9 +132,14 @@ export class Game {
   updateWalk(dt) {
     const p = this.player;
     let best = null, bestD = Infinity;
+    const fwd = p.forward();
     for (const s of this.bar.stations) {
       const d = Math.hypot(s.pos.x - p.pos.x, s.pos.z - p.pos.z);
-      if (d < s.radius && d < bestD) { best = s; bestD = d; }
+      if (d >= s.radius || d >= bestD) continue;
+      // you have to be more or less looking at the thing (or the person) you want to play
+      const to = new THREE.Vector3(s.look.x - p.pos.x, 0, s.look.z - p.pos.z).normalize();
+      if (to.dot(fwd) < 0.35) continue;
+      best = s; bestD = d;
     }
     if (best !== this.nearStation) {
       this.nearStation = best;

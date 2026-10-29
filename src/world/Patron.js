@@ -114,6 +114,8 @@ export class Patron {
   drink() { this.acts.drink = 0; }
   stagger() { this.acts.stagger = 0; }
   hit(side = 1) { this.acts.hit = 0; this.hitSide = side; }
+  kick() { this.acts.kick = 0; }
+  reach() { this.acts.reach = 0; }
   laugh() { this.acts.laugh = 0; }
   gesture() { this.acts.gesture = 0; this.gestureArm = this.rnd() < 0.5 ? 0 : 1; }
   nod() { this.acts.nod = 0; }
@@ -161,6 +163,8 @@ export class Patron {
         const sh = Math.sin(t * 4.2);
         tg.lx = -1.25 + sh * 0.05; tg.rx = -1.15 - sh * 0.05; tg.lz = 0.4; tg.rz = -0.4; tg.lf = -2.0; tg.rf = -2.1; tg.torsoX = 0.14;
         tg.torsoZ = sh * 0.04; tg.bodyY = Math.abs(Math.sin(t * 4.2)) * 0.012; tg.hipL = -0.15 + sh * 0.08; tg.hipR = 0.1 - sh * 0.08; tg.neckX = 0.1;
+        if (this.block === 'high') { tg.lx = -1.9; tg.rx = -1.9; tg.lz = 0.15; tg.rz = -0.15; tg.lf = -2.4; tg.rf = -2.4; tg.neckX = 0.25; tg.torsoX = 0.2; }
+        if (this.block === 'low') { tg.hipR = -1.1; tg.torsoX = 0.3; tg.lx = -0.6; tg.rx = -0.6; tg.lf = -1.2; tg.rf = -1.2; tg.bodyY = 0.02; }
         break;
       }
       case 'lean': // over a pool table, cue in the right hand
@@ -219,6 +223,16 @@ export class Patron {
       const ext = k < 0.35 ? 0 : k < 0.55 ? (k - 0.35) / 0.2 : 1 - (k - 0.55) / 0.45;
       tg[a + 'x'] = -1.2 + wind * 0.5 - ext * 0.85; tg[a + 'f'] = -2.0 + ext * 2.0 - wind * 0.2; tg[a + 'z'] = sgn * (0.4 - ext * 0.3);
       tg.torsoY += sgn * (wind * -0.35 + ext * 0.45); tg.torsoX += ext * 0.12; tg.hipL += ext * sgn * 0.1; tg.hipR -= ext * sgn * 0.1;
+    }
+    if ((k = this.act('kick', dt, 2.2)) >= 0) {
+      // chamber then snap the right leg out
+      const wind = k < 0.4 ? k / 0.4 : k < 0.6 ? 1 - (k - 0.4) / 0.2 : 0;
+      const ext = k < 0.4 ? 0 : k < 0.6 ? (k - 0.4) / 0.2 : 1 - (k - 0.6) / 0.4;
+      tg.hipR = -0.9 * wind - 1.5 * ext; tg.hipL = 0.2 * ext; tg.torsoX -= ext * 0.25; tg.bodyY += ext * 0.03; tg.lx -= ext * 0.5;
+    }
+    if ((k = this.act('reach', dt, 1.3)) >= 0) {
+      const e = Math.sin(k * Math.PI);
+      tg.rx = -0.9 - e * 0.1; tg.rf = -0.2 - e * 0.1; tg.torsoX += e * 0.25; tg.neckX += e * 0.1;
     }
     if ((k = this.act('hit', dt, 2.6)) >= 0) {
       const e = Math.sin(k * Math.PI);

@@ -19,7 +19,7 @@ const ROWS = [
   { x: 0.525, team: 'bot', n: 1, slide: 0.14 },
 ];
 const OFFSETS = { 1: [0], 2: [-0.12, 0.12], 3: [-0.18, 0, 0.18], 5: [-0.24, -0.12, 0, 0.12, 0.24] };
-const KEYS = { KeyE: 'fwd', KeyD: 'mid', KeyC: 'def', Space: 'goalie' };
+const KEYS = { Digit1: 'fwd', Digit2: 'mid', Digit3: 'def', Digit4: 'goalie', Numpad1: 'fwd', Numpad2: 'mid', Numpad3: 'def', Numpad4: 'goalie' };
 
 export class Foosball extends MiniGame {
   start() {
@@ -70,19 +70,40 @@ export class Foosball extends MiniGame {
     this.opp.lookAt(new THREE.Vector3(this.cx, 0, this.cz)); this.opp.pose = 'foos'; this.group.add(this.opp.root);
 
     this.placeCamera();
+    this.onResize = () => this.placeCamera(); addEventListener('resize', this.onResize);
     this.serve(this.mustWin ? 1 : -1);
-    this.hud.setHints(`<kbd>E</kbd> forwards <kbd>D</kbd> mid <kbd>C</kbd> defence <kbd>space</kbd> goalie · <kbd>scroll</kbd> spin · <kbd>mouse ←→</kbd> slide`);
+    this.hud.setHints(`<kbd>1</kbd> forwards <kbd>2</kbd> mid <kbd>3</kbd> defence <kbd>4</kbd> goalie · <kbd>scroll</kbd> spin · <kbd>mouse ←→</kbd> slide`);
     this.hud.setRodTabs(['Forwards', 'Midfield', 'Defence', 'Goalie'], 0, (i) => this.selectKey(['fwd', 'mid', 'def', 'goalie'][i]));
     this.selectKey('mid');
     this.hud.showToast('First to three', 'Nadia has not lost since 2019', 2000);
   }
 
-  /** Top-front view from behind your own goal, like a spectator leaning on the score beads. */
+  /**
+   * Top-front view from behind your own goal. The camera is pulled in along a fixed line of
+   * sight until the whole playing surface (walls included) just fits the screen, so the table
+   * fills the view and every figure and the ball stay visible.
+   */
   placeCamera() {
+    this.fov0 = this.fov0 ?? this.camera.fov;
     const portrait = innerHeight > innerWidth;
-    const back = portrait ? 1.25 : 1.05, up = portrait ? 1.35 : 0.95;
-    const pos = new THREE.Vector3(this.cx - L / 2 - back, this.ty + up, this.cz);
-    this.setCamera(pos, new THREE.Vector3(this.cx + 0.12, this.ty - 0.02, this.cz));
+    this.camera.fov = portrait ? 62 : 50; this.camera.updateProjectionMatrix();
+    const pitch = portrait ? 1.05 : 0.92;                         // steeper in portrait
+    const centre = new THREE.Vector3(this.cx + 0.02, this.ty, this.cz);
+    const dir = new THREE.Vector3(-Math.cos(pitch), Math.sin(pitch), 0);
+    const corners = [];
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) corners.push(new THREE.Vector3(this.cx + sx * (L / 2 + 0.1), this.ty + 0.16, this.cz + sz * (W / 2 + 0.1)));
+    const v = new THREE.Vector3();
+    let d = 0.8;
+    for (; d < 4; d += 0.03) {
+      this.camera.position.copy(centre).addScaledVector(dir, d);
+      this.camera.lookAt(centre);
+      this.camera.updateMatrixWorld();
+      let ok = true;
+      for (const c of corners) { v.copy(c).project(this.camera); if (Math.abs(v.x) > 0.95 || v.y > 0.78 || v.y < -0.95) { ok = false; break; } }
+      if (ok) break;
+    }
+    this.camera.position.copy(centre).addScaledVector(dir, d);
+    this.camera.lookAt(centre);
   }
 
   selectKey(key) {
@@ -122,12 +143,13 @@ export class Foosball extends MiniGame {
     const inp = this.input;
     for (const [code, key] of Object.entries(KEYS)) if (inp.justPressed(code)) this.selectKey(key);
     const r = this.rods[this.sel];
-    if (inp.wheel) r.w += -inp.wheel * 0.09;
+    if (inp.wheel) r.w += -inp.wheel * 0.07;
     const p = inp.pointer;
     if (this.isTouch) {
       if (p.down) { r.s -= p.dx * 0.0012; if (Math.abs(p.dy) > 2) r.w += -p.dy * 0.045; }
     } else if (p.dx) r.s -= p.dx * 0.0011;
     r.s = THREE.MathUtils.clamp(r.s, -r.slide, r.slide);
+    if (inp.justPressed('Space')) r.w += 9; // quick kick on the selected rod
   }
 
   botAI(dt) {
@@ -139,14 +161,14 @@ export class Foosball extends MiniGame {
       let best = r.offsets[0], bd = Infinity;
       for (const off of r.offsets) { const d = Math.abs(b.z - (r.s + off)); if (d < bd) { bd = d; best = off; } }
       const targetS = THREE.MathUtils.clamp(b.z - best, -r.slide, r.slide);
-      const speed = 0.35 + skill * 1.3;
+      const speed = 0.3 + skill * 0.9;
       r.s = THREE.MathUtils.damp(r.s, targetS, speed * 4, dt);
       // kick when the ball is at the feet and roughly lined up
       const inX = b.x > r.x - 0.05 && b.x < r.x + 0.03;
       if (inX && bd < 0.035 && r.cool <= 0 && Math.abs(r.w) < 1) {
         if (Math.random() < 0.3 + skill * 0.7) {
           const backward = this.clock > 120 && this.mustWin && Math.random() < 0.35;
-          r.w = (backward ? 1 : -1) * (7 + skill * 9);
+          r.w = (backward ? 1 : -1) * (6 + skill * 6);
           r.cool = 0.6;
         }
       }
@@ -166,7 +188,7 @@ export class Foosball extends MiniGame {
     for (let i = 0; i < sub; i++) {
       b.x += b.vx * h; b.z += b.vz * h;
       const sp = Math.hypot(b.vx, b.vz);
-      if (sp > 0) { const ns = Math.max(0, sp - 0.22 * h); b.vx *= ns / sp; b.vz *= ns / sp; }
+      if (sp > 0) { const ns = Math.max(0, sp - 0.32 * h); b.vx *= ns / sp; b.vz *= ns / sp; }
       if (b.z < -W / 2 + R) { b.z = -W / 2 + R; b.vz = Math.abs(b.vz) * 0.6; }
       if (b.z > W / 2 - R) { b.z = W / 2 - R; b.vz = -Math.abs(b.vz) * 0.6; }
       // goals
@@ -191,7 +213,7 @@ export class Foosball extends MiniGame {
           const vFoot = r.w * Math.cos(r.th) * LEG;
           if (Math.abs(vFoot) > 0.12) {
             const dir = Math.sign(vFoot);
-            b.vx = dir * Math.min(3.4, Math.abs(vFoot) * 1.7 + 0.4);
+            b.vx = dir * Math.min(2.1, Math.abs(vFoot) * 1.1 + 0.3);
             b.vz = ((b.z - mz) / 0.03) * Math.abs(b.vx) * 0.35 + (Math.random() - 0.5) * 0.1;
             b.x = footX + dir * (R + 0.013);
             b.lastKicker = r.team;
@@ -239,7 +261,7 @@ export class Foosball extends MiniGame {
     this.serve(you ? -1 : 1);
   }
 
-  dispose() { super.dispose(); this.bar.foosDecor.visible = true; }
+  dispose() { super.dispose(); this.bar.foosDecor.visible = true; removeEventListener('resize', this.onResize); this.camera.fov = this.fov0; this.camera.updateProjectionMatrix(); }
 
   sync() {
     for (const r of this.rods) {
