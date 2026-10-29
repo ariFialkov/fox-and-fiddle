@@ -25,7 +25,7 @@ export class BarFight extends MiniGame {
     this.fx = [];
     this.labels = [];
     const mick = this.bar.mick;
-    this.addEnemy(mick, { hp: 110, dmg: this.mustWin ? 7 : 11, rate: 1.7, blockChance: this.mustWin ? 0.3 : 0.5 });
+    this.addEnemy(mick, { hp: 140, dmg: this.mustWin ? 8 : 12, rate: 1.6, blockChance: this.mustWin ? 0.3 : 0.5 });
     // who might join, and when
     const extra = Math.min(this.bar.mates.length, flav.extraPatrons ?? 1);
     this.joinQueue = [];
@@ -143,14 +143,14 @@ export class BarFight extends MiniGame {
         if (k >= 1) a.t = -1;
       } else if (this.block === 'high') {
         // forearms up in front of the face
-        a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.16, -0.02, -0.32), Math.min(1, dt * 14));
-        a.shoulder.rotation.set(damp(a.shoulder.rotation.x, 0.9, 14, dt), damp(a.shoulder.rotation.y, -a.side * 0.5, 14, dt), damp(a.shoulder.rotation.z, a.side * 0.9, 14, dt));
-        a.elbow.rotation.x = damp(a.elbow.rotation.x, 1.1, 14, dt);
+        a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.2, -0.36, -0.22), Math.min(1, dt * 14));
+        a.shoulder.rotation.set(damp(a.shoulder.rotation.x, 0.35, 14, dt), damp(a.shoulder.rotation.y, -a.side * 0.35, 14, dt), damp(a.shoulder.rotation.z, a.side * 0.25, 14, dt));
+        a.elbow.rotation.x = damp(a.elbow.rotation.x, 1.35, 14, dt);
       } else if (this.block === 'low') {
         // arms drop low and the stance crouches
-        a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.26, -0.5, -0.3), Math.min(1, dt * 14));
-        a.shoulder.rotation.set(damp(a.shoulder.rotation.x, -0.4, 14, dt), 0, damp(a.shoulder.rotation.z, a.side * 0.2, 14, dt));
-        a.elbow.rotation.x = damp(a.elbow.rotation.x, 0.6, 14, dt);
+        a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.28, -0.42, -0.3), Math.min(1, dt * 14));
+        a.shoulder.rotation.set(damp(a.shoulder.rotation.x, -0.5, 14, dt), 0, damp(a.shoulder.rotation.z, a.side * 0.2, 14, dt));
+        a.elbow.rotation.x = damp(a.elbow.rotation.x, 0.5, 14, dt);
       } else {
         a.shoulder.position.lerp(new THREE.Vector3(a.side * 0.3, idleY, idleZ), Math.min(1, dt * 10));
         a.shoulder.rotation.set(damp(a.shoulder.rotation.x, 0, 10, dt), damp(a.shoulder.rotation.y, 0, 10, dt), damp(a.shoulder.rotation.z, 0, 10, dt));
@@ -301,7 +301,7 @@ export class BarFight extends MiniGame {
       e.patron.stagger();
       return;
     }
-    this.damage(e, base * (this.mustWin ? 1.8 : 0.75), kind, side);
+    this.damage(e, base * (this.mustWin ? 1.35 : 0.75), kind, side);
   }
 
   damage(e, amount, kind, side = 1) {

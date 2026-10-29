@@ -268,7 +268,7 @@ export class Bar {
     const cab = this.box(0.08, 1.2, 1.1, M.darkWood, x - 0.02, y, z, { shadow: false });
     const board = new THREE.Mesh(new THREE.CylinderGeometry(0.2255, 0.2255, 0.04, 48), new THREE.MeshStandardMaterial({ map: T.dartboard(), roughness: 0.85, transparent: true }));
     // cylinder axis -> world -x (cap faces the room); extra local-Y turn so the 20 sits at the top
-    board.rotation.set(0, Math.PI / 2, Math.PI / 2, 'ZYX');
+    board.rotation.set(0, 0, Math.PI / 2, 'ZYX'); // cap faces -x; spun so the 20 sits at the top
     board.position.set(x - 0.08, y, z);
     this.group.add(board);
     // scoring radius: texture ring outer edge = 0.47 of the 0.451m texture span
