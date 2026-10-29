@@ -114,6 +114,5 @@ export class Pickup extends MiniGame {
   dispose() {
     super.dispose();
     this.rose.mood = 0.5;
-    this.rose.lookAt(new THREE.Vector3(4.5, 0, 3.0));
   }
 }

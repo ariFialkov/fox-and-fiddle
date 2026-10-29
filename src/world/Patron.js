@@ -1,12 +1,16 @@
 /**
- * Low-poly bar patrons built from primitives, with enough joints to sell
- * idle sway, drinking, punching, flirting and getting knocked out.
+ * Low-poly bar patrons built from primitives, with enough joints to sell walking, sitting,
+ * drinking, talking, laughing, leaning over a pool table, throwing darts, fighting and
+ * getting knocked out. Poses set per-frame targets; everything eases toward them so
+ * transitions look natural. One-shot actions (punch, drink, laugh...) layer on top.
  */
 import * as THREE from 'three';
 
 const SHIRTS = [0x8a2b2b, 0x2c4a7a, 0x3d6b3a, 0x6b4a2a, 0x4a4a4a, 0x7a3a6b, 0x9a6a2a, 0x2a6b6b];
 const SKINS = [0xf1c9a5, 0xd9a278, 0xb07a4e, 0x8a5a3a, 0xe8b790];
 let seq = 0;
+const lerp = THREE.MathUtils.lerp;
+const damp = (a, b, k, dt) => THREE.MathUtils.damp(a, b, k, dt);
 
 export class Patron {
   constructor({ name = 'Patron', female = false, shirt, skin, hair, height = 1.0, seed = seq++ } = {}) {
@@ -27,20 +31,18 @@ export class Patron {
     const pantsMat = new THREE.MeshStandardMaterial({ color: 0x23262e, roughness: 0.95 });
     const hairMat = new THREE.MeshStandardMaterial({ color: hair, roughness: 0.9 });
 
-    // legs
-    this.legs = [];
+    // legs hang from hip pivots
+    this.hips = [];
     for (const s of [-1, 1]) {
-      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.62, 4, 8), pantsMat);
-      leg.position.set(s * 0.11, 0.4, 0);
-      leg.castShadow = true;
-      g.add(leg); this.legs.push(leg);
+      const hip = new THREE.Group(); hip.position.set(s * 0.11, 0.8, 0);
+      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.6, 4, 8), pantsMat);
+      leg.position.y = -0.4; leg.castShadow = true;
+      hip.add(leg); g.add(hip); this.hips.push(hip);
     }
-    // hips/torso
     this.torso = new THREE.Group(); this.torso.position.y = 0.78; g.add(this.torso);
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(female ? 0.16 : 0.2, 0.42, 4, 10), shirtMat);
-    body.position.y = 0.3; body.castShadow = true; body.scale.set(1.15, 1, 0.8);
-    this.torso.add(body);
-    // arms
+    const bodyMesh = new THREE.Mesh(new THREE.CapsuleGeometry(female ? 0.16 : 0.2, 0.42, 4, 10), shirtMat);
+    bodyMesh.position.y = 0.3; bodyMesh.castShadow = true; bodyMesh.scale.set(1.15, 1, 0.8);
+    this.torso.add(bodyMesh);
     this.arms = [];
     for (const s of [-1, 1]) {
       const pivot = new THREE.Group(); pivot.position.set(s * (female ? 0.22 : 0.27), 0.52, 0);
@@ -53,11 +55,9 @@ export class Patron {
       hand.position.y = -0.3;
       fore.add(forearm, hand);
       pivot.add(upper, fore);
-      pivot.rotation.z = s * 0.15;
       this.torso.add(pivot);
-      this.arms.push({ pivot, fore, hand });
+      this.arms.push({ pivot, fore, hand, side: s });
     }
-    // head
     this.neck = new THREE.Group(); this.neck.position.y = 0.78; this.torso.add(this.neck);
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 12), skinMat);
     head.position.y = 0.1; head.scale.set(0.95, 1.1, 0.95); head.castShadow = true;
@@ -79,94 +79,186 @@ export class Patron {
     this.mouth = mouth;
     if (!female && rnd() > 0.5) {
       const beard = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8, 0, Math.PI * 2, 1.3, 1.2), hairMat);
-      beard.position.y = 0.09; beard.position.z = 0.03; beard.scale.set(1, 1, 1);
+      beard.position.y = 0.09; beard.position.z = 0.03;
       this.neck.add(beard);
     }
     g.scale.setScalar(height);
 
-    this.t = Math.random() * 10;
+    this.t = rnd() * 10;
     this.pose = 'idle';
-    this.mood = 0.5;      // used by pick-up lines
-    this.ko = 0;          // 0 standing .. 1 knocked out
-    this.punchT = -1;
-    this.punchArm = 1;
-    this.drinkT = -1;
-    this.staggerT = -1;
-    this.sway = 0.5 + rnd() * 0.5;
+    this.mood = 0.5;          // pick-up lines
+    this.ko = 0;              // 0 standing .. 1 knocked out
+    this.slump = 0;           // 0 .. 1 slumped over the bar
+    this.walk = 0;            // walk blend 0..1 (driven by the NPC director / fight)
+    this.walkPhase = 0;
+    this.sway = 0.6 + rnd() * 0.6;
     this.hp = 100;
-    this.prop = null;     // held item (glass)
+    this.prop = null;         // held item (glass, cue, dart)
+    this.headTarget = null;   // world point to look at
+    this.busy = false;        // claimed by a mini-game: the director leaves it alone
+    this.seatH = 0;
+    this.acts = {};           // one-shot action timers
+    this.cur = {};            // eased joint values
+    this.rnd = rnd;
   }
 
   get position() { return this.root.position; }
   lookAt(v) { const p = v.clone(); p.y = this.root.position.y; this.root.lookAt(p); }
+  faceYaw() { return this.root.rotation.y; }
 
-  sit() { this.pose = 'sit'; this.legs.forEach((l) => { l.rotation.x = -Math.PI / 2; l.position.y = 0.52; l.position.z = 0.3; }); this.torso.position.y = 0.55; }
-  stand() { this.pose = 'idle'; this.legs.forEach((l) => { l.rotation.x = 0; l.position.y = 0.4; l.position.z = 0; }); this.torso.position.y = 0.78; }
+  sit(seatH = 0.72) { this.pose = 'sit'; this.seatH = seatH; }
+  stand() { if (this.pose === 'sit') this.pose = 'idle'; }
 
-  punch() { this.punchT = 0; this.punchArm = this.punchArm === 1 ? 0 : 1; }
-  drink() { this.drinkT = 0; }
-  stagger() { this.staggerT = 0; }
-  holdGlass(mesh) { if (this.prop) this.arms[1].hand.remove(this.prop); this.prop = mesh; if (mesh) { mesh.position.set(0, -0.03, 0.04); this.arms[1].hand.add(mesh); } }
+  // one-shots
+  punch() { this.acts.punch = 0; this.punchArm = this.punchArm === 1 ? 0 : 1; }
+  drink() { this.acts.drink = 0; }
+  stagger() { this.acts.stagger = 0; }
+  laugh() { this.acts.laugh = 0; }
+  gesture() { this.acts.gesture = 0; this.gestureArm = this.rnd() < 0.5 ? 0 : 1; }
+  nod() { this.acts.nod = 0; }
+  throwDart() { this.acts.throw = 0; }
+  strike() { this.acts.strike = 0; }
+  jerk() { this.acts.jerk = 0; }
+  cheer() { this.acts.cheer = 0; }
+  holdGlass(mesh) { this.hold(mesh, 1, [0, -0.03, 0.04]); }
+  hold(mesh, armIdx = 1, pos = [0, -0.03, 0.04], rot = [0, 0, 0]) {
+    if (this.prop) this.prop.parent?.remove(this.prop);
+    this.prop = mesh;
+    if (mesh) { mesh.position.set(...pos); mesh.rotation.set(...rot); this.arms[armIdx].hand.add(mesh); }
+  }
+
+  /** Advance a one-shot timer; returns progress 0..1 or -1 when inactive. */
+  act(name, dt, speed) {
+    if (this.acts[name] == null) return -1;
+    this.acts[name] += dt * speed;
+    if (this.acts[name] >= 1) { delete this.acts[name]; return 1; }
+    return this.acts[name];
+  }
 
   update(dt) {
     this.t += dt;
-    const t = this.t;
-    const idle = this.pose === 'sit' ? 0.4 : 1;
-    // breathing / sway
-    this.torso.rotation.z = Math.sin(t * 0.9 * this.sway) * 0.02 * idle;
-    this.torso.rotation.x = Math.sin(t * 1.3 * this.sway) * 0.015;
-    this.neck.rotation.y = Math.sin(t * 0.5 * this.sway) * 0.25 * idle;
-    this.neck.rotation.z = Math.sin(t * 0.7) * 0.05;
-
+    const t = this.t, tg = {};
     const [L, R] = this.arms;
-    // default arms: hang, or mood-driven for flirting
-    let lx = 0.1, rx = 0.1, lz = 0.15, rz = -0.15, lf = -0.3, rf = -0.3;
-    if (this.pose === 'flirt') {
-      const m = this.mood; // 0 cold .. 1 warm
-      lz = 0.15 + (1 - m) * 0.9;  // crossed arms when cold
-      rz = -0.15 - (1 - m) * 0.9;
-      lf = -0.3 - (1 - m) * 1.6; rf = -0.3 - (1 - m) * 1.6;
-      lx = rx = -0.2 * (1 - m);
-      this.torso.rotation.x += (0.5 - m) * 0.25;         // lean away when cold, in when warm
-      this.neck.rotation.x = (m - 0.5) * 0.3;
-      this.neck.rotation.z += (m - 0.5) * 0.25;
-      this.mouth.scale.x = 0.6 + m * 1.2;
-      this.mouth.position.y = 0.045 + m * 0.012;
-    } else if (this.pose === 'fight') {
-      lx = -1.2; rx = -1.2; lz = 0.35; rz = -0.35; lf = -1.9; rf = -1.9;
-      this.torso.rotation.x += 0.12;
-    } else if (this.pose === 'sit' || this.pose === 'drinkSit') {
-      lx = -0.9; rx = -0.9; lf = -1.6; rf = -1.6;
+    const sitting = this.pose === 'sit';
+    // ---- pose targets ----
+    tg.hipL = 0; tg.hipR = 0; tg.torsoX = 0; tg.torsoY = 0; tg.torsoZ = 0; tg.torsoH = 0.78; tg.neckX = 0; tg.neckY = 0; tg.neckZ = 0;
+    tg.lx = 0.1; tg.rx = 0.1; tg.lz = 0.15; tg.rz = -0.15; tg.lf = -0.3; tg.rf = -0.3; tg.mouth = 1; tg.bodyY = 0;
+    switch (this.pose) {
+      case 'sit':
+        tg.hipL = tg.hipR = -1.35; tg.torsoH = this.seatH + 0.04;
+        tg.lx = tg.rx = -0.9; tg.lf = tg.rf = -1.6; tg.lz = 0.25; tg.rz = -0.25;
+        break;
+      case 'flirt': {
+        const m = this.mood;
+        tg.lz = 0.15 + (1 - m) * 0.9; tg.rz = -0.15 - (1 - m) * 0.9;
+        tg.lf = tg.rf = -0.3 - (1 - m) * 1.6; tg.lx = tg.rx = -0.2 * (1 - m);
+        tg.torsoX = (0.5 - m) * 0.25; tg.neckX = (m - 0.5) * 0.3; tg.neckZ = (m - 0.5) * 0.25;
+        tg.mouth = 0.6 + m * 1.2;
+        break;
+      }
+      case 'fight':
+        tg.lx = tg.rx = -1.2; tg.lz = 0.35; tg.rz = -0.35; tg.lf = tg.rf = -1.9; tg.torsoX = 0.12;
+        break;
+      case 'lean': // over a pool table, cue in the right hand
+        tg.torsoX = 0.85; tg.neckX = -0.6;
+        tg.lx = -1.6; tg.lf = -0.4; tg.lz = 0.5; tg.rx = -0.9; tg.rf = -0.9; tg.rz = -0.2;
+        tg.hipL = -0.15; tg.hipR = 0.25;
+        break;
+      case 'foos': // hands on two rod handles
+        tg.lx = tg.rx = -0.75; tg.lf = tg.rf = -0.7; tg.lz = 0.4; tg.rz = -0.4; tg.torsoX = 0.3; tg.neckX = -0.1;
+        break;
+      case 'darts':
+        tg.lx = -0.5; tg.lf = -1.5; tg.rx = -1.8; tg.rf = -1.5; tg.rz = -0.3; tg.torsoX = 0.05;
+        break;
+      case 'juke': // leaning on the jukebox, one hand on it
+        tg.rx = -1.0; tg.rf = -0.5; tg.lx = 0.2; tg.lf = -0.8; tg.torsoX = 0.15; tg.torsoZ = -0.08;
+        break;
+      case 'bartend':
+        tg.lx = tg.rx = -0.6; tg.lf = tg.rf = -1.2; tg.torsoX = 0.2;
+        break;
+      case 'talk':
+        tg.lx = -0.3; tg.lf = -1.2; tg.rx = -0.4; tg.rf = -1.0; tg.lz = 0.3; tg.rz = -0.3;
+        break;
+      default: break;
     }
-    L.pivot.rotation.x = lx; R.pivot.rotation.x = rx; L.pivot.rotation.z = lz; R.pivot.rotation.z = rz;
-    L.fore.rotation.x = lf; R.fore.rotation.x = rf;
+    // ---- walking layer ----
+    const w = this.walk;
+    if (w > 0.01 && !sitting) {
+      const s = Math.sin(this.walkPhase), c = Math.sin(this.walkPhase + Math.PI);
+      tg.hipL += s * 0.55 * w; tg.hipR += c * 0.55 * w;
+      tg.lx += c * 0.4 * w; tg.rx += s * 0.4 * w;
+      tg.bodyY += Math.abs(Math.sin(this.walkPhase)) * 0.025 * w;
+      tg.torsoZ += Math.sin(this.walkPhase) * 0.04 * w;
+      tg.torsoX += 0.06 * w;
+    }
+    // ---- idle breathing / sway ----
+    const idle = sitting ? 0.4 : 1 - w * 0.7;
+    tg.torsoZ += Math.sin(t * 0.9 * this.sway) * 0.02 * idle;
+    tg.torsoX += Math.sin(t * 1.3 * this.sway) * 0.015 + Math.sin(t * 2.2) * 0.004;
+    tg.neckY += this.headTarget ? 0 : Math.sin(t * 0.5 * this.sway) * 0.25 * idle;
+    tg.neckZ += Math.sin(t * 0.7) * 0.05;
+    // ---- head tracking ----
+    if (this.headTarget) {
+      const local = this.root.worldToLocal(this.headTarget.clone());
+      const yaw = Math.atan2(local.x, local.z);
+      const pitch = Math.atan2(local.y - 1.5 * this.height, Math.hypot(local.x, local.z));
+      tg.neckY += THREE.MathUtils.clamp(yaw, -1.1, 1.1);
+      tg.neckX += THREE.MathUtils.clamp(-pitch, -0.5, 0.5);
+      if (Math.abs(yaw) > 1.1 && !sitting && w < 0.01) tg.torsoY = THREE.MathUtils.clamp(yaw - Math.sign(yaw) * 1.1, -0.6, 0.6);
+    }
+    // ---- one-shots ----
+    let k;
+    if ((k = this.act('punch', dt, 4)) >= 0) {
+      const e = Math.sin(k * Math.PI), a = this.punchArm ? 'r' : 'l';
+      tg[a + 'x'] = -1.2 - e * 0.6; tg[a + 'f'] = -1.9 + e * 1.9; tg[a + 'z'] = (this.punchArm ? -1 : 1) * 0.1;
+      tg.torsoY += (this.punchArm ? -1 : 1) * e * 0.35;
+    }
+    if ((k = this.act('drink', dt, 1.1)) >= 0) {
+      const e = Math.sin(k * Math.PI);
+      tg.rx = -0.9 - e * 1.1; tg.rf = -1.6 - e * 0.9; tg.rz = -0.5 * e; tg.neckX -= e * 0.5;
+    }
+    if ((k = this.act('stagger', dt, 3)) >= 0) { const e = Math.sin(k * Math.PI); tg.torsoX -= e * 0.3; tg.neckX -= e * 0.4; }
+    if ((k = this.act('laugh', dt, 0.9)) >= 0) {
+      const e = Math.sin(k * Math.PI);
+      tg.torsoX -= e * 0.25 - Math.sin(k * 40) * 0.05 * e; tg.neckX -= e * 0.35; tg.mouth = 1 + e; tg.bodyY += Math.abs(Math.sin(k * 40)) * 0.01 * e;
+      tg.lx -= e * 0.5; tg.rx -= e * 0.5;
+    }
+    if ((k = this.act('gesture', dt, 0.8)) >= 0) {
+      const e = Math.sin(k * Math.PI), a = this.gestureArm ? 'r' : 'l';
+      tg[a + 'x'] = -1.0 - e * 0.4 + Math.sin(k * 20) * 0.15 * e; tg[a + 'f'] = -1.2 + e * 0.6; tg[a + 'z'] = (this.gestureArm ? -1 : 1) * (0.3 + e * 0.4);
+    }
+    if ((k = this.act('nod', dt, 2.2)) >= 0) tg.neckX += Math.sin(k * Math.PI * 2) * 0.25;
+    if ((k = this.act('throw', dt, 1.6)) >= 0) {
+      const e = k < 0.6 ? k / 0.6 : 1 - (k - 0.6) / 0.4; // wind back then release
+      tg.rx = -1.9 + (k > 0.6 ? (k - 0.6) / 0.4 * 0.5 : 0); tg.rf = -1.6 + (k > 0.6 ? (k - 0.6) / 0.4 * 1.5 : -e * 0.2); tg.rz = -0.2;
+      tg.torsoX += (k > 0.6 ? 0.1 : 0);
+    }
+    if ((k = this.act('strike', dt, 2)) >= 0) {
+      const e = k < 0.5 ? k * 2 : 1 - (k - 0.5) * 2;
+      tg.rx = -0.9 + e * 0.5; tg.rf = -0.9 - e * 0.4;
+    }
+    if ((k = this.act('jerk', dt, 6)) >= 0) { const e = Math.sin(k * Math.PI); tg.torsoX += e * 0.15; tg.lx -= e * 0.5; tg.rx -= e * 0.5; tg.torsoZ += (this.rnd() - 0.5) * 0.1 * e; }
+    if ((k = this.act('cheer', dt, 1)) >= 0) { const e = Math.sin(k * Math.PI); tg.lx = tg.rx = -2.6 * e + 0.1 * (1 - e); tg.lf = tg.rf = -0.3; tg.neckX -= e * 0.3; tg.bodyY += e * 0.04; }
+    // ---- knocked out / slumped ----
+    const ko = this.ko;
+    tg.bodyTilt = -Math.PI / 2 * ko;
+    tg.bodyY += 0.15 * ko;
+    if (this.slump > 0) { tg.torsoX += this.slump * 0.9; tg.neckX += this.slump * 0.4; tg.lx = tg.rx = -1.4 * this.slump + tg.lx * (1 - this.slump); }
 
-    if (this.punchT >= 0) {
-      this.punchT += dt * 4;
-      const k = Math.sin(Math.min(1, this.punchT) * Math.PI);
-      const a = this.arms[this.punchArm];
-      a.pivot.rotation.x = -1.2 - k * 0.6; a.fore.rotation.x = -1.9 + k * 1.9; a.pivot.rotation.z = (this.punchArm ? -1 : 1) * 0.1;
-      this.torso.rotation.y = (this.punchArm ? -1 : 1) * k * 0.35;
-      if (this.punchT >= 1) this.punchT = -1;
-    } else this.torso.rotation.y *= 0.8;
-
-    if (this.drinkT >= 0) {
-      this.drinkT += dt * 1.2;
-      const k = Math.sin(Math.min(1, this.drinkT) * Math.PI);
-      R.pivot.rotation.x = -0.9 - k * 1.1; R.fore.rotation.x = -1.6 - k * 0.9; R.pivot.rotation.z = -0.5 * k;
-      this.neck.rotation.x = -k * 0.5;
-      if (this.drinkT >= 1) this.drinkT = -1;
-    }
-    if (this.staggerT >= 0) {
-      this.staggerT += dt * 3;
-      const k = Math.sin(Math.min(1, this.staggerT) * Math.PI);
-      this.torso.rotation.x -= k * 0.3; this.neck.rotation.x = -k * 0.4;
-      if (this.staggerT >= 1) this.staggerT = -1;
-    }
-    // knocked out: fall backwards
-    const target = this.ko;
-    this.body.rotation.x = THREE.MathUtils.lerp(this.body.rotation.x, -Math.PI / 2 * target, Math.min(1, dt * 4));
-    this.body.position.y = THREE.MathUtils.lerp(this.body.position.y, 0.15 * target, Math.min(1, dt * 4));
+    // ---- ease toward targets ----
+    const c = this.cur;
+    const rate = 9;
+    for (const key of Object.keys(tg)) c[key] = c[key] == null ? tg[key] : damp(c[key], tg[key], key === 'bodyTilt' ? 4 : rate, dt);
+    this.hips[0].rotation.x = c.hipL; this.hips[1].rotation.x = c.hipR;
+    this.hips[0].position.y = this.hips[1].position.y = c.torsoH + 0.02;
+    this.torso.position.y = c.torsoH;
+    this.torso.rotation.set(c.torsoX, c.torsoY, c.torsoZ);
+    this.neck.rotation.set(c.neckX, c.neckY, c.neckZ);
+    L.pivot.rotation.x = c.lx; R.pivot.rotation.x = c.rx; L.pivot.rotation.z = c.lz; R.pivot.rotation.z = c.rz;
+    L.fore.rotation.x = c.lf; R.fore.rotation.x = c.rf;
+    this.mouth.scale.x = c.mouth;
+    this.body.rotation.x = c.bodyTilt;
+    this.body.position.y = c.bodyY;
   }
 }
 

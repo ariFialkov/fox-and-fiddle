@@ -66,8 +66,10 @@ curl -X POST localhost:8787/api/admin/rtp -H 'x-admin-key: change-me' -H 'conten
 
 ## Controls
 
-Walk: `WASD` (joystick on touch). The view auto-rotates toward where you walk; dragging on the
-screen also looks around. Near an activity, `Space` / click / tap plays.
+Walk: `W`/`S` forward and back, `A`/`D` strafe (joystick on touch). There is no turn key: the view
+smoothly follows the direction you are walking, so holding `A` alone walks you round in a circle.
+Dragging on the screen nudges the view. The camera breathes while idle and bobs while walking.
+Near an activity, `Space` / click / tap plays.
 
 - Billiards: `A`/`D` aim (drag sideways on touch), drag back and release to strike,
   `W`/`S` follow/draw, `Space` chalk.
@@ -78,6 +80,17 @@ screen also looks around. Near an activity, `Space` / click / tap plays.
   to smash it over whoever is in front of you.
 - Drinking / pick-up lines: buttons (`Space` drinks, `1`/`2` choose a line, `Esc` cashes out).
 
+## The regulars
+
+`src/world/Npc.js` keeps the patrons busy. Each one runs an activity (sit at the bar, drink at a
+table, stand and talk, shoot pool, throw darts, play foosball, a drinking contest, milling about,
+and every so often a brawl) as a small state machine. Patrons walk a waypoint graph between
+activities, steer round each other and the player, and fire animations (drink, gesture, nod,
+laugh, lean, strike, throw, punch, stagger, cheer, knock-out). Mini-games claim the characters
+they need (`busy`) and evict NPC activities from the station in use.
+
+Debug flags: `?skipintro=1`, `?lowend=1` (no bloom/shadows, fewer lights), `?timescale=4`.
+
 ## Layout
 
 ```
@@ -86,7 +99,7 @@ shared/rng.js        provably-fair float generation
 server/engine.js     sessions, balances, rounds, settlement
 server/index.js      Express API (+ serves dist/ in production)
 src/engine/          renderer + state machine, player controller, input, HUD
-src/world/           procedural textures, the bar, patrons
+src/world/           procedural textures, the bar, patrons, NPC director (Npc.js)
 src/minigames/       one file per game + poolPhysics.js (pure, tested)
 src/net/             API client + offline fallback engine
 public/              manifest, service worker, icons (npm run icons)

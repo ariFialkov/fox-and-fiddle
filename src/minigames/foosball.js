@@ -26,6 +26,7 @@ export class Foosball extends MiniGame {
     const f = this.bar.foos;
     this.cx = f.cx; this.cz = f.cz; this.ty = f.y - 0.13;
     this.player.enabled = false;
+    this.bar.foosDecor.visible = false;
     this.target = this.round.flavour?.target ?? 3;
     this.skill = this.round.flavour?.botSkill ?? 0.5;
     this.mustWin = !!this.round.win;
@@ -235,6 +236,8 @@ export class Foosball extends MiniGame {
     }
     this.serve(you ? -1 : 1);
   }
+
+  dispose() { super.dispose(); this.bar.foosDecor.visible = true; }
 
   sync() {
     for (const r of this.rods) {

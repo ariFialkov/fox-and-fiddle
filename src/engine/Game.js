@@ -8,6 +8,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { Bar } from '../world/Bar.js';
 import { Player } from './Player.js';
+import { NpcDirector } from '../world/Npc.js';
 import { Input } from './Input.js';
 import { HUD, fmt } from './HUD.js';
 import { Api } from '../net/api.js';
@@ -21,8 +22,9 @@ export class Game {
     this.state = 'boot';
     this.clock = new THREE.Clock();
     this.time = 0;
-    this.lowEnd = matchMedia('(pointer: coarse)').matches || navigator.hardwareConcurrency <= 4;
+    this.lowEnd = matchMedia('(pointer: coarse)').matches || navigator.hardwareConcurrency <= 4 || new URLSearchParams(location.search).has('lowend');
     this.debug = new URLSearchParams(location.search);
+    this.timeScale = Number(this.debug.get('timescale')) || 1; // debug: speed up the clock
   }
 
   async init() {
@@ -46,6 +48,7 @@ export class Game {
     this.input = new Input(this.canvas, this.uiRoot);
     this.bar = new Bar(this.scene, { lowEnd: this.lowEnd });
     this.player = new Player(this.camera, this.bar);
+    this.npcs = new NpcDirector(this.bar, this.scene, this.player);
 
     if (!this.lowEnd) {
       this.composer = new EffectComposer(r);
@@ -140,7 +143,6 @@ export class Game {
         this.hud.showPrompt(best.label, key, () => this.offer(best));
       } else this.hud.hidePrompt();
     }
-    p.lookTarget = best ? best.look : null;
     p.update(dt, this.input);
     if (best && (this.input.justPressed('Space') || this.input.clicks.length)) this.offer(best);
   }
@@ -175,6 +177,7 @@ export class Game {
     };
     const returnPos = this.player.pos.clone();
     const returnYaw = this.player.yaw;
+    this.npcs.suspend(station);
     this.minigame = new Cls(ctx);
     let result;
     try {
@@ -190,6 +193,7 @@ export class Game {
     }
     this.minigame.dispose?.();
     this.minigame = null;
+    this.npcs.resume(station);
     this.hud.clearGameUI();
     this.state = 'result';
     await this.hud.showResult({
@@ -204,8 +208,9 @@ export class Game {
   loop() {
     const tick = () => {
       requestAnimationFrame(tick);
-      const dt = Math.min(0.05, this.clock.getDelta());
+      const dt = Math.min(0.05, this.clock.getDelta()) * this.timeScale;
       this.time += dt;
+      this.npcs.update(dt);
       this.bar.update(dt, this.time);
       if (this.state === 'intro') this.updateIntro(dt);
       else if (this.state === 'walk') this.updateWalk(dt);

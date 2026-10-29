@@ -30,10 +30,7 @@ export class BarFight extends MiniGame {
       this.joinQueue.push({ patron: m, at: 2 + i * 3 + Math.random() * 2, bruiser: i === bruiserIdx });
     }
     if (flav.bruiser && extra === 0) this.joinQueue.push({ patron: this.bar.mates[0], at: 2, bruiser: true });
-    // the fighters stop blocking movement; they move now
-    this.savedColliders = this.bar.colliders;
     const fighters = new Set([mick, ...this.bar.mates]);
-    this.bar.colliders = this.bar.colliders.filter((c) => !fighters.has(c.patron));
     this.origins = new Map();
     for (const p of fighters) this.origins.set(p, p.root.position.clone());
 
@@ -134,11 +131,13 @@ export class BarFight extends MiniGame {
     const dir = to.clone().normalize();
     const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(e.orbit);
     const speed = e.bruiser ? 1.5 : 1.9;
+    if (dist <= 0.95) p.walk = THREE.MathUtils.damp(p.walk, 0, 8, dt);
     if (dist > 0.95) {
       const step = dir.multiplyScalar(speed * dt).add(side.multiplyScalar(dt * 0.5));
       const nx = p.root.position.x + step.x, nz = p.root.position.z + step.z;
-      if (!this.player.blocked(nx, nz)) { p.root.position.x = nx; p.root.position.z = nz; }
+      if (!this.player.blocked(nx, nz, p)) { p.root.position.x = nx; p.root.position.z = nz; }
       else { e.orbit = -e.orbit; }
+      p.walk = THREE.MathUtils.damp(p.walk, 0.8, 8, dt); p.walkPhase += speed * dt / 0.36 * Math.PI;
     }
     // separation from other enemies
     for (const o of this.enemies) {
@@ -203,7 +202,7 @@ export class BarFight extends MiniGame {
     // knock back
     const dir = this.enemyFacing(e).normalize().multiplyScalar(-(kind === 'kick' ? 0.35 : 0.15));
     const nx = e.patron.root.position.x + dir.x, nz = e.patron.root.position.z + dir.z;
-    if (!this.player.blocked(nx, nz)) { e.patron.root.position.x = nx; e.patron.root.position.z = nz; }
+    if (!this.player.blocked(nx, nz, e.patron)) { e.patron.root.position.x = nx; e.patron.root.position.z = nz; }
     if (e.hp <= 0) { e.ko = true; e.patron.ko = 1; this.hud.showToast(`${e.patron.name} is down`, '', 1200); }
     else if (e.hp === floor && floor > 0 && !e.shrugged) { e.shrugged = true; this.hud.showToast(`${e.patron.name} shrugs it off`, 'that is not a man, that is a wall', 1600); }
     this.updateHealth();
@@ -305,10 +304,8 @@ export class BarFight extends MiniGame {
     this.camera.remove(this.hands);
     this.camera.rotation.z = 0;
     this.hud.setBlackout(0);
-    this.bar.colliders = this.savedColliders;
     if (this.held) this.returnProp(this.held);
     if (this.projectile) this.returnProp(this.projectile.pr);
-    for (const [p, pos] of this.origins) { p.root.position.copy(pos); p.ko = 0; p.pose = 'idle'; p.stand(); p.body.rotation.x = 0; p.body.position.y = 0; p.lookAt(new THREE.Vector3(1.0, 0, 3)); }
-    this.bar.mick.lookAt(new THREE.Vector3(1.0, 0, 3));
+    for (const [p, pos] of this.origins) { p.root.position.copy(pos); p.ko = 0; p.pose = 'idle'; p.walk = 0; p.stand(); }
   }
 }

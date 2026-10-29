@@ -41,7 +41,9 @@ export class Drinking extends MiniGame {
     this.drink = drink;
     const home = dee.root.position.clone();
     const to = new THREE.Vector3(this.sitEye.x - 0.5, 0, this.bar.barZ - 0.75);
-    await this.glide(dee.root.position, to, 0.9, () => dee.lookAt(this.sitEye));
+    dee.pose = 'idle'; dee.walk = 1;
+    await this.glide(dee.root.position, to, 0.9, () => { dee.lookAt(this.sitEye); dee.walkPhase += 0.25; });
+    dee.walk = 0; dee.pose = 'bartend';
     this.clearGlasses();
     this.glasses = [
       this.bar.glass(this.sitEye.x - 0.15, this.bar.barTopY, this.bar.barZ + 0.08, drink.pint, this.group),
@@ -49,7 +51,8 @@ export class Drinking extends MiniGame {
     ];
     dee.punch();
     await this.wait(0.5);
-    this.glide(dee.root.position, home, 1.0, () => dee.lookAt(new THREE.Vector3(home.x, 0, 0)));
+    dee.walk = 1; dee.pose = 'idle';
+    this.glide(dee.root.position, home, 1.0, () => { dee.lookAt(new THREE.Vector3(home.x, 0, 0)); dee.walkPhase += 0.25; }).then(() => { dee.walk = 0; dee.pose = 'bartend'; });
   }
 
   clearGlasses() { if (this.glasses) for (const g of this.glasses) this.group.remove(g); this.glasses = null; }
@@ -166,7 +169,6 @@ export class Drinking extends MiniGame {
     super.dispose();
     this.hud.setBlur(0); this.hud.setBlackout(0);
     this.camera.rotation.z = 0;
-    this.sal.lookAt(new THREE.Vector3(this.sal.root.position.x, 0, -6));
   }
 }
 

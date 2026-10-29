@@ -222,6 +222,15 @@ export class Bar {
     // legs
     for (const [lx, lz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(0.18, y - 0.16, 0.18, M.darkWood, lx * (L / 2 - 0.1), (y - 0.16) / 2, lz * (Wd / 2 - 0.05), { group: g });
     this.addCollider(cx, cz, L + 0.6, Wd + 0.6);
+    // a few balls on the table while nobody is betting on it
+    this.poolDecor = new THREE.Group(); g.add(this.poolDecor);
+    this.poolBalls = [];
+    const ballGeo = new THREE.SphereGeometry(0.0286, 14, 10);
+    [[0xf7f3e8, -0.6, 0.1], [0xf2c200, 0.3, -0.2], [0xd62828, 0.5, 0.25], [0x1d4fd8, -0.1, 0.3], [0x111111, 0.7, -0.05], [0x1b7a3f, 0.05, -0.4]].forEach(([c, u, v]) => {
+      const m = new THREE.Mesh(ballGeo, new THREE.MeshStandardMaterial({ color: c, roughness: 0.25 }));
+      m.position.set(u, y + 0.02 + 0.0286, v); m.castShadow = true;
+      this.poolDecor.add(m); this.poolBalls.push(m);
+    });
     // cue rack on the east wall
     for (let i = 0; i < 4; i++) { const c = this.cyl(0.008, 0.016, 1.45, M.wood, ROOM.maxX - 0.08, 1.0, 1.0 + i * 0.18, 6); c.castShadow = false; }
     this.stations.push({
@@ -270,6 +279,22 @@ export class Bar {
     for (const s of [-1, 1]) this.box(0.02, 0.08, 0.2, M.black, s * (L / 2 + 0.03), y - 0.09, 0, { group: g });
     for (const [lx, lz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(0.08, y - 0.22, 0.08, M.metal, lx * (L / 2 - 0.1), (y - 0.22) / 2, lz * (Wd / 2 - 0.05), { group: g });
     this.addCollider(cx, cz, L + 0.5, Wd + 0.6);
+    this.foosDecor = new THREE.Group(); g.add(this.foosDecor);
+    this.foosRods = [];
+    const rodMat = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.9, roughness: 0.3 });
+    const rows = [[-0.525, 'you', 1], [-0.375, 'you', 2], [-0.225, 'bot', 3], [-0.075, 'you', 5], [0.075, 'bot', 5], [0.225, 'you', 3], [0.375, 'bot', 2], [0.525, 'bot', 1]];
+    const offs = { 1: [0], 2: [-0.12, 0.12], 3: [-0.18, 0, 0.18], 5: [-0.24, -0.12, 0, 0.12, 0.24] };
+    const manMat = { you: new THREE.MeshStandardMaterial({ color: 0x2b5fd9 }), bot: new THREE.MeshStandardMaterial({ color: 0xd93b2b }) };
+    for (const [rx, team, n] of rows) {
+      const rg = new THREE.Group(); rg.position.set(rx, y - 0.06, 0); this.foosDecor.add(rg);
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, Wd + 0.36, 8), rodMat);
+      rod.rotation.x = Math.PI / 2; rod.position.z = team === 'you' ? 0.18 : -0.18; rg.add(rod);
+      const men = new THREE.Group(); rg.add(men);
+      for (const o of offs[n]) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.07, 0.026), manMat[team]); m.position.set(0, -0.04, o); men.add(m); }
+      this.foosRods.push({ team, men, w: 0 });
+    }
+    this.foosBall = new THREE.Mesh(new THREE.SphereGeometry(0.017, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf4efe0 }));
+    this.foosBall.position.set(0.1, y - 0.129 + 0.017, 0.05); this.foosDecor.add(this.foosBall);
     this.stations.push({
       id: 'foosball', gameId: 'foosball', label: 'Foosball', blurb: 'First to three goals. Spin wisely; the table is older than you.',
       pos: new THREE.Vector3(cx, 0, cz + Wd / 2 + 0.75), look: new THREE.Vector3(cx, y - 0.1, cz), radius: 1.1,
@@ -279,6 +304,7 @@ export class Bar {
   buildTables() {
     const { mats: M } = this;
     this.tables = [];
+    this.chairs = [];
     for (const [x, z] of [[-1.6, 3.2], [1.9, 3.6], [-6.6, -2.4], [6.2, -4.3]]) {
       this.cyl(0.42, 0.42, 0.04, M.wood, x, 0.74, z, 18);
       this.cyl(0.03, 0.03, 0.72, M.metal, x, 0.36, z, 8);
@@ -288,6 +314,7 @@ export class Bar {
       for (let i = 0; i < 3; i++) {
         const a = (i / 3) * Math.PI * 2 + x;
         this.chair(x + Math.cos(a) * 0.7, z + Math.sin(a) * 0.7, a + Math.PI);
+        this.chairs.push({ x: x + Math.cos(a) * 0.72, z: z + Math.sin(a) * 0.72, tx: x, tz: z, table: this.tables.length - 1 });
       }
       this.glass(x + 0.15, 0.76, z - 0.1, true);
       const b = this.bottle(x - 0.2, 0.76, z + 0.12, 1);
@@ -304,13 +331,13 @@ export class Bar {
     this.box(0.4, 0.04, 0.4, M.darkWood, 0, 0.46, 0, { group: g });
     this.box(0.4, 0.45, 0.04, M.darkWood, 0, 0.7, -0.18, { group: g });
     for (const [lx, lz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(0.04, 0.46, 0.04, M.darkWood, lx * 0.17, 0.23, lz * 0.17, { group: g, shadow: false });
-    this.addCollider(x, z, 0.45, 0.45);
+    this.addCollider(x, z, 0.3, 0.3);
   }
 
   buildJukebox() {
     const { mats: M } = this;
-    const x = 7.3, z = 4.9;
-    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = Math.PI * 0.75; this.group.add(g);
+    const x = 7.15, z = 4.75;
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = -Math.PI * 0.75; this.group.add(g);
     this.box(0.9, 1.5, 0.6, new THREE.MeshStandardMaterial({ color: 0x5a1a1a, roughness: 0.5 }), 0, 0.75, 0, { group: g });
     const top = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.6, 16, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0x5a1a1a, roughness: 0.5 }));
     top.rotation.set(Math.PI / 2, 0, Math.PI / 2); top.rotation.z = 0; top.position.y = 1.5; top.rotation.x = Math.PI / 2; g.add(top);
@@ -319,7 +346,7 @@ export class Bar {
     const tube = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 8, 24, Math.PI), new THREE.MeshStandardMaterial({ color: 0xff5a8c, emissive: 0xff5a8c, emissiveIntensity: 2 }));
     tube.position.set(0, 1.5, 0.3); g.add(tube);
     const light = new THREE.PointLight(0xff8a5a, this.lowEnd ? 1.5 : 3, 4, 2); light.position.set(0, 1.3, 0.8); g.add(light);
-    this.addCollider(x, z, 1.0, 0.7);
+    this.addCollider(x, z, 1.1, 1.1);
     this.jukebox = g;
   }
 
@@ -373,6 +400,7 @@ export class Bar {
       shade.position.y = 0.05; g.add(shade);
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 3 }));
       bulb.position.y = -0.02; g.add(bulb);
+      if (low && intensity < 4) return g; // low-end: small pendants are emissive only, fewer lights in the shader
       const l = new THREE.PointLight(color, low ? intensity * 0.8 : intensity, dist, 2);
       l.position.y = -0.08;
       if (shadow && !low) { l.castShadow = true; l.shadow.mapSize.set(512, 512); l.shadow.bias = -0.004; }
@@ -409,18 +437,15 @@ export class Bar {
     this.bartender = add({ name: 'Dee', female: true, shirt: 0x111111, height: 0.98 }, -0.8, -4.95, -0.8, 0);
     // Sal, the drinking contest regular, at the left end of the bar
     this.sal = add({ name: 'Sal', shirt: 0x6b4a2a, height: 1.03 }, this.stoolX[0], this.barZ + 0.85, this.stoolX[0], -6, true);
-    this.sal.holdGlass(this.glass(0, 0, 0, true, new THREE.Group()));
     this.stations.push({
       id: 'drinking', gameId: 'drinking', label: 'Drinking contest with Sal', blurb: 'Round for round with the bar\'s most dedicated regular. Cash out while you can still see.',
-      pos: new THREE.Vector3(this.stoolX[2], 0, this.barZ + 1.5), look: new THREE.Vector3(this.stoolX[0], 1.3, this.barZ + 0.85), radius: 1.2, patron: this.sal,
+      pos: new THREE.Vector3(this.stoolX[2], 0, this.barZ + 1.5), look: new THREE.Vector3(this.stoolX[0], 1.3, this.barZ + 0.85), radius: 1.2, patron: this.sal, patrons: [this.sal, this.bartender],
       seat: new THREE.Vector3(this.stoolX[2], 0, this.barZ + 0.85),
     });
-    // a couple of regulars at the bar
-    add({ name: 'Earl', height: 0.97 }, this.stoolX[6], this.barZ + 0.85, this.stoolX[6], -6, true);
-    add({ name: 'Marge', female: true, height: 0.95 }, this.stoolX[8], this.barZ + 0.85, this.stoolX[8], -6, true);
-    // table patrons
-    add({ name: 'Lou' }, 1.9 + 0.7, 3.6, 1.9, 3.6, true).root.position.y = 0;
-    add({ name: 'Benny' }, -6.6 - 0.7, -2.4, -6.6, -2.4, true);
+    // the regulars: the NPC director decides where they go
+    for (const o of [{ name: 'Earl', height: 0.97 }, { name: 'Marge', female: true, height: 0.95 }, { name: 'Lou' }, { name: 'Benny' },
+      { name: 'Vic', shirt: 0x9a6a2a, height: 1.02 }, { name: 'Pearl', female: true, shirt: 0x2a6b6b, height: 0.96 }, { name: 'Rudy', shirt: 0x7a3a6b, height: 0.99 },
+      { name: 'Gus', shirt: 0x4a4a4a, height: 1.0 }, { name: 'Nell', female: true, shirt: 0x8a2b2b, height: 0.94 }, { name: 'Frank', height: 1.03 }]) add(o, 0, 0, 0, 1);
     // Big Mick and his mates, standing mid-room
     this.mick = add({ name: 'Big Mick', shirt: 0x4a4a4a, skin: 0xd9a278, height: 1.12 }, 1.0, -0.6, 1.0, 3);
     this.mates = [
@@ -430,16 +455,14 @@ export class Bar {
     ];
     this.stations.push({
       id: 'barfight', gameId: 'barfight', label: 'Pick a fight with Big Mick', blurb: 'He has been eyeing your stool all night. His mates may or may not stay out of it.',
-      pos: new THREE.Vector3(1.0, 0, 1.0), look: new THREE.Vector3(1.0, 1.5, -0.6), radius: 1.4, patron: this.mick,
+      pos: new THREE.Vector3(1.0, 0, 1.0), look: new THREE.Vector3(1.0, 1.5, -0.6), radius: 1.4, patron: this.mick, patrons: [this.mick, ...this.mates],
     });
     // Rose by the jukebox
-    this.rose = add({ name: 'Rose', female: true, shirt: 0x7a3a6b, hair: 0x8a1a1a, height: 0.97 }, 6.2, 4.2, 4.5, 3.0);
-    this.rose.pose = 'flirt';
+    this.rose = add({ name: 'Rose', female: true, shirt: 0x7a3a6b, hair: 0x8a1a1a, height: 0.97 }, 6.35, 4.1, 7.15, 4.75);
     this.stations.push({
       id: 'pickup', gameId: 'pickup', label: 'Talk to Rose', blurb: 'She is picking a song. Pick a line. Keep going, or ask her to get out of here.',
-      pos: new THREE.Vector3(5.1, 0, 3.4), look: new THREE.Vector3(6.2, 1.45, 4.2), radius: 1.3, patron: this.rose,
+      pos: new THREE.Vector3(5.2, 0, 3.3), look: new THREE.Vector3(6.35, 1.45, 4.1), radius: 1.3, patron: this.rose, patrons: [this.rose],
     });
-    for (const p of this.patrons) { this.addCollider(p.root.position.x, p.root.position.z, 0.5, 0.5); this.colliders[this.colliders.length - 1].patron = p; }
   }
 
   update(dt, t) {

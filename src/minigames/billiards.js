@@ -34,6 +34,7 @@ export class Billiards extends MiniGame {
     const pool = this.bar.pool;
     this.cx = pool.cx; this.cz = pool.cz; this.ty = pool.y + 0.02;
     this.player.enabled = false;
+    this.bar.poolDecor.visible = false;
     this.state = P.rackState();
     this.mustWin = this.round.win ? 'you' : 'bot';
     this.skill = this.round.flavour?.botSkill ?? 0.6;
@@ -277,6 +278,7 @@ export class Billiards extends MiniGame {
 
   dispose() {
     super.dispose();
+    this.bar.poolDecor.visible = true;
     this.hud.setPower(null);
   }
 }
