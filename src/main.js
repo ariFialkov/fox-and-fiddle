@@ -11,5 +11,5 @@ new Game(canvas, ui).init().then(() => {
 });
 
 if ('serviceWorker' in navigator && !import.meta.env.DEV) {
-  addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  addEventListener('load', () => navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => {}));
 }
