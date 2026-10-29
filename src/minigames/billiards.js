@@ -74,12 +74,12 @@ export class Billiards extends MiniGame {
     this.chalk.visible = false; this.group.add(this.chalk);
     // cue carried in hand while waiting (camera child), with a chalk hand
     this.handCue = new THREE.Group();
-    const hc = makeCue(); hc.rotation.x = Math.PI / 2 + 0.25; hc.position.set(0, 0.0, 0); // tip up
+    const hc = makeCue(); hc.rotation.x = Math.PI / 2 - 0.3; hc.position.set(0, 0.0, 0); // held low near the butt, tip up and away
     this.handCue.add(hc);
-    this.handCue.position.set(0.34, -0.55, -0.6); this.handCue.rotation.set(0.15, -0.15, 0.08);
+    this.handCue.position.set(0.46, -0.62, -0.45); this.handCue.rotation.set(0.1, 0.1, -0.35);
     this.handCue.visible = false;
     const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
-    this.handR = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), skin); this.handR.scale.set(1, 0.8, 1.1); this.handR.position.set(0, -0.38, 0.4); // grips the stick
+    this.handR = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), skin); this.handR.scale.set(1, 0.8, 1.1); this.handR.position.set(0, 0.02, 0.0); // grips the stick near the butt
     this.handCue.add(this.handR);
     this.handL = new THREE.Group(); this.handL.visible = false;
     const palm = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), skin); palm.scale.set(1, 0.8, 1.1);
@@ -236,14 +236,14 @@ export class Billiards extends MiniGame {
     const k = Math.min(1, this.chalkT);
     const e = Math.sin(Math.min(1, k * 1.25) * Math.PI); // bring the tip in, rub, take it away
     // cue swings from the resting upright pose to tip-forward at eye level
-    this.handCue.position.set(0.34 - e * 0.14, -0.55 + e * 0.3, -0.6 + e * 0.05);
-    this.handCue.rotation.set(0.15 - e * 1.1, -0.15 - e * 0.25, 0.08);
+    this.handCue.position.set(0.46 - e * 0.3, -0.62 + e * 0.35, -0.45 - e * 0.1);
+    this.handCue.rotation.set(0.1 - e * 1.25, 0.1 - e * 0.4, -0.35 + e * 0.3);
     this.handL.visible = e > 0.3;
     const tip = this.handCue.children[0].localToWorld(new THREE.Vector3(0, 0, 0));
     const local = this.camera.worldToLocal(tip);
     this.handL.position.copy(local).add(new THREE.Vector3(Math.sin(k * 45) * 0.012 * e, 0.035 + Math.cos(k * 45) * 0.01 * e, -0.01));
     this.handL.rotation.set(0.4, 0, Math.sin(k * 45) * 0.3 * e);
-    if (k >= 1) { this.chalkT = -1; this.handL.visible = false; this.handCue.position.set(0.34, -0.55, -0.6); this.handCue.rotation.set(0.15, -0.15, 0.08); }
+    if (k >= 1) { this.chalkT = -1; this.handL.visible = false; this.handCue.position.set(0.46, -0.62, -0.45); this.handCue.rotation.set(0.1, 0.1, -0.35); }
   }
 
   updateAim(dt) {
@@ -354,7 +354,7 @@ export class Billiards extends MiniGame {
     this.phase = 'aim';
     this.hud.setHints(`<kbd>A</kbd><kbd>D</kbd> aim · <kbd>drag back</kbd> power, release to strike · <kbd>W</kbd><kbd>S</kbd> spin`);
     this.chalkT = -1; this.handL.visible = false;
-    this.handCue.position.set(0.34, -0.55, -0.6); this.handCue.rotation.set(0.15, -0.15, 0.08);
+    this.handCue.position.set(0.46, -0.62, -0.45); this.handCue.rotation.set(0.1, 0.1, -0.35);
   }
 
   // ---------- Shark ----------
