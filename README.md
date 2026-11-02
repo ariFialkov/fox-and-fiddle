@@ -104,5 +104,5 @@ src/engine/          renderer + state machine, player controller, input, HUD
 src/world/           procedural textures, the bar, patrons, NPC director (Npc.js)
 src/minigames/       one file per game + poolPhysics.js (pure, tested)
 src/net/             API client + offline fallback engine
-public/              manifest, service worker, icons (npm run icons)
+public/              service worker, icons (npm run icons)
 ```

@@ -1,8 +1,8 @@
 /* Fox and Fiddle service worker: app shell cached for offline play.
    Hashed build assets are cache-first; navigations and API calls are network-first. */
-const VERSION = 'ff-v2';
+const VERSION = 'ff-v3';
 const BASE = new URL('./', self.location.href).pathname; // works at / and at /repo-name/
-const SHELL = [BASE, BASE + 'index.html', BASE + 'manifest.webmanifest', BASE + 'icons/icon-192.png', BASE + 'icons/icon-512.png'];
+const SHELL = [BASE, BASE + 'index.html', BASE + 'icons/icon-192.png', BASE + 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
