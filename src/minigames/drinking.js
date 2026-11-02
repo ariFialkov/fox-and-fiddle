@@ -158,7 +158,7 @@ export class Drinking extends MiniGame {
     await this.seq(drainSec, (e, k) => { sal.tiltR = Math.min(1, k * 3); this.bar.setGlassLevel(glass, 1 - k); });
     sal.tiltR = 0; sal.liftR = 0;
     if (lose) { sal.laugh(); return; }
-    await this.seq(0.3, () => {});
+    await this.seq(0.45, () => {});
     sal.headTarget = this.salSpot.clone().add(new THREE.Vector3(0, 0.08, 0));
     await this.salTurn(this.salBarYaw, 0.4);
     sal.reachR = 1;
@@ -174,15 +174,17 @@ export class Drinking extends MiniGame {
   }
 
   /** Keep the glass in Sal's grip: follow his hand, upright apart from the drinking tilt. */
-  updateSalHold() {
+  updateSalHold(dt) {
     const h = this.salHold;
-    if (!h) return;
     const sal = this.sal;
+    // tip the top of the glass back towards his mouth as he drinks, eased like his arm
+    const want = -(0.25 * sal.liftR + 1.55 * sal.tiltR) * sal.liftR;
+    this.salTilt = THREE.MathUtils.damp(this.salTilt || 0, want, 8, dt);
+    if (!h) return;
     sal.root.updateMatrixWorld(true);
     const hw = sal.arms[1].hand.getWorldPosition(new THREE.Vector3());
     const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), sal.root.rotation.y);
-    // tip the top of the glass back towards his mouth as he drinks
-    const tilt = -(0.25 * sal.liftR + 1.55 * sal.tiltR) * sal.liftR;
+    const tilt = this.salTilt;
     const q = yawQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), tilt));
     h.glass.quaternion.copy(q);
     h.glass.position.copy(hw).add(h.off.clone().applyQuaternion(q));
@@ -299,7 +301,7 @@ export class Drinking extends MiniGame {
       this.camera.rotateX(this.headTilt);
     }
     this.hud.setBlur(this.blur);
-    this.updateSalHold();
+    this.updateSalHold(dt);
   }
 
   glide(pos, to, sec, each) {

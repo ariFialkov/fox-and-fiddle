@@ -335,7 +335,8 @@ export class Darts extends MiniGame {
       g2.strokeStyle = 'rgba(255,255,255,0.85)'; g2.lineWidth = 10; g2.beginPath(); g2.moveTo(10, 100); g2.lineTo(64, 40); g2.lineTo(118, 100); g2.stroke();
       g2.strokeStyle = 'rgba(0,0,0,0.6)'; g2.lineWidth = 8; g2.strokeRect(0, 0, 128, 128);
       const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-      const flightMat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.55 });
+      // a little self-illumination so the flights still read with the board light in front of them
+      const flightMat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.55, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.35 });
       const shape = new THREE.Shape();
       shape.moveTo(0.0016, 0.104); shape.lineTo(0.0165, 0.118); shape.quadraticCurveTo(0.0185, 0.13, 0.0175, 0.1395); shape.lineTo(0.0016, 0.1395); shape.lineTo(0.0016, 0.104);
       const fg = new THREE.ShapeGeometry(shape, 6);

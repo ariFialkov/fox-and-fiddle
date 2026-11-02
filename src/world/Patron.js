@@ -99,6 +99,10 @@ export class Patron {
     this.reachR = 0;          // 0..1 right arm reaching forward and down (to pick something up)
     this.liftR = 0;           // 0..1 right hand raised to the mouth
     this.tiltR = 0;           // 0..1 head tipped back to drink
+    // joint targets for those blends (upper arm x, forearm x, upper arm z, torso lean)
+    // (fitted against the seated rig: hand ~7cm above the bar top, and just under the chin)
+    this.reachPose = { rx: -1.35, rf: -0.25, rz: -0.05, lean: 0.12 };
+    this.liftPose = { rx: -1.2, rf: -1.65, rz: -1.4 };
     this.seatH = 0;
     this.acts = {};           // one-shot action timers
     this.cur = {};            // eased joint values
@@ -272,12 +276,14 @@ export class Patron {
     // ---- continuous arm blends driven by mini-games ----
     if (this.reachR > 0.001) {
       const e = this.reachR;
-      tg.rx = lerp(tg.rx, -1.3, e); tg.rf = lerp(tg.rf, -0.15, e); tg.rz = lerp(tg.rz, -0.05, e);
-      tg.torsoX += 0.3 * e; tg.neckX += 0.25 * e;
+      const P = this.reachPose;
+      tg.rx = lerp(tg.rx, P.rx, e); tg.rf = lerp(tg.rf, P.rf, e); tg.rz = lerp(tg.rz, P.rz, e);
+      tg.torsoX += P.lean * e; tg.neckX += 0.25 * e;
     }
     if (this.liftR > 0.001) {
       const e = this.liftR;
-      tg.rx = lerp(tg.rx, -2.0, e); tg.rf = lerp(tg.rf, -2.35, e); tg.rz = lerp(tg.rz, -0.4, e);
+      const P = this.liftPose;
+      tg.rx = lerp(tg.rx, P.rx, e); tg.rf = lerp(tg.rf, P.rf, e); tg.rz = lerp(tg.rz, P.rz, e);
       tg.neckX -= 0.5 * this.tiltR * e; tg.torsoX -= 0.12 * this.tiltR * e;
     }
     // ---- knocked out / slumped ----
