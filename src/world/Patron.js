@@ -96,6 +96,9 @@ export class Patron {
     this.prop = null;         // held item (glass, cue, dart)
     this.headTarget = null;   // world point to look at
     this.busy = false;        // claimed by a mini-game: the director leaves it alone
+    this.reachR = 0;          // 0..1 right arm reaching forward and down (to pick something up)
+    this.liftR = 0;           // 0..1 right hand raised to the mouth
+    this.tiltR = 0;           // 0..1 head tipped back to drink
     this.seatH = 0;
     this.acts = {};           // one-shot action timers
     this.cur = {};            // eased joint values
@@ -266,6 +269,17 @@ export class Patron {
     }
     if ((k = this.act('jerk', dt, 6)) >= 0) { const e = Math.sin(k * Math.PI); tg.torsoX += e * 0.15; tg.lx -= e * 0.5; tg.rx -= e * 0.5; tg.torsoZ += (this.rnd() - 0.5) * 0.1 * e; }
     if ((k = this.act('cheer', dt, 1)) >= 0) { const e = Math.sin(k * Math.PI); tg.lx = tg.rx = -2.6 * e + 0.1 * (1 - e); tg.lf = tg.rf = -0.3; tg.neckX -= e * 0.3; tg.bodyY += e * 0.04; }
+    // ---- continuous arm blends driven by mini-games ----
+    if (this.reachR > 0.001) {
+      const e = this.reachR;
+      tg.rx = lerp(tg.rx, -1.3, e); tg.rf = lerp(tg.rf, -0.15, e); tg.rz = lerp(tg.rz, -0.05, e);
+      tg.torsoX += 0.3 * e; tg.neckX += 0.25 * e;
+    }
+    if (this.liftR > 0.001) {
+      const e = this.liftR;
+      tg.rx = lerp(tg.rx, -2.0, e); tg.rf = lerp(tg.rf, -2.35, e); tg.rz = lerp(tg.rz, -0.4, e);
+      tg.neckX -= 0.5 * this.tiltR * e; tg.torsoX -= 0.12 * this.tiltR * e;
+    }
     // ---- knocked out / slumped ----
     const ko = this.ko;
     tg.bodyTilt = -Math.PI / 2 * ko;

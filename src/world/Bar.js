@@ -153,7 +153,8 @@ export class Bar {
     this.stoolX = [];
     for (let x = x0 + 0.5; x <= x1 - 0.5; x += 0.8) { this.stool(x, z + 0.85); this.stoolX.push(x); }
     // glasses on the bar
-    for (let i = 0; i < 6; i++) this.glass(x0 + 1 + i * 1.3, 1.11, z + 0.15, i % 2 === 0);
+    this.barGlasses = [];
+    for (let i = 0; i < 6; i++) this.barGlasses.push(this.glass(x0 + 1 + i * 1.3, 1.11, z + 0.15, i % 2 === 0));
     // bar top position for drinking contest glasses
     this.barTopY = 1.11; this.barZ = z;
     // bartender area bar flap at the right end
@@ -280,7 +281,8 @@ export class Bar {
     const cb = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.5), new THREE.MeshStandardMaterial({ map: T.chalkboard() }));
     cb.position.set(x - 0.001, 1.75, z + 1.1); cb.rotation.y = -Math.PI / 2; this.group.add(cb);
     this.stations.push({
-      id: 'darts', gameId: 'darts', label: 'Darts', blurb: 'Three darts each, highest total takes it. The regular throws first.',
+      id: 'darts', gameId: 'darts', label: 'Darts', blurb: 'Fergus is up for a game: highest total over three darts, or a proper 501 where you have to finish exactly on zero.',
+      modes: { key: 'ff.dartsMode', label: 'Game', options: [{ value: 'total', label: 'Highest total' }, { value: '501', label: '501' }] },
       pos: new THREE.Vector3(x - 0.1 - 2.37 - 0.15, 0, z), look: new THREE.Vector3(x, y, z), radius: 1.1,
     });
   }
@@ -305,7 +307,7 @@ export class Bar {
     this.foosDecor = new THREE.Group(); g.add(this.foosDecor);
     this.foosRods = [];
     const rodMat = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.9, roughness: 0.3 });
-    const rows = [[-0.525, 'you', 1], [-0.375, 'you', 2], [-0.225, 'bot', 3], [-0.075, 'you', 5], [0.075, 'bot', 5], [0.225, 'you', 3], [0.375, 'bot', 2], [0.525, 'bot', 1]];
+    const rows = [[-0.525, 'you', 3], [-0.375, 'you', 2], [-0.225, 'bot', 3], [-0.075, 'you', 5], [0.075, 'bot', 5], [0.225, 'you', 3], [0.375, 'bot', 2], [0.525, 'bot', 3]];
     const offs = { 1: [0], 2: [-0.12, 0.12], 3: [-0.18, 0, 0.18], 5: [-0.24, -0.12, 0, 0.12, 0.24] };
     const manMat = { you: new THREE.MeshStandardMaterial({ color: 0x2b5fd9 }), bot: new THREE.MeshStandardMaterial({ color: 0xd93b2b }) };
     for (const [rx, team, n] of rows) {

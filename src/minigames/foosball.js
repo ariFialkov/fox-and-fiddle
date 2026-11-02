@@ -9,14 +9,14 @@ import { Patron } from '../world/Patron.js';
 
 const L = 1.2, W = 0.7, R = 0.017, GOAL = 0.1, LEG = 0.065;
 const ROWS = [
-  { x: -0.525, team: 'you', n: 1, key: 'goalie', label: 'Goalie', slide: 0.14 },
+  { x: -0.525, team: 'you', n: 3, key: 'goalie', label: 'Goalie', slide: 0.13 },
   { x: -0.375, team: 'you', n: 2, key: 'def', label: 'Defence', slide: 0.2 },
   { x: -0.225, team: 'bot', n: 3, slide: 0.14 },
   { x: -0.075, team: 'you', n: 5, key: 'mid', label: 'Midfield', slide: 0.08 },
   { x: 0.075, team: 'bot', n: 5, slide: 0.08 },
   { x: 0.225, team: 'you', n: 3, key: 'fwd', label: 'Forwards', slide: 0.14 },
   { x: 0.375, team: 'bot', n: 2, slide: 0.2 },
-  { x: 0.525, team: 'bot', n: 1, slide: 0.14 },
+  { x: 0.525, team: 'bot', n: 3, slide: 0.13 },
 ];
 const OFFSETS = { 1: [0], 2: [-0.12, 0.12], 3: [-0.18, 0, 0.18], 5: [-0.24, -0.12, 0, 0.12, 0.24] };
 const KEYS = { Digit1: 'fwd', Digit2: 'mid', Digit3: 'def', Digit4: 'goalie', Numpad1: 'fwd', Numpad2: 'mid', Numpad3: 'def', Numpad4: 'goalie' };
@@ -119,7 +119,7 @@ export class Foosball extends MiniGame {
   serve(dir) {
     this.ball.x = 0; this.ball.z = (Math.random() - 0.5) * 0.2;
     this.ball.vx = dir * 0.35; this.ball.vz = (Math.random() - 0.5) * 0.3; this.ball.lastKicker = null;
-    this.sinceGoal = 0; this.frozen = 0.8;
+    this.sinceGoal = 0; this.frozen = 0.8; this.still = 0;
   }
 
   update(dt) {
@@ -146,33 +146,58 @@ export class Foosball extends MiniGame {
     if (inp.wheel) r.w += -inp.wheel * 0.07;
     const p = inp.pointer;
     if (this.isTouch) {
-      if (p.down) { r.s -= p.dx * 0.0012; if (Math.abs(p.dy) > 2) r.w += -p.dy * 0.045; }
-    } else if (p.dx) r.s -= p.dx * 0.0011;
+      if (p.down) { r.s += p.dx * 0.0012; if (Math.abs(p.dy) > 2) r.w += -p.dy * 0.045; }
+    } else if (p.dx) r.s += p.dx * 0.0011;
     r.s = THREE.MathUtils.clamp(r.s, -r.slide, r.slide);
     if (inp.justPressed('Space')) r.w += 9; // quick kick on the selected rod
   }
 
+  /**
+   * Nadia's rods. Every rod tracks the ball sideways. A ball in front of a rod, anywhere the foot
+   * can sweep to, gets kicked. A ball stuck just behind her men (where a normal kick swings away
+   * from it) gets a full forward spin, so the foot comes over the top and down onto it from behind,
+   * unless another of her rods already has it in front.
+   */
   botAI(dt) {
     const b = this.ball;
     const skill = this.effectiveSkill();
-    for (const r of this.rods) {
-      if (r.team !== 'bot') continue;
-      // choose the man closest to the ball's z and slide so he lines up
+    const sp = Math.hypot(b.vx, b.vz);
+    const bots = this.rods.filter((r) => r.team === 'bot');
+    const inFront = (r) => b.x < r.x + 0.02 && b.x > r.x - 0.083;
+    const behind = (r) => b.x >= r.x + 0.02 && b.x < r.x + 0.085;
+    const someoneInFront = bots.some(inFront);
+    for (const r of bots) {
       let best = r.offsets[0], bd = Infinity;
-      for (const off of r.offsets) { const d = Math.abs(b.z - (r.s + off)); if (d < bd) { bd = d; best = off; } }
+      for (const off of r.offsets) {
+        const reachable = THREE.MathUtils.clamp(b.z - off, -r.slide, r.slide) + off;
+        const d = Math.abs(b.z - reachable);
+        if (d < bd) { bd = d; best = off; }
+      }
       const targetS = THREE.MathUtils.clamp(b.z - best, -r.slide, r.slide);
       const speed = 0.3 + skill * 0.9;
       r.s = THREE.MathUtils.damp(r.s, targetS, speed * 4, dt);
-      // kick when the ball is at the feet and roughly lined up
-      const inX = b.x > r.x - 0.05 && b.x < r.x + 0.03;
-      if (inX && bd < 0.035 && r.cool <= 0 && Math.abs(r.w) < 1) {
+      const lined = Math.abs(b.z - (r.s + best)) < 0.033;
+      if (!lined || r.cool > 0 || Math.abs(r.w) > 1) continue;
+      if (inFront(r)) {
         if (Math.random() < 0.3 + skill * 0.7) {
           const backward = this.clock > 120 && this.mustWin && Math.random() < 0.35;
           r.w = (backward ? 1 : -1) * (6 + skill * 6);
           r.cool = 0.6;
         }
+      } else if (behind(r) && !someoneInFront && sp < 0.3) {
+        if (Math.random() < (0.25 + skill * 0.6) * dt * 4) { r.w = -22; r.cool = 1.4; }
       }
     }
+  }
+
+  /** Can any rod, on either side, get a foot to the ball where it sits? */
+  reachable() {
+    const b = this.ball;
+    for (const r of this.rods) {
+      if (Math.abs(b.x - r.x) > 0.08) continue;
+      for (const off of r.offsets) if (b.z > off - r.slide - 0.031 && b.z < off + r.slide + 0.031) return true;
+    }
+    return false;
   }
 
   /** How good the bot plays right now, given the fate of the round. */
@@ -226,8 +251,19 @@ export class Foosball extends MiniGame {
         }
       }
     }
-    // stuck ball: nudge after a while
-    if (this.sinceGoal > 40) { this.hud.showToast('Throw-in', 'house rules', 900); this.serve(this.mustWin ? 1 : -1); }
+    // the corners of the table are sloped, like a real one, so a ball never settles in them
+    if (Math.abs(b.x) > 0.45 && Math.abs(b.z) > 0.15) b.vz -= Math.sign(b.z) * 0.2 * dt;
+    // a ball that has stopped where no foot can reach rolls gently back into play
+    const sp = Math.hypot(b.vx, b.vz);
+    this.still = sp < 0.05 ? (this.still || 0) + dt : 0;
+    if (this.still > 1.2 && !this.reachable()) {
+      let near = this.rods[0];
+      for (const r of this.rods) if (Math.abs(r.x - b.x) < Math.abs(near.x - b.x)) near = r;
+      b.vx = Math.sign(near.x - b.x || 1) * 0.14;
+      b.vz = -Math.sign(b.z) * Math.min(0.12, Math.abs(b.z) * 0.6);
+      this.still = 0;
+    }
+    if (this.still > 9) { this.hud.showToast('Throw-in', 'house rules', 900); this.serve(this.mustWin ? 1 : -1); this.still = 0; }
   }
 
   /** On the decisive goal the loser's shots hit the post... */

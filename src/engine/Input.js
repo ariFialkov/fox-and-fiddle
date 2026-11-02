@@ -151,5 +151,9 @@ export function analyseSwipe(path) {
     dev = Math.max(dev, Math.hypot(p.x - px, p.y - py));
   }
   const wobble = Math.min(1, dev / (len * 0.35)) * 0.6 + Math.min(1, (travelled / len - 1) * 2) * 0.4;
-  return { dx, dy, len, dt, speed: len / dt, angle: Math.atan2(-dy, dx), straightness: 1 - Math.min(1, wobble), points: path.length };
+  // speed over the part of the gesture that is actually moving (ignores a pause before the flick)
+  let i0 = 0;
+  while (i0 < path.length - 1 && Math.hypot(path[i0].x - a.x, path[i0].y - a.y) < 8) i0++;
+  const activeDt = Math.max(1, b.t - path[Math.max(0, i0 - 1)].t);
+  return { dx, dy, len, dt, speed: len / dt, activeSpeed: len / activeDt, angle: Math.atan2(-dy, dx), straightness: 1 - Math.min(1, wobble), points: path.length };
 }

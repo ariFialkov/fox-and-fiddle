@@ -74,9 +74,9 @@ export class Darts extends MiniGame {
     this.player.enabled = false;
     const st = this.station.pos;
     this.eye = new THREE.Vector3(st.x, 1.6, st.z);
-    this.setCamera(this.eye, new THREE.Vector3(b.pos.x, b.pos.y - 0.03, b.pos.z));
-    this.camBase = this.camera.quaternion.clone();
-    this.fov0 = this.camera.fov; this.camera.fov = 28; this.camera.updateProjectionMatrix();
+    this.fov0 = this.camera.fov;
+    this.fitCamera();
+    this.onResize = () => this.fitCamera(); addEventListener('resize', this.onResize);
 
     this.bot = new Patron({ name: 'Fergus', shirt: 0x3d6b3a, height: 1.02, seed: 77 });
     this.bot.root.position.set(st.x + 1.0, 0, st.z + 1.05);
@@ -85,21 +85,24 @@ export class Darts extends MiniGame {
 
     this.darts = [];
     this.busy = false;
-    this.mode = localStorage.getItem('ff.dartsMode') || 'total';
-    this.thrown = false;
-    this.hud.setHints(`<kbd>swipe up</kbd> to throw · angle = left/right · speed = high/low · keep it straight`);
-    this.hud.setModes(['Highest total', '501'], this.mode === '501' ? 1 : 0, (i) => this.setMode(i ? '501' : 'total'));
-    this.setMode(this.mode, true);
+    this.mode = this.ctx.mode === '501' ? '501' : 'total';
+    this.hud.setHints(`<kbd>swipe up</kbd> to throw · long swipes are steadier · angle = left/right · speed = high/low · keep it straight`);
+    if (this.mode === 'total') { this.leg = 0; this.startLeg(); this.hud.showToast('Your throw', 'three darts each, highest total wins', 2200); }
+    else { this.rem = { you: 501, bot: 501 }; this.phase = 'bot'; this.updateScore('Fergus throws first'); this.hud.showToast('501', 'finish exactly on zero · Fergus throws first', 2000); this.after(1.6, () => { if (!this.done) this.botVisit(); }); }
   }
 
-  setMode(mode, init = false) {
-    if (this.thrown) return;
-    this.mode = mode;
-    localStorage.setItem('ff.dartsMode', mode);
-    this.hud.setModes(['Highest total', '501'], mode === '501' ? 1 : 0, (i) => this.setMode(i ? '501' : 'total'));
-    this.clearDarts();
-    if (mode === 'total') { this.leg = 0; this.startLeg(); if (!init) this.hud.showToast('Highest total', 'three darts each, you throw first', 1800); else this.hud.showToast('Your throw', 'three darts each, highest total wins', 2200); }
-    else { this.rem = { you: 501, bot: 501 }; this.phase = 'bot'; this.visitDarts = 0; this.updateScore('Fergus throws first'); this.hud.showToast('501', 'finish exactly on zero · Fergus throws first', 2000); this.after(1.6, () => { if (this.mode === '501' && !this.done) this.botVisit(); }); }
+  /** Zoom so the board (number ring included) fills most of the screen in either orientation. */
+  fitCamera() {
+    const b = this.bar.dartboard;
+    const d = this.eye.distanceTo(b.pos);
+    const aspect = innerWidth / innerHeight;
+    const outer = 0.2255, fill = 0.82;
+    const tanHalf = outer / (fill * d * Math.min(1, aspect));
+    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(tanHalf));
+    this.camera.updateProjectionMatrix();
+    // aim a touch above centre so the board sits clear of the score panel
+    this.setCamera(this.eye, new THREE.Vector3(b.pos.x, b.pos.y + outer * 0.1, b.pos.z));
+    this.camBase = this.camera.quaternion.clone();
   }
 
   // ---------- highest-total mode ----------
@@ -240,7 +243,7 @@ export class Darts extends MiniGame {
     this.bot.update(dt);
     const q = this.camBase.clone();
     const e = new THREE.Euler().setFromQuaternion(q, 'YXZ');
-    e.x += Math.sin(this.t * 1.1) * 0.004; e.y += Math.sin(this.t * 0.7) * 0.003;
+    e.x += Math.sin(this.t * 1.1) * 0.0012; e.y += Math.sin(this.t * 0.7) * 0.0009;
     this.camera.quaternion.setFromEuler(e);
     if (this.phase === 'you' && !this.busy && this.input.swipes.length) {
       const sw = this.input.swipes[0];
@@ -249,17 +252,24 @@ export class Darts extends MiniGame {
     for (const d of this.darts) if (d.update) d.update(dt);
   }
 
+  /**
+   * Swipe -> landing point. Everything is measured in screen heights so desktop and phones feel
+   * the same. Direction (sideways drift per unit of upward travel) sets left/right; the speed of
+   * the flick sets high/low (a brisk ~2.6 screen-heights/second lands on the bull's line);
+   * wobble scatters it. Short flicks are refused: a long swipe is a steady swipe.
+   */
   playerThrow(sw) {
+    const H = innerHeight;
+    if (sw.len / H < 0.16) { this.hud.showToast('Longer swipe', 'draw it up the screen in one smooth stroke', 1100); return; }
     this.busy = true;
-    if (!this.thrown) { this.thrown = true; this.hud.setModes(null); }
-    const tilt = Math.atan2(sw.dx, -sw.dy);
-    let bx = Math.sin(tilt) * 0.55;
-    const ideal = 1.35;
-    let by = (sw.speed - ideal) * 0.3;
-    const scatter = (1 - sw.straightness) * 0.09;
+    const R = this.R;
+    let bx = (sw.dx / Math.max(1, -sw.dy)) * 1.2 * R;
+    const speed = (sw.activeSpeed ?? sw.speed) / H * 1000;
+    let by = (speed - 2.6) * 0.7 * R;
+    const scatter = (1 - sw.straightness) * 0.22 * R;
     const ang = Math.random() * Math.PI * 2, rr = Math.random() * scatter;
     bx += Math.cos(ang) * rr; by += Math.sin(ang) * rr;
-    bx = THREE.MathUtils.clamp(bx, -0.3, 0.3); by = THREE.MathUtils.clamp(by, -0.3, 0.3);
+    bx = THREE.MathUtils.clamp(bx, -1.4 * R, 1.4 * R); by = THREE.MathUtils.clamp(by, -1.4 * R, 1.4 * R);
     const pt = { x: bx, y: by };
     const from = this.camera.localToWorld(new THREE.Vector3(0.25, -0.2, -0.3));
     this.flyDart(from, pt, 0x3355dd, () => {
@@ -294,39 +304,85 @@ export class Darts extends MiniGame {
     this.finish({ win, title: t, line: lines[Math.floor(Math.random() * lines.length)] });
   }
 
+  /**
+   * A proper steel-tip dart, ~15cm: needle point, knurled tungsten barrel, nylon shaft and four
+   * printed flights. Built along +Y then turned so the point sits at the origin facing +Z.
+   */
   makeDart(color) {
+    const key = 'dart' + color;
+    if (!Darts.cache) Darts.cache = {};
+    if (!Darts.cache[key]) {
+      const steel = new THREE.MeshStandardMaterial({ color: 0xdedede, metalness: 1, roughness: 0.18 });
+      const tungsten = new THREE.MeshStandardMaterial({ color: 0x8b9097, metalness: 0.95, roughness: 0.32 });
+      const shaftMat = new THREE.MeshStandardMaterial({ color: 0x141414, metalness: 0.2, roughness: 0.4 });
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0xc9a23a, metalness: 1, roughness: 0.3 });
+      const lathe = (pts, mat) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), 24), mat);
+      const point = lathe([[0, 0], [0.0004, 0.0015], [0.0009, 0.006], [0.00115, 0.03], [0.0013, 0.0315], [0, 0.0315]], steel);
+      // barrel: front taper, 10 knurled grip rings, rear taper
+      const bp = [[0, 0.031], [0.0016, 0.031], [0.0031, 0.037], [0.0034, 0.041]];
+      for (let i = 0; i < 10; i++) { const y = 0.042 + i * 0.0042; bp.push([0.0034, y], [0.0029, y + 0.0012], [0.0029, y + 0.0026], [0.0034, y + 0.0036]); }
+      bp.push([0.0034, 0.085], [0.0028, 0.09], [0.002, 0.092], [0, 0.092]);
+      const barrel = lathe(bp, tungsten);
+      const shaft = lathe([[0, 0.091], [0.0019, 0.091], [0.0017, 0.1], [0.00155, 0.128], [0.0019, 0.13], [0.0019, 0.136], [0, 0.137]], shaftMat);
+      const ring = lathe([[0, 0.1255], [0.0021, 0.1255], [0.0021, 0.1275], [0, 0.1275]], ringMat);
+      // flight texture: team colour, a pale chevron and a dark edge
+      const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+      const g2 = c.getContext('2d');
+      const hex = '#' + color.toString(16).padStart(6, '0');
+      g2.fillStyle = hex; g2.fillRect(0, 0, 128, 128);
+      const grad = g2.createLinearGradient(0, 0, 128, 128); grad.addColorStop(0, 'rgba(255,255,255,0.25)'); grad.addColorStop(1, 'rgba(0,0,0,0.25)');
+      g2.fillStyle = grad; g2.fillRect(0, 0, 128, 128);
+      g2.strokeStyle = 'rgba(255,255,255,0.85)'; g2.lineWidth = 10; g2.beginPath(); g2.moveTo(10, 100); g2.lineTo(64, 40); g2.lineTo(118, 100); g2.stroke();
+      g2.strokeStyle = 'rgba(0,0,0,0.6)'; g2.lineWidth = 8; g2.strokeRect(0, 0, 128, 128);
+      const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      const flightMat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.55 });
+      const shape = new THREE.Shape();
+      shape.moveTo(0.0016, 0.104); shape.lineTo(0.0165, 0.118); shape.quadraticCurveTo(0.0185, 0.13, 0.0175, 0.1395); shape.lineTo(0.0016, 0.1395); shape.lineTo(0.0016, 0.104);
+      const fg = new THREE.ShapeGeometry(shape, 6);
+      fg.computeBoundingBox();
+      const bb = fg.boundingBox, uv = fg.attributes.uv, pos = fg.attributes.position;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) - bb.min.x) / (bb.max.x - bb.min.x), (pos.getY(i) - bb.min.y) / (bb.max.y - bb.min.y));
+      const inner = new THREE.Group();
+      inner.add(point, barrel, shaft, ring);
+      for (let i = 0; i < 4; i++) { const f = new THREE.Mesh(fg, flightMat); f.rotation.y = (i * Math.PI) / 2 + Math.PI / 4; inner.add(f); }
+      for (const m of inner.children) { m.castShadow = true; }
+      inner.rotation.x = -Math.PI / 2;   // +Y (towards the flights) -> -Z: point at the origin facing +Z
+      Darts.cache[key] = inner;
+    }
     const g = new THREE.Group();
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.12, 6), new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.3 }));
-    shaft.rotation.x = Math.PI / 2; shaft.position.z = -0.03;
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.003, 0.03, 6), new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.9 }));
-    tip.rotation.x = Math.PI / 2; tip.position.z = 0.045;
-    const flight = new THREE.Mesh(new THREE.PlaneGeometry(0.035, 0.03), new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness: 0.6 }));
-    flight.position.z = -0.1; flight.position.y = 0.012;
-    const flight2 = flight.clone(); flight2.rotation.z = Math.PI / 2; flight2.position.set(0.012, 0, -0.1);
-    g.add(shaft, tip, flight, flight2);
+    g.add(Darts.cache[key].clone());
     return g;
   }
 
+  /** Fly a dart from `from` to board point `pt` (scoring coordinates: x = right as you look at the board). */
   flyDart(from, pt, color, onLand) {
     const dart = this.makeDart(color);
-    const target = this.boardPos.clone().add(new THREE.Vector3(0, pt.y, -pt.x)); // board right = -z
+    // the camera looks along +x at the board, so "right" on screen is world +z
+    const target = this.boardPos.clone().add(new THREE.Vector3(0, pt.y, pt.x));
     this.group.add(dart);
     const dur = 0.42;
     let t = 0;
     const ctrl = from.clone().lerp(target, 0.5).add(new THREE.Vector3(0, 0.18, 0));
-    const tmp = new THREE.Vector3();
+    const tmp = new THREE.Vector3(), next = new THREE.Vector3();
+    const wob = new THREE.Euler((Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.12, Math.random() * Math.PI * 2);
+    const bez = (k, out) => out.set(0, 0, 0).addScaledVector(from, (1 - k) * (1 - k)).addScaledVector(ctrl, 2 * (1 - k) * k).addScaledVector(target, k * k);
     dart.update = (dt) => {
       t += dt;
       const k = Math.min(1, t / dur);
-      tmp.set(0, 0, 0).addScaledVector(from, (1 - k) * (1 - k)).addScaledVector(ctrl, 2 * (1 - k) * k).addScaledVector(target, k * k);
-      const next = new THREE.Vector3().addScaledVector(from, (1 - k - 0.02) * (1 - k - 0.02)).addScaledVector(ctrl, 2 * (1 - k - 0.02) * (k + 0.02)).addScaledVector(target, (k + 0.02) * (k + 0.02));
+      bez(k, tmp); bez(Math.min(1, k + 0.02), next);
       dart.position.copy(tmp);
-      dart.lookAt(k < 1 ? next : target.clone().add(new THREE.Vector3(1, 0, 0)));
-      if (k >= 1) { dart.position.copy(target).add(new THREE.Vector3(-0.045, 0, 0)); dart.lookAt(target.clone().add(new THREE.Vector3(1, 0, 0))); dart.update = null; onLand && onLand(); }
+      if (k < 1) { dart.lookAt(next); dart.rotateZ(t * 25); }
+      else {
+        // stuck in the board, point slightly embedded, flights at a small random angle
+        dart.position.copy(target).add(new THREE.Vector3(0.008, 0, 0));
+        dart.lookAt(target.clone().add(new THREE.Vector3(1, 0, 0)));
+        dart.rotateX(wob.x); dart.rotateY(wob.y); dart.rotateZ(wob.z);
+        dart.update = null; onLand && onLand();
+      }
     };
     this.darts.push(dart);
   }
 
   clearDarts() { for (const d of this.darts) this.group.remove(d); this.darts = []; }
-  dispose() { super.dispose(); this.camera.fov = this.fov0; this.camera.updateProjectionMatrix(); }
+  dispose() { super.dispose(); removeEventListener('resize', this.onResize); this.camera.fov = this.fov0; this.camera.updateProjectionMatrix(); }
 }

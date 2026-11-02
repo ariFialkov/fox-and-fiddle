@@ -73,11 +73,13 @@ Near an activity, `Space` / click / tap plays.
 
 - Billiards: `A`/`D` aim (drag sideways on touch), drag back and release to strike,
   `W`/`S` follow/draw, `Space` chalk.
-- Darts: swipe up.
-- Foosball: `E` forwards, `D` midfield, `C` defence, `Space` goalie; scroll to spin; move the mouse
-  to slide the rod. On touch, tap a rod tab, drag sideways to slide and flick vertically to spin.
-- Bar fight: `X` punch, `C` kick, hold `Space` to grab a bottle and release to throw, `Space`+`X`/`C`
-  to smash it over whoever is in front of you.
+- Darts: pick "Highest total" or "501" on the stake panel, then swipe up. Long swipes are steadier:
+  sideways drift sets left/right, flick speed sets high/low, wobble scatters the dart.
+- Foosball: `1` forwards, `2` midfield, `3` defence, `4` goalie; scroll to spin, `Space` for a quick
+  kick; move the mouse to slide the rod. On touch, tap a rod tab, drag sideways to slide and flick
+  vertically to spin.
+- Bar fight: `X` punch, `C` kick, hold `Shift` to block high and `Z` to block low, hold `Space` to grab
+  a bottle and release to throw, `Space`+`X`/`C` to smash it over whoever is in front of you.
 - Drinking / pick-up lines: buttons (`Space` drinks, `1`/`2` choose a line, `Esc` cashes out).
 
 ## The regulars

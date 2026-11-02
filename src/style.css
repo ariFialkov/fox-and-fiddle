@@ -57,6 +57,7 @@ button.icon { background: var(--panel); border: 1px solid var(--panel-edge); col
 .panel h2 { margin: 0 0 4px; font-family: var(--font); font-weight: normal; font-size: 22px; color: var(--amber); }
 .panel p { margin: 0 0 10px; color: var(--ink-dim); font-size: 13px; line-height: 1.4; }
 .stakes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.panel-label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); margin: 2px 0 6px; }
 .stakes button { pointer-events: auto; flex: 1 0 44px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--panel-edge); color: var(--ink); border-radius: 10px; padding: 9px 0; font-size: 14px; cursor: pointer; }
 .stakes button.sel { border-color: var(--amber); background: rgba(240, 168, 75, 0.18); color: var(--amber); }
 .row { display: flex; gap: 8px; }

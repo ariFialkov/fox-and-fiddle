@@ -159,11 +159,11 @@ export class Game {
     this.hud.hidePrompt();
     const g = GAMES[station.gameId];
     const blurb = `${station.blurb}<br>${g.type === 'versus' ? `Pays ${g.payout}x.` : 'Each round multiplies your stake; blow it and the stake is gone.'}`;
-    const stake = await this.hud.showBet(station.label, blurb, this.input.isTouch);
-    if (!stake) { this.state = 'walk'; this.player.enabled = true; return; }
+    const choice = await this.hud.showBet(station.label, blurb, this.input.isTouch, station.modes);
+    if (!choice) { this.state = 'walk'; this.player.enabled = true; return; }
     try {
-      const round = await this.api.startRound(station.gameId, stake);
-      await this.runMinigame(station, round);
+      const round = await this.api.startRound(station.gameId, choice.stake);
+      await this.runMinigame(station, round, choice.mode);
     } catch (e) {
       console.error(e);
       this.hud.showToast('The house is closed', String(e.message || e));
@@ -171,14 +171,14 @@ export class Game {
     }
   }
 
-  async runMinigame(station, round) {
+  async runMinigame(station, round, mode = null) {
     this.state = 'minigame';
     this.input.showJoystick(false);
     this.hud.hidePrompt();
     const Cls = MINIGAMES[station.gameId];
     const ctx = {
       game: this, scene: this.scene, camera: this.camera, player: this.player, hud: this.hud, input: this.input,
-      api: this.api, bar: this.bar, station, round, isTouch: this.input.isTouch, lowEnd: this.lowEnd,
+      api: this.api, bar: this.bar, station, round, mode, isTouch: this.input.isTouch, lowEnd: this.lowEnd,
     };
     const returnPos = this.player.pos.clone();
     const returnYaw = this.player.yaw;

@@ -77,12 +77,29 @@ export class HUD {
   }
   hidePrompt() { this.prompt.classList.remove('show'); }
 
-  /** Stake picker. Resolves with stake or null. */
-  showBet(title, blurb, isTouch) {
+  /**
+   * Stake picker, optionally with a game-mode choice (`modes`: { key, label, options: [{value, label}] }).
+   * Resolves with { stake, mode } or null.
+   */
+  showBet(title, blurb, isTouch, modes) {
     return new Promise((resolve) => {
       let stake = Number(localStorage.getItem('ff.stake')) || 5;
+      let mode = null;
       this.panel.innerHTML = '';
       this.panel.append(h('h2', '', title), h('p', '', blurb));
+      if (modes) {
+        mode = localStorage.getItem(modes.key) || modes.options[0].value;
+        if (!modes.options.some((o) => o.value === mode)) mode = modes.options[0].value;
+        this.panel.append(h('div', 'panel-label', modes.label));
+        const row = h('div', 'stakes');
+        const mbtns = modes.options.map((o) => {
+          const b = h('button', o.value === mode ? 'sel' : '', o.label);
+          b.onclick = () => { mode = o.value; mbtns.forEach((x) => x.classList.toggle('sel', x === b)); };
+          row.append(b);
+          return b;
+        });
+        this.panel.append(row, h('div', 'panel-label', 'Stake'));
+      }
       const stakes = h('div', 'stakes');
       const btns = STAKES.map((s) => {
         const b = h('button', s === stake ? 'sel' : '', String(s));
@@ -96,13 +113,15 @@ export class HUD {
       row.append(cancel, play);
       this.panel.append(stakes, row);
       const done = (v) => { this.panel.classList.remove('show'); window.removeEventListener('keydown', onKey); resolve(v); };
-      const onKey = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); done(stake); } if (e.code === 'Escape') done(null); };
-      cancel.onclick = () => done(null);
-      play.onclick = () => {
+      const go = () => {
         if (this.api.balance < stake) { this.showToast('Not enough in the wallet', 'top up from the ⓘ menu'); return; }
         localStorage.setItem('ff.stake', String(stake));
-        done(stake);
+        if (modes) localStorage.setItem(modes.key, mode);
+        done({ stake, mode });
       };
+      const onKey = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); go(); } if (e.code === 'Escape') done(null); };
+      cancel.onclick = () => done(null);
+      play.onclick = go;
       setTimeout(() => window.addEventListener('keydown', onKey), 50);
       this.panel.classList.add('show');
     });
