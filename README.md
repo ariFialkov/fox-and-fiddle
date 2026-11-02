@@ -18,7 +18,7 @@ npm run dev        # outcome server on :8787 + Vite dev server on :5173 (proxies
 Production:
 
 ```bash
-npm run build      # builds the PWA into dist/
+npm run build      # builds the game into dist/ as one self-contained index.html (+ icons, sw.js)
 npm start          # serves dist/ and the API from one Node process on :8787
 ```
 
@@ -31,6 +31,11 @@ npm test           # outcome maths, RNG, engine, pool physics/rules
 
 If the API is unreachable (static hosting, offline) the client falls back to a local engine with
 the same maths so the PWA still plays. That mode is for demos only: a client can be inspected.
+
+The build is deliberately host-agnostic: all paths are relative and the script and styles are
+inlined into `index.html`, so it runs from any folder, over plain http, or inside a sandboxed
+iframe (where storage and WebCrypto may be blocked; the game falls back to in-memory settings and a
+plain-JS SHA-256). If it still cannot start, the loading screen says why.
 
 ## How the betting layer works
 

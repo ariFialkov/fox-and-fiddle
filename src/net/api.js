@@ -4,6 +4,7 @@
  * game remains playable in demo mode. In production the server is authoritative.
  */
 import { LocalEngine } from './localEngine.js';
+import { storage } from './storage.js';
 
 const SESSION_KEY = 'ff.session';
 
@@ -23,15 +24,18 @@ export class Api {
   setBalance(b) { if (typeof b === 'number') { this.balance = b; this.listeners.forEach((f) => f(b)); } }
 
   async init() {
-    const saved = safeJson(localStorage.getItem(SESSION_KEY));
+    const saved = safeJson(storage.get(SESSION_KEY));
     try {
       let s = null;
       if (saved?.sessionId) {
-        s = await this.req('GET', `/api/session/${saved.sessionId}`).catch(() => null);
+        s = await this.req('GET', `api/session/${saved.sessionId}`).catch(() => null);
+        if (s && typeof s.sessionId !== 'string') s = null;
       }
-      if (!s) s = await this.req('POST', '/api/session', { clientSeed: saved?.clientSeed });
+      if (!s) s = await this.req('POST', 'api/session', { clientSeed: saved?.clientSeed });
+      // a static host may answer any path with its own page; only a real session counts
+      if (!s || typeof s.sessionId !== 'string' || typeof s.balance !== 'number') throw new Error('no outcome server here');
       this.adopt(s);
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ sessionId: s.sessionId, clientSeed: s.clientSeed }));
+      storage.set(SESSION_KEY, JSON.stringify({ sessionId: s.sessionId, clientSeed: s.clientSeed }));
       this.offline = false;
     } catch (e) {
       console.warn('[api] outcome server unreachable, using local demo engine', e);
@@ -72,31 +76,32 @@ export class Api {
     return r;
   }
   async topUp() {
-    const s = this.offline ? await this.local.topUp() : await this.req('POST', `/api/session/${this.sessionId}/topup`);
+    const s = this.offline ? await this.local.topUp() : await this.req('POST', `api/session/${this.sessionId}/topup`);
     this.setBalance(s.balance);
     return s;
   }
   async rotateSeed() {
-    const s = this.offline ? await this.local.rotate() : await this.req('POST', `/api/session/${this.sessionId}/rotate`);
+    const s = this.offline ? await this.local.rotate() : await this.req('POST', `api/session/${this.sessionId}/rotate`);
     this.adopt(s);
     return s;
   }
 
   call(action, body) {
     if (this.offline) return this.local[action](body);
-    return this.req('POST', `/api/round/${action}`, body);
+    return this.req('POST', `api/round/${action}`, body);
   }
 
   async req(method, url, body) {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 6000);
+    const t = setTimeout(() => ctrl.abort(), this.sessionId ? 8000 : 4000);
     try {
       const res = await fetch(url, {
         method, headers: { 'content-type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined, signal: ctrl.signal,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+      if (!data || typeof data !== 'object') throw new Error('not a JSON response');
       return data;
     } finally { clearTimeout(t); }
   }

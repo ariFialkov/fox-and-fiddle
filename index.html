@@ -11,6 +11,30 @@
   <link rel="icon" href="./icons/icon-192.png" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <title>Fox and Fiddle</title>
+  <style>
+    /* loading screen styles live here too, so it never shows up unstyled */
+    html, body { margin: 0; height: 100%; background: #120a06; }
+    #boot { position: fixed; inset: 0; background: #120a06; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; font-family: Georgia, serif; }
+    .boot-sign { font-size: clamp(28px, 7vw, 64px); letter-spacing: 0.12em; color: #ff5a8c; text-shadow: 0 0 12px #ff5a8c; }
+    .boot-sign span { color: #4fd9ff; text-shadow: 0 0 12px #4fd9ff; }
+    .boot-sub { margin-top: 12px; color: rgba(244, 233, 216, 0.65); letter-spacing: 0.3em; font-size: 12px; text-transform: uppercase; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; text-align: center; max-width: 86vw; white-space: pre-wrap; line-height: 1.6; }
+  </style>
+  <script>
+    // Boot watchdog: if the game cannot start, say why on the loading screen instead of hanging.
+    (function () {
+      function show(msg) { var el = document.querySelector('.boot-sub'); if (el) { el.textContent = msg; el.style.letterSpacing = '0.05em'; el.style.textTransform = 'none'; el.style.color = '#ffb4a8'; } }
+      window.__ffBootError = show;
+      window.addEventListener('error', function (e) {
+        var t = e && e.target;
+        if (t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) show('could not load ' + (t.src || t.href) + '\nthe game files may be in a different folder from this page');
+        else if (!window.__ffStarted) show('could not start: ' + ((e && e.message) || 'script error'));
+      }, true);
+      setTimeout(function () {
+        var boot = document.getElementById('boot');
+        if (boot && !boot.classList.contains('gone') && !window.__ffStarted) show('the game script did not start\ncheck that this browser allows JavaScript modules here');
+      }, 15000);
+    })();
+  </script>
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>

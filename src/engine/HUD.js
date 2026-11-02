@@ -1,5 +1,6 @@
 /** All 2D UI. Minimal, grouped around the edges so the 3D view stays the focus. */
 import { STAKES } from '../../shared/outcomes.js';
+import { storage } from '../net/storage.js';
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 
@@ -83,12 +84,12 @@ export class HUD {
    */
   showBet(title, blurb, isTouch, modes) {
     return new Promise((resolve) => {
-      let stake = Number(localStorage.getItem('ff.stake')) || 5;
+      let stake = Number(storage.get('ff.stake')) || 5;
       let mode = null;
       this.panel.innerHTML = '';
       this.panel.append(h('h2', '', title), h('p', '', blurb));
       if (modes) {
-        mode = localStorage.getItem(modes.key) || modes.options[0].value;
+        mode = storage.get(modes.key) || modes.options[0].value;
         if (!modes.options.some((o) => o.value === mode)) mode = modes.options[0].value;
         this.panel.append(h('div', 'panel-label', modes.label));
         const row = h('div', 'stakes');
@@ -115,8 +116,8 @@ export class HUD {
       const done = (v) => { this.panel.classList.remove('show'); window.removeEventListener('keydown', onKey); resolve(v); };
       const go = () => {
         if (this.api.balance < stake) { this.showToast('Not enough in the wallet', 'top up from the ⓘ menu'); return; }
-        localStorage.setItem('ff.stake', String(stake));
-        if (modes) localStorage.setItem(modes.key, mode);
+        storage.set('ff.stake', String(stake));
+        if (modes) storage.set(modes.key, mode);
         done({ stake, mode });
       };
       const onKey = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); go(); } if (e.code === 'Escape') done(null); };

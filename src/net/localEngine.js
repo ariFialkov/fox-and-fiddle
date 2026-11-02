@@ -6,24 +6,40 @@
  */
 import { resolveOutcome, floatsNeeded, stepperPayout, DEFAULT_RTP, STAKES } from '../../shared/outcomes.js';
 import { rollFloats } from '../../shared/rng.js';
+import { sha256, hmacSha256 } from './sha256.js';
+import { storage } from './storage.js';
 
 const KEY = 'ff.local';
 const enc = new TextEncoder();
 
+// WebCrypto only exists in secure contexts (https / localhost); fall back to plain JS elsewhere.
+const subtle = (typeof crypto !== 'undefined' && crypto.subtle) || null;
 async function hmac(key, msg) {
-  const k = await crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  return new Uint8Array(await crypto.subtle.sign('HMAC', k, enc.encode(msg)));
+  if (subtle) {
+    try {
+      const k = await subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      return new Uint8Array(await subtle.sign('HMAC', k, enc.encode(msg)));
+    } catch {}
+  }
+  return hmacSha256(enc.encode(key), enc.encode(msg));
 }
 async function sha256hex(s) {
-  const d = await crypto.subtle.digest('SHA-256', enc.encode(s));
-  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  let d;
+  if (subtle) { try { d = new Uint8Array(await subtle.digest('SHA-256', enc.encode(s))); } catch {} }
+  if (!d) d = sha256(enc.encode(s));
+  return [...d].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-const rndHex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, '0')).join('');
+function randomBytes(n) {
+  const a = new Uint8Array(n);
+  try { crypto.getRandomValues(a); } catch { for (let i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256); }
+  return a;
+}
+const rndHex = (n) => [...randomBytes(n)].map((b) => b.toString(16).padStart(2, '0')).join('');
 
 export class LocalEngine {
   async init() {
     let s = null;
-    try { s = JSON.parse(localStorage.getItem(KEY)); } catch {}
+    try { s = JSON.parse(storage.get(KEY)); } catch {}
     if (!s || !s.serverSeed) {
       s = { sessionId: 'local_' + rndHex(6), balance: 1000, serverSeed: rndHex(32), clientSeed: rndHex(8), nonce: 0, rtp: DEFAULT_RTP };
     }
@@ -31,7 +47,7 @@ export class LocalEngine {
     this.rounds = new Map();
     this.save();
   }
-  save() { try { localStorage.setItem(KEY, JSON.stringify(this.s)); } catch {} }
+  save() { storage.set(KEY, JSON.stringify(this.s)); }
   async session() {
     return { sessionId: this.s.sessionId, balance: this.s.balance, rtp: this.s.rtp, clientSeed: this.s.clientSeed, serverSeedHash: await sha256hex(this.s.serverSeed), nonce: this.s.nonce };
   }
