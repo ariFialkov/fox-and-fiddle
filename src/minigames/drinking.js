@@ -130,6 +130,16 @@ export class Drinking extends MiniGame {
     return this.seq(sec, (e) => this.sal.root.rotation.set(0, from + d * e, 0));
   }
 
+  /** Wait until Sal's hand has actually arrived at the grab point (frame-rate independent). */
+  async salHandAt(target, maxSec = 2) {
+    const t0 = performance.now();
+    while (!this.done && performance.now() - t0 < maxSec * 1000) {
+      this.sal.root.updateMatrixWorld(true);
+      if (this.sal.arms[1].hand.getWorldPosition(new THREE.Vector3()).distanceTo(target) < 0.025) return;
+      await this.seq(0.04, () => {});
+    }
+  }
+
   seq(sec, fn) {
     return new Promise((r) => { const t0 = performance.now(); const step = () => { const k = Math.min(1, (performance.now() - t0) / (sec * 1000)); fn(k * k * (3 - 2 * k), k); if (k < 1 && !this.done) requestAnimationFrame(step); else r(); }; step(); });
   }
@@ -145,7 +155,8 @@ export class Drinking extends MiniGame {
     sal.headTarget = glass.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.08, 0));
     await this.salTurn(this.salBarYaw, 0.4);
     sal.reachR = 1;
-    await this.seq(0.45, () => {});
+    await this.seq(0.3, () => {});
+    await this.salHandAt(this.salGrab);
     // take hold: remember where the glass sits relative to his hand, in his own facing frame
     const hw = hand.getWorldPosition(new THREE.Vector3());
     const inv = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -sal.root.rotation.y);
@@ -162,7 +173,8 @@ export class Drinking extends MiniGame {
     sal.headTarget = this.salSpot.clone().add(new THREE.Vector3(0, 0.08, 0));
     await this.salTurn(this.salBarYaw, 0.4);
     sal.reachR = 1;
-    await this.seq(0.45, () => {});
+    await this.seq(0.3, () => {});
+    await this.salHandAt(this.salGrab);
     // let go: settle the glass flat on the bar where it started
     this.salHold = null;
     const p1 = glass.position.clone(), q1 = glass.quaternion.clone();
