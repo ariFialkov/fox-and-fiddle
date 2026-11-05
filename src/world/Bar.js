@@ -22,6 +22,8 @@ export class Bar {
     this.patrons = [];
     this.stations = [];
     this.lights = [];
+    this.catalog = {};     // asset id -> [instance -> [objects]] (read by the asset-catalog studio)
+    this._cat = [];
     this.group = new THREE.Group();
     scene.add(this.group);
     this.mats = {
@@ -57,27 +59,48 @@ export class Bar {
   }
   addCollider(x, z, w, d) { this.colliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 }); }
 
+  // ---- asset catalog bookkeeping ----
+  // Everything added to the bar between catBegin(id) and catEnd() is filed under that asset id, so
+  // the asset-catalog render studio can photograph and measure each piece on its own. Nested
+  // records are not double counted. Has no effect on the game.
+  catBegin(id) { this._cat.push({ id, start: this.group.children.length, taken: new Set() }); }
+  catEnd() {
+    const c = this._cat.pop();
+    const objs = this.group.children.slice(c.start).filter((o) => !c.taken.has(o));
+    (this.catalog[c.id] ||= []).push(objs);
+    for (const outer of this._cat) for (const o of objs) outer.taken.add(o);
+    return objs;
+  }
+
   build() {
     const { mats: M } = this;
     const W = ROOM.maxX - ROOM.minX, D = ROOM.maxZ - ROOM.minZ, H = ROOM.height;
-    // floor + ceiling
+    // floor
+    this.catBegin('floor');
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), M.floor);
     floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; this.group.add(floor);
+    this.catEnd();
+    // ceiling + beams
+    this.catBegin('ceiling');
     const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), M.ceiling);
     ceil.rotation.x = Math.PI / 2; ceil.position.y = H; this.group.add(ceil);
     for (let i = -3; i <= 3; i++) this.box(0.18, 0.22, D, M.darkWood, i * 2.3, H - 0.11, 0, { shadow: false });
-    // walls (brick north/east, plaster south/west with wainscot)
-    const wallN = this.box(W, H, 0.2, M.brick, 0, H / 2, ROOM.minZ - 0.1, { shadow: false });
-    const wallS = this.box(W, H, 0.2, M.plaster, 0, H / 2, ROOM.maxZ + 0.1, { shadow: false });
+    this.catEnd();
+    // brick walls (north, east) with skirting
+    this.catBegin('wallBrick');
+    this.box(W, H, 0.2, M.brick, 0, H / 2, ROOM.minZ - 0.1, { shadow: false });
     const wallE = this.box(0.2, H, D, M.brick, ROOM.maxX + 0.1, H / 2, 0, { shadow: false });
-    const wallW = this.box(0.2, H, D, M.plaster, ROOM.minX - 0.1, H / 2, 0, { shadow: false });
     wallE.material = M.brick.clone(); wallE.material.map = T.brick([4, 2]);
-    // wainscot on plaster walls
-    this.box(W, 1.0, 0.06, M.darkWood, 0, 0.5, ROOM.maxZ - 0.03, { shadow: false });
-    this.box(0.06, 1.0, D, M.darkWood, ROOM.minX + 0.03, 0.5, 0, { shadow: false });
-    // skirting
     this.box(W, 0.12, 0.05, M.black, 0, 0.06, ROOM.minZ + 0.025, { shadow: false });
     this.box(0.05, 0.12, D, M.black, ROOM.maxX - 0.025, 0.06, 0, { shadow: false });
+    this.catEnd();
+    // plaster walls (south, west) with wood wainscot
+    this.catBegin('wallPlaster');
+    this.box(W, H, 0.2, M.plaster, 0, H / 2, ROOM.maxZ + 0.1, { shadow: false });
+    this.box(0.2, H, D, M.plaster, ROOM.minX - 0.1, H / 2, 0, { shadow: false });
+    this.box(W, 1.0, 0.06, M.darkWood, 0, 0.5, ROOM.maxZ - 0.03, { shadow: false });
+    this.box(0.06, 1.0, D, M.darkWood, ROOM.minX + 0.03, 0.5, 0, { shadow: false });
+    this.catEnd();
 
     this.buildEntrance();
     this.buildBar();
@@ -94,18 +117,25 @@ export class Bar {
   buildEntrance() {
     const { mats: M } = this;
     // door in south wall at x=-5
+    this.catBegin('door');
     const door = this.box(1.0, 2.2, 0.08, M.darkWood, -5, 1.1, ROOM.maxZ - 0.06, { shadow: false });
     door.material = M.darkWood.clone();
     this.box(0.06, 2.3, 0.14, M.black, -5.55, 1.15, ROOM.maxZ - 0.06, { shadow: false });
     this.box(0.06, 2.3, 0.14, M.black, -4.45, 1.15, ROOM.maxZ - 0.06, { shadow: false });
     this.box(1.2, 0.08, 0.14, M.black, -5, 2.26, ROOM.maxZ - 0.06, { shadow: false });
     const knob = this.cyl(0.03, 0.03, 0.06, M.brass, -4.65, 1.05, ROOM.maxZ - 0.12, 8); knob.rotation.x = Math.PI / 2;
+    this.catEnd();
     // small window with OPEN sign
+    this.catBegin('window');
     const win = this.box(1.4, 0.9, 0.05, new THREE.MeshStandardMaterial({ color: 0x0a0d1a, roughness: 0.2, metalness: 0.4 }), -2.4, 2.0, ROOM.maxZ - 0.03, { shadow: false });
     win.material.emissive = new THREE.Color(0x101830);
     const open = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.35), new THREE.MeshBasicMaterial({ map: T.neonText('OPEN', '#4fd9ff', 512, 160, 'bold 110px Georgia'), transparent: true }));
+    this.catBegin('openSign');
     open.position.set(-2.4, 2.0, ROOM.maxZ - 0.07); open.rotation.y = Math.PI; this.group.add(open);
+    this.catEnd();
+    this.catEnd();
     // coat rack by the door
+    this.catBegin('coatRack');
     const rack = new THREE.Group(); rack.position.set(-6.6, 0, 4.7); this.group.add(rack);
     this.cyl(0.03, 0.03, 1.8, M.brass, 0, 0.9, 0, 8, rack);
     this.cyl(0.22, 0.26, 0.04, M.darkWood, 0, 0.02, 0, 12, rack);
@@ -113,33 +143,46 @@ export class Bar {
       const hook = this.cyl(0.015, 0.015, 0.22, M.brass, 0, 1.7, 0, 6, rack);
       hook.rotation.z = Math.PI / 2; hook.rotation.y = (i * Math.PI) / 2; hook.position.set(Math.cos(i * Math.PI / 2) * 0.11, 1.7, Math.sin(i * Math.PI / 2) * 0.11);
     }
+    this.catEnd();
     this.coatHook = new THREE.Vector3(-6.6 + 0.2, 1.7, 4.7);
     this.addCollider(-6.6, 4.7, 0.5, 0.5);
     // a hanging coat already there
+    this.catBegin('coat');
     const coat = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.5, 4, 8), new THREE.MeshStandardMaterial({ color: 0x2a2f3a, roughness: 0.95 }));
     coat.position.set(-6.6, 1.35, 4.9); coat.scale.set(1.3, 1, 0.6); coat.castShadow = true; this.group.add(coat);
+    this.catEnd();
     // the player's coat (used by the intro), starts hidden
+    this.catBegin('playerCoat');
     this.playerCoat = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.42, 4, 8), new THREE.MeshStandardMaterial({ color: 0x3a2414, roughness: 0.95 }));
     this.playerCoat.scale.set(1.3, 1, 0.6); this.playerCoat.castShadow = true; this.playerCoat.visible = false;
     this.group.add(this.playerCoat);
+    this.catEnd();
     // welcome mat
+    this.catBegin('doormat');
     this.box(1.2, 0.02, 0.7, new THREE.MeshStandardMaterial({ color: 0x4a2a1a, roughness: 1 }), -5, 0.01, 4.9, { shadow: false });
+    this.catEnd();
   }
 
   buildBar() {
     const { mats: M } = this;
     const z = -4.25, x0 = -4.5, x1 = 3.5, len = x1 - x0, cx = (x0 + x1) / 2;
     // counter body + top + brass rail
+    this.catBegin('barCounter');
     this.box(len, 1.05, 0.62, M.darkWood, cx, 0.525, z, { collide: true });
     this.box(len + 0.1, 0.06, 0.74, M.wood, cx, 1.08, z);
     const rail = this.cyl(0.02, 0.02, len, M.brass, cx, 0.25, z + 0.42, 8); rail.rotation.z = Math.PI / 2;
     for (let x = x0 + 0.5; x < x1; x += 2) this.cyl(0.015, 0.015, 0.25, M.brass, x, 0.13, z + 0.4, 6);
+    this.box(0.62, 0.05, 0.62, M.wood, x1 + 0.31, 1.08, z); // bar flap at the bartender's end
+    this.catEnd();
     // beer taps
     for (let i = 0; i < 4; i++) {
+      this.catBegin('beerTap');
       this.cyl(0.03, 0.035, 0.25, M.metal, -1.6 + i * 0.22, 1.23, z - 0.1, 10);
       this.cyl(0.02, 0.02, 0.14, i % 2 ? M.darkWood : M.brass, -1.6 + i * 0.22, 1.42, z - 0.1, 8);
+      this.catEnd();
     }
     // back bar: counter, shelves, mirror, bottles
+    this.catBegin('backBar');
     this.box(len, 0.95, 0.5, M.darkWood, cx, 0.475, ROOM.minZ + 0.35, { collide: true });
     this.box(len, 0.04, 0.55, M.wood, cx, 0.97, ROOM.minZ + 0.35);
     const mirror = new THREE.Mesh(new THREE.PlaneGeometry(len - 0.4, 1.3), new THREE.MeshStandardMaterial({ color: 0x8a9aa8, metalness: 0.9, roughness: 0.15 }));
@@ -149,6 +192,7 @@ export class Bar {
       this.box(len - 0.4, 0.03, 0.28, M.wood, cx, y, ROOM.minZ + 0.17);
       for (let x = x0 + 0.35; x < x1 - 0.3; x += 0.19) this.bottle(x + (s % 2) * 0.07, y + 0.015, ROOM.minZ + 0.17, s);
     }
+    this.catEnd();
     // stools
     this.stoolX = [];
     for (let x = x0 + 0.5; x <= x1 - 0.5; x += 0.8) { this.stool(x, z + 0.85); this.stoolX.push(x); }
@@ -157,17 +201,17 @@ export class Bar {
     for (let i = 0; i < 6; i++) this.barGlasses.push(this.glass(x0 + 1 + i * 1.3, 1.11, z + 0.15, i % 2 === 0));
     // bar top position for drinking contest glasses
     this.barTopY = 1.11; this.barZ = z;
-    // bartender area bar flap at the right end
-    this.box(0.62, 0.05, 0.62, M.wood, x1 + 0.31, 1.08, z);
   }
 
   stool(x, z) {
     const { mats: M } = this;
+    this.catBegin('barStool');
     const seat = this.cyl(0.18, 0.18, 0.06, M.leather, x, 0.72, z, 14);
     this.cyl(0.025, 0.025, 0.7, M.metal, x, 0.35, z, 8);
     this.cyl(0.17, 0.2, 0.03, M.metal, x, 0.015, z, 14);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.012, 6, 16), M.metal);
     ring.position.set(x, 0.25, z); ring.rotation.x = Math.PI / 2; this.group.add(ring);
+    this.catEnd();
     this.addCollider(x, z, 0.4, 0.4);
     return seat;
   }
@@ -182,7 +226,9 @@ export class Bar {
     const lbl = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.041, 0.08, 10, 1, true), new THREE.MeshStandardMaterial({ color: [0xeeeeee, 0xd8b45a, 0x222222][kind % 3], roughness: 0.8 }));
     lbl.position.y = 0.11;
     g.add(body, neck, cap, lbl);
+    this.catBegin('bottle');
     this.group.add(g);
+    this.catEnd();
     return g;
   }
 
@@ -210,7 +256,10 @@ export class Bar {
       const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, h * 1.3, 6), new THREE.MeshStandardMaterial({ color: 0xd62828 }));
       straw.position.set(r * 0.4, h * 0.65, 0); straw.rotation.z = 0.25; g.add(straw);
     }
+    const tracked = group === this.group;
+    if (tracked) this.catBegin(pint ? 'pintGlass' : 'rocksGlass');
     group.add(g);
+    if (tracked) this.catEnd();
     return g;
   }
   /** Scale a glass's liquid down to `k` of its original fill. */
@@ -223,7 +272,9 @@ export class Bar {
   buildPoolTable() {
     const { mats: M } = this;
     const cx = 4.3, cz = 1.2, L = 2.3, Wd = 1.15, y = 0.8;
+    this.catBegin('poolTable');
     const g = new THREE.Group(); g.position.set(cx, 0, cz); this.group.add(g);
+    this.catEnd();
     this.pool = { group: g, cx, cz, L, W: Wd, y };
     this.box(L + 0.3, 0.16, Wd + 0.3, M.darkWood, 0, y - 0.08, 0, { group: g });
     const bed = this.box(L, 0.02, Wd, M.felt, 0, y + 0.01, 0, { group: g });
@@ -247,7 +298,7 @@ export class Bar {
     for (const [lx, lz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(0.18, y - 0.16, 0.18, M.darkWood, lx * (L / 2 - 0.1), (y - 0.16) / 2, lz * (Wd / 2 - 0.05), { group: g });
     this.addCollider(cx, cz, L + 0.6, Wd + 0.6);
     // a few balls on the table while nobody is betting on it
-    this.poolDecor = new THREE.Group(); g.add(this.poolDecor);
+    this.poolDecor = new THREE.Group(); this.poolDecor.name = 'poolDecor'; g.add(this.poolDecor);
     this.poolBalls = [];
     const ballGeo = new THREE.SphereGeometry(0.0286, 14, 10);
     [[0xf7f3e8, -0.6, 0.1], [0xf2c200, 0.3, -0.2], [0xd62828, 0.5, 0.25], [0x1d4fd8, -0.1, 0.3], [0x111111, 0.7, -0.05], [0x1b7a3f, 0.05, -0.4]].forEach(([c, u, v]) => {
@@ -256,7 +307,9 @@ export class Bar {
       this.poolDecor.add(m); this.poolBalls.push(m);
     });
     // cue rack on the east wall
+    this.catBegin('cueRack');
     for (let i = 0; i < 4; i++) { const c = this.cyl(0.008, 0.016, 1.45, M.wood, ROOM.maxX - 0.08, 1.0, 1.0 + i * 0.18, 6); c.castShadow = false; }
+    this.catEnd();
     this.stations.push({
       id: 'billiards', gameId: 'billiards', label: 'Billiards', blurb: 'Eight-ball against the local shark. Pot your group, then the 8. Loser buys.',
       pos: new THREE.Vector3(cx, 0, cz + 1.55), look: new THREE.Vector3(cx, 0.85, cz), radius: 1.3,
@@ -266,20 +319,26 @@ export class Bar {
   buildDarts() {
     const { mats: M } = this;
     const z = -2.4, y = 1.73, x = ROOM.maxX - 0.05;
+    this.catBegin('dartboard');
     const cab = this.box(0.08, 1.2, 1.1, M.darkWood, x - 0.02, y, z, { shadow: false });
     const board = new THREE.Mesh(new THREE.CylinderGeometry(0.2255, 0.2255, 0.04, 48), new THREE.MeshStandardMaterial({ map: T.dartboard(), roughness: 0.85, transparent: true }));
     // cylinder axis -> world -x (cap faces the room); extra local-Y turn so the 20 sits at the top
     board.rotation.set(0, 0, Math.PI / 2, 'ZYX'); // cap faces -x; spun so the 20 sits at the top
     board.position.set(x - 0.08, y, z);
     this.group.add(board);
+    this.catEnd();
     // scoring radius: texture ring outer edge = 0.47 of the 0.451m texture span
     this.dartboard = { pos: new THREE.Vector3(x - 0.1, y, z), normal: new THREE.Vector3(-1, 0, 0), R: 0.2255 * 0.8, x: x - 0.1 }; // R = double-ring outer edge (texture ring at 0.40 of a 0.451m span)
     // oche (throw line) 2.37m from the board face
+    this.catBegin('oche');
     const oche = this.box(0.04, 0.01, 0.9, new THREE.MeshStandardMaterial({ color: 0xd8d0b0 }), x - 0.1 - 2.37, 0.006, z, { shadow: false });
     oche.receiveShadow = false;
+    this.catEnd();
     // chalk scoreboard
+    this.catBegin('chalkboard');
     const cb = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.5), new THREE.MeshStandardMaterial({ map: T.chalkboard() }));
     cb.position.set(x - 0.001, 1.75, z + 1.1); cb.rotation.y = -Math.PI / 2; this.group.add(cb);
+    this.catEnd();
     this.stations.push({
       id: 'darts', gameId: 'darts', label: 'Darts', blurb: 'Fergus is up for a game: highest total over three darts, or a proper 501 where you have to finish exactly on zero.',
       modes: { key: 'ff.dartsMode', label: 'Game', options: [{ value: 'total', label: 'Highest total' }, { value: '501', label: '501' }] },
@@ -290,7 +349,9 @@ export class Bar {
   buildFoosball() {
     const { mats: M } = this;
     const cx = -4.6, cz = 0.4, L = 1.2, Wd = 0.7, y = 0.9;
+    this.catBegin('foosballTable');
     const g = new THREE.Group(); g.position.set(cx, 0, cz); this.group.add(g);
+    this.catEnd();
     this.foos = { group: g, cx, cz, L, W: Wd, y };
     this.box(L + 0.16, 0.12, Wd + 0.16, M.darkWood, 0, y - 0.19, 0, { group: g });
     const pitch = new THREE.Mesh(new THREE.PlaneGeometry(Wd, L), new THREE.MeshStandardMaterial({ map: T.foosballPitch(), roughness: 0.9 }));
@@ -331,9 +392,11 @@ export class Bar {
     this.tables = [];
     this.chairs = [];
     for (const [x, z] of [[-1.6, 3.2], [1.9, 3.6], [-6.6, -2.4], [6.2, -4.3]]) {
+      this.catBegin('pubTable');
       this.cyl(0.42, 0.42, 0.04, M.wood, x, 0.74, z, 18);
       this.cyl(0.03, 0.03, 0.72, M.metal, x, 0.36, z, 8);
       this.cyl(0.25, 0.3, 0.03, M.metal, x, 0.015, z, 14);
+      this.catEnd();
       this.addCollider(x, z, 0.9, 0.9);
       this.tables.push({ x, z });
       for (let i = 0; i < 3; i++) {
@@ -352,7 +415,9 @@ export class Bar {
 
   chair(x, z, rot) {
     const { mats: M } = this;
+    this.catBegin('chair');
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = -rot + Math.PI / 2; this.group.add(g);
+    this.catEnd();
     this.box(0.4, 0.04, 0.4, M.darkWood, 0, 0.46, 0, { group: g });
     this.box(0.4, 0.45, 0.04, M.darkWood, 0, 0.7, -0.18, { group: g });
     for (const [lx, lz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(0.04, 0.46, 0.04, M.darkWood, lx * 0.17, 0.23, lz * 0.17, { group: g, shadow: false });
@@ -362,9 +427,12 @@ export class Bar {
   buildJukebox() {
     const { mats: M } = this;
     const x = 7.15, z = 4.75;
+    this.catBegin('jukebox');
     const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = -Math.PI * 0.75; this.group.add(g);
+    this.catEnd();
     this.box(0.9, 1.5, 0.6, new THREE.MeshStandardMaterial({ color: 0x5a1a1a, roughness: 0.5 }), 0, 0.75, 0, { group: g });
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.6, 16, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0x5a1a1a, roughness: 0.5 }));
+    // half-cylinder arch: start the sweep at a quarter turn so, once laid on its side, the half that shows is the top
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.6, 16, 1, false, Math.PI / 2, Math.PI), new THREE.MeshStandardMaterial({ color: 0x5a1a1a, roughness: 0.5 }));
     top.rotation.set(Math.PI / 2, 0, Math.PI / 2); top.rotation.z = 0; top.position.y = 1.5; top.rotation.x = Math.PI / 2; g.add(top);
     const glow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.05), new THREE.MeshStandardMaterial({ color: 0xffd080, emissive: 0xff9040, emissiveIntensity: 1.2 }));
     glow.position.set(0, 1.05, 0.31); g.add(glow);
@@ -379,38 +447,50 @@ export class Bar {
     const { mats: M } = this;
     // neon sign above the back bar
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.05), new THREE.MeshBasicMaterial({ map: T.neonText('Fox & Fiddle'), transparent: true }));
+    this.catBegin('neonSign');
     sign.position.set(-0.5, 2.85, ROOM.minZ + 0.06); this.group.add(sign);
+    this.catEnd();
     this.neon = sign;
     // posters
     const posters = [
-      [T.poster('LIVE MUSIC', 'every Friday, the Lonesome Pines'), -7.2, 1.9, ROOM.minZ + 0.12, 0],
-      [T.poster('FOX & FIDDLE', 'est. 1974 · cold beer · warm welcome', '#2a3a5a'), 2.5, 1.9, ROOM.maxZ - 0.12, Math.PI],
-      [T.poster('NO FIGHTING', '(we mean it, Mick)', '#3a3a3a'), ROOM.maxX - 0.12, 1.9, 3.0, -Math.PI / 2],
-      [T.poster('DARTS LEAGUE', 'Tuesdays · sign up at the bar', '#5a3a1a'), ROOM.maxX - 0.12, 1.9, -0.5, -Math.PI / 2],
-      [T.poster('HAPPY HOUR', '5 til 7 · half price regrets', '#1a4a3a'), ROOM.minX + 0.12, 1.9, 2.5, Math.PI / 2],
+      ['posterLiveMusic', T.poster('LIVE MUSIC', 'every Friday, the Lonesome Pines'), -7.2, 1.9, ROOM.minZ + 0.12, 0],
+      ['posterFoxFiddle', T.poster('FOX & FIDDLE', 'est. 1974 · cold beer · warm welcome', '#2a3a5a'), 2.5, 1.9, ROOM.maxZ - 0.12, Math.PI],
+      ['posterNoFighting', T.poster('NO FIGHTING', '(we mean it, Mick)', '#3a3a3a'), ROOM.maxX - 0.12, 1.9, 3.0, -Math.PI / 2],
+      ['posterDartsLeague', T.poster('DARTS LEAGUE', 'Tuesdays · sign up at the bar', '#5a3a1a'), ROOM.maxX - 0.12, 1.9, -0.5, -Math.PI / 2],
+      ['posterHappyHour', T.poster('HAPPY HOUR', '5 til 7 · half price regrets', '#1a4a3a'), ROOM.minX + 0.12, 1.9, 2.5, Math.PI / 2],
     ];
-    for (const [tex, x, y, z, ry] of posters) {
+    for (const [id, tex, x, y, z, ry] of posters) {
+      this.catBegin(id);
       const p = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.9), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
       p.position.set(x, y, z); p.rotation.y = ry; this.group.add(p);
+      this.catEnd();
     }
     // ceiling fan
+    this.catBegin('ceilingFan');
     const fan = new THREE.Group(); fan.position.set(0.5, ROOM.height - 0.35, 1.0); this.group.add(fan);
+    this.catEnd();
     this.cyl(0.04, 0.04, 0.35, M.metal, 0, 0.17, 0, 8, fan);
     for (let i = 0; i < 4; i++) { const b = this.box(0.9, 0.02, 0.14, M.darkWood, 0, 0, 0, { group: fan, shadow: false }); b.position.x = Math.cos(i * Math.PI / 2) * 0.5; b.position.z = Math.sin(i * Math.PI / 2) * 0.5; b.rotation.y = -i * Math.PI / 2; }
     this.fan = fan;
     // TV in the corner
+    this.catBegin('tv');
     const tv = this.box(0.9, 0.55, 0.06, M.black, -7.0, 2.4, ROOM.minZ + 0.5, { shadow: false });
     tv.rotation.y = 0.5;
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.47), new THREE.MeshStandardMaterial({ color: 0x244a6a, emissive: 0x2a6a9a, emissiveIntensity: 0.8 }));
     screen.position.set(-6.98, 2.4, ROOM.minZ + 0.52); screen.rotation.y = 0.5; screen.position.x += Math.sin(0.5) * 0.035; screen.position.z += Math.cos(0.5) * 0.035;
     this.group.add(screen);
+    this.catEnd();
     // pipes along the ceiling
-    for (const z of [-4.6, 4.8]) { const p = this.cyl(0.05, 0.05, 15.6, M.metal, 0, ROOM.height - 0.3, z, 8); p.rotation.z = Math.PI / 2; p.castShadow = false; }
+    for (const z of [-4.6, 4.8]) { this.catBegin('ceilingPipe'); const p = this.cyl(0.05, 0.05, 15.6, M.metal, 0, ROOM.height - 0.3, z, 8); p.rotation.z = Math.PI / 2; p.castShadow = false; this.catEnd(); }
     // a radiator and a plant for good measure
+    this.catBegin('radiator');
     this.box(0.9, 0.6, 0.12, M.metal, -0.5, 0.35, ROOM.maxZ - 0.1, { shadow: false });
+    this.catEnd();
+    this.catBegin('pottedPlant');
     const pot = this.cyl(0.18, 0.14, 0.3, new THREE.MeshStandardMaterial({ color: 0x7a4a2a }), ROOM.minX + 0.4, 0.15, ROOM.maxZ - 0.4, 10);
     const plant = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 7), new THREE.MeshStandardMaterial({ color: 0x2f6a2a, roughness: 1 }));
     plant.position.set(ROOM.minX + 0.4, 0.75, ROOM.maxZ - 0.4); plant.castShadow = true; this.group.add(plant);
+    this.catEnd();
     this.addCollider(ROOM.minX + 0.4, ROOM.maxZ - 0.4, 0.6, 0.6);
   }
 
@@ -419,7 +499,9 @@ export class Bar {
     this.scene.add(new THREE.AmbientLight(0xffb070, low ? 0.45 : 0.32));
     const hemi = new THREE.HemisphereLight(0xffd0a0, 0x1a0e08, low ? 0.5 : 0.42); this.scene.add(hemi);
     const pendant = (x, y, z, color = 0xffb060, intensity = 6, dist = 7, shadow = false) => {
+      this.catBegin('pendantLamp');
       const g = new THREE.Group(); g.position.set(x, y, z); this.group.add(g);
+      this.catEnd();
       const cord = this.cyl(0.006, 0.006, ROOM.height - y, this.mats.black, 0, (ROOM.height - y) / 2, 0, 4, g); cord.castShadow = false;
       const shade = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.2, 14, 1, true), new THREE.MeshStandardMaterial({ color: 0x2a4a3a, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.4 }));
       shade.position.y = 0.05; g.add(shade);
@@ -440,7 +522,9 @@ export class Bar {
     pendant(-3.6, 2.4, 4.0, 0xffb060, 3.5, 6); pendant(5.6, 2.3, 3.6, 0xffb060, 3, 6);
     // wall lamp over the coat rack so the entrance reads
     const sconce = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 2.5, side: THREE.DoubleSide }));
+    this.catBegin('wallSconce');
     sconce.position.set(ROOM.minX + 0.08, 2.2, 4.4); sconce.rotation.y = Math.PI / 2; this.group.add(sconce);
+    this.catEnd();
     const sconceL = new THREE.PointLight(0xffc080, 6, 5, 2); sconceL.position.set(ROOM.minX + 0.35, 2.1, 4.4); this.group.add(sconceL);
     // dartboard spot
     const spot = new THREE.SpotLight(0xfff0d0, low ? 3 : 4.5, 6, 0.7, 0.9, 1.2);

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Every character, prop and texture in Fox and Fiddle, rendered from the game code, with sizes, materials and reskin notes." />
+  <title>Fox &amp; Fiddle asset catalog</title>
+  <link rel="icon" href="images/app-icon.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>Fox <span>&amp;</span> Fiddle</h1>
+      <p class="sub">Asset catalog</p>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+      <input id="q" type="search" placeholder="Search assets, tags, notes…" autocomplete="off" aria-label="Search assets" />
+      <kbd>/</kbd>
+    </div>
+    <div class="sort">
+      <label for="sort">Sort</label>
+      <select id="sort">
+        <option value="relevance">Best match</option>
+        <option value="category">Category</option>
+        <option value="name">Name</option>
+        <option value="size">Size (largest dimension)</option>
+        <option value="height">Height</option>
+        <option value="footprint">Footprint</option>
+        <option value="tris">Triangles</option>
+        <option value="instances">Copies in the bar</option>
+      </select>
+      <button id="dir" class="icon-btn" title="Reverse order" aria-label="Reverse order">↓</button>
+    </div>
+  </header>
+
+  <nav id="cats" class="cats" aria-label="Categories"></nav>
+
+  <section class="meta-bar">
+    <p id="count" aria-live="polite"></p>
+    <p class="conventions" id="conventions"></p>
+    <a id="download" class="link" href="catalog.json" download>Download catalog.json</a>
+  </section>
+
+  <main id="grid" class="grid"></main>
+  <p id="empty" class="empty" hidden>No assets match. Try fewer words, or a different category.</p>
+
+  <div id="detail" class="detail" hidden>
+    <div class="detail-backdrop" data-close></div>
+    <article class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="d-name">
+      <header class="d-head">
+        <div>
+          <p class="d-cat" id="d-cat"></p>
+          <h2 id="d-name"></h2>
+        </div>
+        <div class="d-nav">
+          <button class="icon-btn" id="d-prev" title="Previous (←)" aria-label="Previous asset">‹</button>
+          <button class="icon-btn" id="d-next" title="Next (→)" aria-label="Next asset">›</button>
+          <button class="icon-btn" data-close title="Close (Esc)" aria-label="Close">✕</button>
+        </div>
+      </header>
+      <div class="d-body">
+        <div class="d-media">
+          <div class="d-stage" id="d-stage"><img id="d-img" alt="" /></div>
+          <div class="d-views" id="d-views"></div>
+          <a class="link" id="d-dl" download>Download this image</a>
+        </div>
+        <div class="d-info" id="d-info"></div>
+      </div>
+    </article>
+  </div>
+
+  <footer class="foot">
+    <p>Images and measurements are generated from the game's code (<code>npm run catalog</code>), so they always match what is in the game.</p>
+    <p id="generated"></p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

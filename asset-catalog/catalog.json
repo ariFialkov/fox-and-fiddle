@@ -1,0 +1,8728 @@
+{
+ "title": "Fox and Fiddle asset catalog",
+ "generated": "2026-11-05T06:56:52.928Z",
+ "conventions": {
+  "units": "metres (1 unit = 1 m)",
+  "up": "+Y",
+  "front": "+Z (the side you see in the Front view)",
+  "images": "transparent WebP, rendered from the game code"
+ },
+ "categories": [
+  {
+   "id": "characters",
+   "label": "Characters"
+  },
+  {
+   "id": "weapons",
+   "label": "Weapons & throwables"
+  },
+  {
+   "id": "props",
+   "label": "Props"
+  },
+  {
+   "id": "drinks",
+   "label": "Drinks"
+  },
+  {
+   "id": "equipment",
+   "label": "Game equipment"
+  },
+  {
+   "id": "viewmodels",
+   "label": "First-person"
+  },
+  {
+   "id": "furniture",
+   "label": "Furniture"
+  },
+  {
+   "id": "decor",
+   "label": "Decor & signage"
+  },
+  {
+   "id": "lighting",
+   "label": "Lighting"
+  },
+  {
+   "id": "architecture",
+   "label": "Architecture"
+  },
+  {
+   "id": "textures",
+   "label": "Textures"
+  },
+  {
+   "id": "ui",
+   "label": "Effects & UI"
+  }
+ ],
+ "assets": [
+  {
+   "id": "char-dee",
+   "name": "Dee (bartender)",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Runs the bar. Walks the length of the back bar, serves both glasses in the drinking contest and chats with whoever is at the counter.",
+   "usedIn": [
+    "Behind the bar",
+    "Drinking contest (serves the rounds)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "staff",
+    "female"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-dee-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-dee-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-dee-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.53,
+    "h": 1.797,
+    "d": 0.271
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#b07a4e",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a2414",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#111111",
+    "#b07a4e",
+    "#3a2414"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.108,
+     0.784,
+     0
+    ],
+    "hip.R": [
+     0.108,
+     0.784,
+     0
+    ],
+    "torso": [
+     0,
+     0.764,
+     0
+    ],
+    "shoulder.L": [
+     -0.216,
+     1.274,
+     0
+    ],
+    "shoulder.R": [
+     0.216,
+     1.274,
+     0
+    ],
+    "elbow.L": [
+     -0.172,
+     0.985,
+     -0.029
+    ],
+    "elbow.R": [
+     0.172,
+     0.985,
+     -0.029
+    ],
+    "hand.L": [
+     -0.13,
+     0.7,
+     0.03
+    ],
+    "hand.R": [
+     0.13,
+     0.7,
+     0.03
+    ],
+    "neck": [
+     0,
+     1.529,
+     0
+    ],
+    "head": [
+     0,
+     1.627,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.98,
+   "bodyType": "female build"
+  },
+  {
+   "id": "char-sal",
+   "name": "Sal",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "The bar's most dedicated regular. Sits on the end stool, drinks steadily, and is the opponent in the drinking contest: turns to the bar, picks up his glass, turns back and chugs.",
+   "usedIn": [
+    "Bar, left end stool",
+    "Drinking contest opponent"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "opponent",
+    "seated",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-sal-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-sal-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-sal-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.66,
+    "h": 1.864,
+    "d": 0.33
+   },
+   "tris": 3062,
+   "verts": 1913,
+   "meshes": 15,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b4a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#b07a4e",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b4a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#6b4a2a",
+    "#b07a4e",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.113,
+     0.824,
+     0
+    ],
+    "hip.R": [
+     0.113,
+     0.824,
+     0
+    ],
+    "torso": [
+     0,
+     0.803,
+     0
+    ],
+    "shoulder.L": [
+     -0.278,
+     1.339,
+     0
+    ],
+    "shoulder.R": [
+     0.278,
+     1.339,
+     0
+    ],
+    "elbow.L": [
+     -0.232,
+     1.035,
+     -0.031
+    ],
+    "elbow.R": [
+     0.232,
+     1.035,
+     -0.031
+    ],
+    "hand.L": [
+     -0.188,
+     0.735,
+     0.031
+    ],
+    "hand.R": [
+     0.188,
+     0.735,
+     0.031
+    ],
+    "neck": [
+     0,
+     1.607,
+     0
+    ],
+    "head": [
+     0,
+     1.71,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.03,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-rose",
+   "name": "Rose",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Leans on the jukebox picking songs. The pick-up lines conversation partner; her posture opens up or closes off as the conversation goes well or badly.",
+   "usedIn": [
+    "By the jukebox",
+    "Pick-up lines"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "opponent",
+    "female"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-rose-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-rose-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-rose-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.525,
+    "h": 1.779,
+    "d": 0.268
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#7a3a6b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a1a1a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#7a3a6b",
+    "#f1c9a5",
+    "#8a1a1a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.107,
+     0.776,
+     0
+    ],
+    "hip.R": [
+     0.107,
+     0.776,
+     0
+    ],
+    "torso": [
+     0,
+     0.757,
+     0
+    ],
+    "shoulder.L": [
+     -0.213,
+     1.261,
+     0
+    ],
+    "shoulder.R": [
+     0.213,
+     1.261,
+     0
+    ],
+    "elbow.L": [
+     -0.17,
+     0.975,
+     -0.029
+    ],
+    "elbow.R": [
+     0.17,
+     0.975,
+     -0.029
+    ],
+    "hand.L": [
+     -0.128,
+     0.693,
+     0.029
+    ],
+    "hand.R": [
+     0.128,
+     0.693,
+     0.029
+    ],
+    "neck": [
+     0,
+     1.513,
+     0
+    ],
+    "head": [
+     0,
+     1.61,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.97,
+   "bodyType": "female build"
+  },
+  {
+   "id": "char-mick",
+   "name": "Big Mick",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "The biggest man in the bar. Holds court mid-room with his crew; the bar fight starts one-on-one with him.",
+   "usedIn": [
+    "Mid-room with his crew",
+    "Bar fight opponent"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "opponent",
+    "fighter",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-mick-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-mick-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-mick-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.718,
+    "h": 2.027,
+    "d": 0.358
+   },
+   "tris": 3062,
+   "verts": 1913,
+   "meshes": 15,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#4a4a4a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d9a278",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a1a1a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#4a4a4a",
+    "#d9a278",
+    "#8a1a1a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.123,
+     0.896,
+     0
+    ],
+    "hip.R": [
+     0.123,
+     0.896,
+     0
+    ],
+    "torso": [
+     0,
+     0.874,
+     0
+    ],
+    "shoulder.L": [
+     -0.302,
+     1.456,
+     0
+    ],
+    "shoulder.R": [
+     0.302,
+     1.456,
+     0
+    ],
+    "elbow.L": [
+     -0.252,
+     1.125,
+     -0.033
+    ],
+    "elbow.R": [
+     0.252,
+     1.125,
+     -0.033
+    ],
+    "hand.L": [
+     -0.204,
+     0.8,
+     0.034
+    ],
+    "hand.R": [
+     0.204,
+     0.8,
+     0.034
+    ],
+    "neck": [
+     0,
+     1.747,
+     0
+    ],
+    "head": [
+     0,
+     1.859,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.12,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-tiny",
+   "name": "Tiny",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "One of Mick's crew. May join the bar fight; one of the crew is sometimes the \"bruiser\" who will not go down.",
+   "usedIn": [
+    "Mid-room with Mick",
+    "Bar fight (joins)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "fighter",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-tiny-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-tiny-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-tiny-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.641,
+    "h": 1.81,
+    "d": 0.32
+   },
+   "tris": 3062,
+   "verts": 1913,
+   "meshes": 15,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a2b2b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a1a1a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#8a2b2b",
+    "#f1c9a5",
+    "#8a1a1a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.11,
+     0.8,
+     0
+    ],
+    "hip.R": [
+     0.11,
+     0.8,
+     0
+    ],
+    "torso": [
+     0,
+     0.78,
+     0
+    ],
+    "shoulder.L": [
+     -0.27,
+     1.3,
+     0
+    ],
+    "shoulder.R": [
+     0.27,
+     1.3,
+     0
+    ],
+    "elbow.L": [
+     -0.225,
+     1.005,
+     -0.03
+    ],
+    "elbow.R": [
+     0.225,
+     1.005,
+     -0.03
+    ],
+    "hand.L": [
+     -0.182,
+     0.714,
+     0.03
+    ],
+    "hand.R": [
+     0.182,
+     0.714,
+     0.03
+    ],
+    "neck": [
+     0,
+     1.56,
+     0
+    ],
+    "head": [
+     0,
+     1.66,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-doug",
+   "name": "Doug",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "One of Mick's crew. May join the bar fight.",
+   "usedIn": [
+    "Mid-room with Mick",
+    "Bar fight (joins)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "fighter",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-doug-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-doug-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-doug-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.667,
+    "h": 1.882,
+    "d": 0.333
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2c4a7a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d9a278",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a2414",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#2c4a7a",
+    "#d9a278",
+    "#3a2414",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.114,
+     0.832,
+     0
+    ],
+    "hip.R": [
+     0.114,
+     0.832,
+     0
+    ],
+    "torso": [
+     0,
+     0.811,
+     0
+    ],
+    "shoulder.L": [
+     -0.281,
+     1.352,
+     0
+    ],
+    "shoulder.R": [
+     0.281,
+     1.352,
+     0
+    ],
+    "elbow.L": [
+     -0.234,
+     1.045,
+     -0.031
+    ],
+    "elbow.R": [
+     0.234,
+     1.045,
+     -0.031
+    ],
+    "hand.L": [
+     -0.19,
+     0.743,
+     0.032
+    ],
+    "hand.R": [
+     0.19,
+     0.743,
+     0.032
+    ],
+    "neck": [
+     0,
+     1.622,
+     0
+    ],
+    "head": [
+     0,
+     1.726,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.04,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-sharkey",
+   "name": "Sharkey",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "One of Mick's crew. May join the bar fight.",
+   "usedIn": [
+    "Mid-room with Mick",
+    "Bar fight (joins)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "fighter",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-sharkey-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-sharkey-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-sharkey-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.679,
+    "h": 1.919,
+    "d": 0.339
+   },
+   "tris": 3062,
+   "verts": 1913,
+   "meshes": 15,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3d6b3a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#e8b790",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#c9a23a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#3d6b3a",
+    "#e8b790",
+    "#c9a23a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.117,
+     0.848,
+     0
+    ],
+    "hip.R": [
+     0.117,
+     0.848,
+     0
+    ],
+    "torso": [
+     0,
+     0.827,
+     0
+    ],
+    "shoulder.L": [
+     -0.286,
+     1.378,
+     0
+    ],
+    "shoulder.R": [
+     0.286,
+     1.378,
+     0
+    ],
+    "elbow.L": [
+     -0.239,
+     1.065,
+     -0.031
+    ],
+    "elbow.R": [
+     0.239,
+     1.065,
+     -0.031
+    ],
+    "hand.L": [
+     -0.193,
+     0.757,
+     0.032
+    ],
+    "hand.R": [
+     0.193,
+     0.757,
+     0.032
+    ],
+    "neck": [
+     0,
+     1.654,
+     0
+    ],
+    "head": [
+     0,
+     1.76,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.06,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-earl",
+   "name": "Earl",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular. Wanders between the bar, tables, pool, darts and foosball; joins drinking contests and the occasional brawl.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-earl-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-earl-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-earl-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.622,
+    "h": 1.756,
+    "d": 0.31
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b4a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#e8b790",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a2414",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#6b4a2a",
+    "#e8b790",
+    "#3a2414",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.107,
+     0.776,
+     0
+    ],
+    "hip.R": [
+     0.107,
+     0.776,
+     0
+    ],
+    "torso": [
+     0,
+     0.757,
+     0
+    ],
+    "shoulder.L": [
+     -0.262,
+     1.261,
+     0
+    ],
+    "shoulder.R": [
+     0.262,
+     1.261,
+     0
+    ],
+    "elbow.L": [
+     -0.218,
+     0.975,
+     -0.029
+    ],
+    "elbow.R": [
+     0.218,
+     0.975,
+     -0.029
+    ],
+    "hand.L": [
+     -0.177,
+     0.693,
+     0.029
+    ],
+    "hand.R": [
+     0.177,
+     0.693,
+     0.029
+    ],
+    "neck": [
+     0,
+     1.513,
+     0
+    ],
+    "head": [
+     0,
+     1.61,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.97,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-marge",
+   "name": "Marge",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular. Same activity set as the other regulars.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "female"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-marge-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-marge-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-marge-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.514,
+    "h": 1.742,
+    "d": 0.262
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#9a6a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#b07a4e",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#c9a23a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#9a6a2a",
+    "#b07a4e",
+    "#c9a23a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.104,
+     0.76,
+     0
+    ],
+    "hip.R": [
+     0.104,
+     0.76,
+     0
+    ],
+    "torso": [
+     0,
+     0.741,
+     0
+    ],
+    "shoulder.L": [
+     -0.209,
+     1.235,
+     0
+    ],
+    "shoulder.R": [
+     0.209,
+     1.235,
+     0
+    ],
+    "elbow.L": [
+     -0.166,
+     0.955,
+     -0.028
+    ],
+    "elbow.R": [
+     0.166,
+     0.955,
+     -0.028
+    ],
+    "hand.L": [
+     -0.126,
+     0.678,
+     0.029
+    ],
+    "hand.R": [
+     0.126,
+     0.678,
+     0.029
+    ],
+    "neck": [
+     0,
+     1.482,
+     0
+    ],
+    "head": [
+     0,
+     1.577,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.95,
+   "bodyType": "female build"
+  },
+  {
+   "id": "char-lou",
+   "name": "Lou",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-lou-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-lou-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-lou-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.641,
+    "h": 1.81,
+    "d": 0.32
+   },
+   "tris": 3062,
+   "verts": 1913,
+   "meshes": 15,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a2b2b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a5a3a",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a2414",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#8a2b2b",
+    "#8a5a3a",
+    "#3a2414",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.11,
+     0.8,
+     0
+    ],
+    "hip.R": [
+     0.11,
+     0.8,
+     0
+    ],
+    "torso": [
+     0,
+     0.78,
+     0
+    ],
+    "shoulder.L": [
+     -0.27,
+     1.3,
+     0
+    ],
+    "shoulder.R": [
+     0.27,
+     1.3,
+     0
+    ],
+    "elbow.L": [
+     -0.225,
+     1.005,
+     -0.03
+    ],
+    "elbow.R": [
+     0.225,
+     1.005,
+     -0.03
+    ],
+    "hand.L": [
+     -0.182,
+     0.714,
+     0.03
+    ],
+    "hand.R": [
+     0.182,
+     0.714,
+     0.03
+    ],
+    "neck": [
+     0,
+     1.56,
+     0
+    ],
+    "head": [
+     0,
+     1.66,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-benny",
+   "name": "Benny",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-benny-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-benny-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-benny-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.641,
+    "h": 1.81,
+    "d": 0.32
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3d6b3a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d9a278",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#c9a23a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#3d6b3a",
+    "#d9a278",
+    "#c9a23a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.11,
+     0.8,
+     0
+    ],
+    "hip.R": [
+     0.11,
+     0.8,
+     0
+    ],
+    "torso": [
+     0,
+     0.78,
+     0
+    ],
+    "shoulder.L": [
+     -0.27,
+     1.3,
+     0
+    ],
+    "shoulder.R": [
+     0.27,
+     1.3,
+     0
+    ],
+    "elbow.L": [
+     -0.225,
+     1.005,
+     -0.03
+    ],
+    "elbow.R": [
+     0.225,
+     1.005,
+     -0.03
+    ],
+    "hand.L": [
+     -0.182,
+     0.714,
+     0.03
+    ],
+    "hand.R": [
+     0.182,
+     0.714,
+     0.03
+    ],
+    "neck": [
+     0,
+     1.56,
+     0
+    ],
+    "head": [
+     0,
+     1.66,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-vic",
+   "name": "Vic",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-vic-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-vic-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-vic-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.654,
+    "h": 1.846,
+    "d": 0.326
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#9a6a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b4a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#9a6a2a",
+    "#f1c9a5",
+    "#6b4a2a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.112,
+     0.816,
+     0
+    ],
+    "hip.R": [
+     0.112,
+     0.816,
+     0
+    ],
+    "torso": [
+     0,
+     0.796,
+     0
+    ],
+    "shoulder.L": [
+     -0.275,
+     1.326,
+     0
+    ],
+    "shoulder.R": [
+     0.275,
+     1.326,
+     0
+    ],
+    "elbow.L": [
+     -0.23,
+     1.025,
+     -0.03
+    ],
+    "elbow.R": [
+     0.23,
+     1.025,
+     -0.03
+    ],
+    "hand.L": [
+     -0.186,
+     0.728,
+     0.031
+    ],
+    "hand.R": [
+     0.186,
+     0.728,
+     0.031
+    ],
+    "neck": [
+     0,
+     1.591,
+     0
+    ],
+    "head": [
+     0,
+     1.693,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.02,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-pearl",
+   "name": "Pearl",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "female"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-pearl-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-pearl-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-pearl-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.519,
+    "h": 1.76,
+    "d": 0.265
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2a6b6b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#1a120c",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#2a6b6b",
+    "#f1c9a5",
+    "#1a120c",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.106,
+     0.768,
+     0
+    ],
+    "hip.R": [
+     0.106,
+     0.768,
+     0
+    ],
+    "torso": [
+     0,
+     0.749,
+     0
+    ],
+    "shoulder.L": [
+     -0.211,
+     1.248,
+     0
+    ],
+    "shoulder.R": [
+     0.211,
+     1.248,
+     0
+    ],
+    "elbow.L": [
+     -0.168,
+     0.965,
+     -0.028
+    ],
+    "elbow.R": [
+     0.168,
+     0.965,
+     -0.028
+    ],
+    "hand.L": [
+     -0.127,
+     0.685,
+     0.029
+    ],
+    "hand.R": [
+     0.127,
+     0.685,
+     0.029
+    ],
+    "neck": [
+     0,
+     1.498,
+     0
+    ],
+    "head": [
+     0,
+     1.594,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.96,
+   "bodyType": "female build"
+  },
+  {
+   "id": "char-rudy",
+   "name": "Rudy",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-rudy-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-rudy-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-rudy-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.635,
+    "h": 1.792,
+    "d": 0.317
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#7a3a6b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#1a120c",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#7a3a6b",
+    "#f1c9a5",
+    "#1a120c",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.109,
+     0.792,
+     0
+    ],
+    "hip.R": [
+     0.109,
+     0.792,
+     0
+    ],
+    "torso": [
+     0,
+     0.772,
+     0
+    ],
+    "shoulder.L": [
+     -0.267,
+     1.287,
+     0
+    ],
+    "shoulder.R": [
+     0.267,
+     1.287,
+     0
+    ],
+    "elbow.L": [
+     -0.223,
+     0.995,
+     -0.029
+    ],
+    "elbow.R": [
+     0.223,
+     0.995,
+     -0.029
+    ],
+    "hand.L": [
+     -0.181,
+     0.707,
+     0.03
+    ],
+    "hand.R": [
+     0.181,
+     0.707,
+     0.03
+    ],
+    "neck": [
+     0,
+     1.544,
+     0
+    ],
+    "head": [
+     0,
+     1.643,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.99,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-gus",
+   "name": "Gus",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-gus-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-gus-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-gus-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.641,
+    "h": 1.81,
+    "d": 0.32
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#4a4a4a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#e8b790",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#1a120c",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#4a4a4a",
+    "#e8b790",
+    "#1a120c",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.11,
+     0.8,
+     0
+    ],
+    "hip.R": [
+     0.11,
+     0.8,
+     0
+    ],
+    "torso": [
+     0,
+     0.78,
+     0
+    ],
+    "shoulder.L": [
+     -0.27,
+     1.3,
+     0
+    ],
+    "shoulder.R": [
+     0.27,
+     1.3,
+     0
+    ],
+    "elbow.L": [
+     -0.225,
+     1.005,
+     -0.03
+    ],
+    "elbow.R": [
+     0.225,
+     1.005,
+     -0.03
+    ],
+    "hand.L": [
+     -0.182,
+     0.714,
+     0.03
+    ],
+    "hand.R": [
+     0.182,
+     0.714,
+     0.03
+    ],
+    "neck": [
+     0,
+     1.56,
+     0
+    ],
+    "head": [
+     0,
+     1.66,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-nell",
+   "name": "Nell",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "female"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-nell-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-nell-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-nell-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.508,
+    "h": 1.724,
+    "d": 0.26
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a2b2b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a1a1a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#8a2b2b",
+    "#f1c9a5",
+    "#8a1a1a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.103,
+     0.752,
+     0
+    ],
+    "hip.R": [
+     0.103,
+     0.752,
+     0
+    ],
+    "torso": [
+     0,
+     0.733,
+     0
+    ],
+    "shoulder.L": [
+     -0.207,
+     1.222,
+     0
+    ],
+    "shoulder.R": [
+     0.207,
+     1.222,
+     0
+    ],
+    "elbow.L": [
+     -0.165,
+     0.945,
+     -0.028
+    ],
+    "elbow.R": [
+     0.165,
+     0.945,
+     -0.028
+    ],
+    "hand.L": [
+     -0.124,
+     0.671,
+     0.028
+    ],
+    "hand.R": [
+     0.124,
+     0.671,
+     0.028
+    ],
+    "neck": [
+     0,
+     1.466,
+     0
+    ],
+    "head": [
+     0,
+     1.56,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.94,
+   "bodyType": "female build"
+  },
+  {
+   "id": "char-frank",
+   "name": "Frank",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "Regular.",
+   "usedIn": [
+    "Anywhere (NPC director)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "regular",
+    "male"
+   ],
+   "source": "src/world/Patron.js · Patron",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-frank-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-frank-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-frank-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.66,
+    "h": 1.864,
+    "d": 0.33
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2a6b6b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a5a3a",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b4a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#2a6b6b",
+    "#8a5a3a",
+    "#6b4a2a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.113,
+     0.824,
+     0
+    ],
+    "hip.R": [
+     0.113,
+     0.824,
+     0
+    ],
+    "torso": [
+     0,
+     0.803,
+     0
+    ],
+    "shoulder.L": [
+     -0.278,
+     1.339,
+     0
+    ],
+    "shoulder.R": [
+     0.278,
+     1.339,
+     0
+    ],
+    "elbow.L": [
+     -0.232,
+     1.035,
+     -0.031
+    ],
+    "elbow.R": [
+     0.232,
+     1.035,
+     -0.031
+    ],
+    "hand.L": [
+     -0.188,
+     0.735,
+     0.031
+    ],
+    "hand.R": [
+     0.188,
+     0.735,
+     0.031
+    ],
+    "neck": [
+     0,
+     1.607,
+     0
+    ],
+    "head": [
+     0,
+     1.71,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.03,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-fergus",
+   "name": "Fergus",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "The darts opponent. Throws from beside the oche and answers your score.",
+   "usedIn": [
+    "Darts opponent (only appears during darts)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "opponent",
+    "male"
+   ],
+   "source": "src/minigames/darts.js · Darts.start",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-fergus-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-fergus-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-fergus-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.654,
+    "h": 1.846,
+    "d": 0.326
+   },
+   "tris": 3062,
+   "verts": 1913,
+   "meshes": 15,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3d6b3a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#c9a23a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#3d6b3a",
+    "#f1c9a5",
+    "#c9a23a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.112,
+     0.816,
+     0
+    ],
+    "hip.R": [
+     0.112,
+     0.816,
+     0
+    ],
+    "torso": [
+     0,
+     0.796,
+     0
+    ],
+    "shoulder.L": [
+     -0.275,
+     1.326,
+     0
+    ],
+    "shoulder.R": [
+     0.275,
+     1.326,
+     0
+    ],
+    "elbow.L": [
+     -0.23,
+     1.025,
+     -0.03
+    ],
+    "elbow.R": [
+     0.23,
+     1.025,
+     -0.03
+    ],
+    "hand.L": [
+     -0.186,
+     0.728,
+     0.031
+    ],
+    "hand.R": [
+     0.186,
+     0.728,
+     0.031
+    ],
+    "neck": [
+     0,
+     1.591,
+     0
+    ],
+    "head": [
+     0,
+     1.693,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.02,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-shark",
+   "name": "Shark",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "The billiards opponent. Walks round the table to his shot, leans in with his cue, strikes, then stands back with the cue upright.",
+   "usedIn": [
+    "Billiards opponent (only appears during billiards)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "opponent",
+    "male"
+   ],
+   "source": "src/minigames/billiards.js · Billiards.start",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-shark-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-shark-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-shark-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.673,
+    "h": 1.9,
+    "d": 0.336
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#151515",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#e8b790",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a2414",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#151515",
+    "#e8b790",
+    "#3a2414",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.116,
+     0.84,
+     0
+    ],
+    "hip.R": [
+     0.116,
+     0.84,
+     0
+    ],
+    "torso": [
+     0,
+     0.819,
+     0
+    ],
+    "shoulder.L": [
+     -0.284,
+     1.365,
+     0
+    ],
+    "shoulder.R": [
+     0.284,
+     1.365,
+     0
+    ],
+    "elbow.L": [
+     -0.236,
+     1.055,
+     -0.031
+    ],
+    "elbow.R": [
+     0.236,
+     1.055,
+     -0.031
+    ],
+    "hand.L": [
+     -0.191,
+     0.75,
+     0.032
+    ],
+    "hand.R": [
+     0.191,
+     0.75,
+     0.032
+    ],
+    "neck": [
+     0,
+     1.638,
+     0
+    ],
+    "head": [
+     0,
+     1.743,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 1.05,
+   "bodyType": "male build"
+  },
+  {
+   "id": "char-nadia",
+   "name": "Nadia",
+   "category": "characters",
+   "categories": [
+    "characters"
+   ],
+   "kind": "character",
+   "description": "The foosball opponent. Stands at the far side of the table working the red rods.",
+   "usedIn": [
+    "Foosball opponent (only appears during foosball)"
+   ],
+   "notes": [
+    "Origin at the feet centre, facing +Z, Y up. Real-world scale (1 unit = 1 m).",
+    "Needs a skeleton with at least the listed joints at roughly the listed positions; every pose and action is driven per joint in code, so keep the pivots where they are or update Patron.js to match.",
+    "Props (glasses, bottles, pool cues, darts) attach to the right hand.",
+    "The mouth width animates with mood (pick-up lines); a separate mouth mesh or blend shape keeps that working."
+   ],
+   "tags": [
+    "opponent",
+    "female"
+   ],
+   "source": "src/minigames/foosball.js · Foosball.start",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/char-nadia-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/char-nadia-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/char-nadia-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.53,
+    "h": 1.797,
+    "d": 0.271
+   },
+   "tris": 2902,
+   "verts": 1814,
+   "meshes": 14,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#23262e",
+     "roughness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d93b2b",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d9a278",
+     "roughness": 0.75
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b4a2a",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.3
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#23262e",
+    "#d93b2b",
+    "#d9a278",
+    "#6b4a2a",
+    "#111111"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "joints": {
+    "hip.L": [
+     -0.108,
+     0.784,
+     0
+    ],
+    "hip.R": [
+     0.108,
+     0.784,
+     0
+    ],
+    "torso": [
+     0,
+     0.764,
+     0
+    ],
+    "shoulder.L": [
+     -0.216,
+     1.274,
+     0
+    ],
+    "shoulder.R": [
+     0.216,
+     1.274,
+     0
+    ],
+    "elbow.L": [
+     -0.172,
+     0.985,
+     -0.029
+    ],
+    "elbow.R": [
+     0.172,
+     0.985,
+     -0.029
+    ],
+    "hand.L": [
+     -0.13,
+     0.7,
+     0.03
+    ],
+    "hand.R": [
+     0.13,
+     0.7,
+     0.03
+    ],
+    "neck": [
+     0,
+     1.529,
+     0
+    ],
+    "head": [
+     0,
+     1.627,
+     0
+    ]
+   },
+   "rig": {
+    "joints": [
+     "root (feet, yaw only)",
+     "body (tilts on knock-out)",
+     "hip.L / hip.R",
+     "torso (waist)",
+     "shoulder.L / shoulder.R",
+     "elbow.L / elbow.R",
+     "hand.L / hand.R (prop socket: right hand)",
+     "neck",
+     "head"
+    ],
+    "poses": [
+     "idle",
+     "sit (bar stool 0.72 m, chair 0.46 m)",
+     "talk",
+     "fight (+ block high / block low)",
+     "lean (over the pool table)",
+     "foos (hands on two rods)",
+     "darts (throwing stance)",
+     "juke (leaning on the jukebox)",
+     "bartend",
+     "flirt (body language driven by a 0..1 mood)"
+    ],
+    "actions": [
+     "walk cycle",
+     "punch (wind-up, snap, recover)",
+     "kick",
+     "hit reaction",
+     "stagger",
+     "block",
+     "drink",
+     "reach (pick up from a surface)",
+     "lift to mouth + head tilt",
+     "laugh",
+     "gesture",
+     "nod",
+     "cheer",
+     "throw dart",
+     "cue strike",
+     "foosball jerk",
+     "slump over the bar",
+     "knock-out fall",
+     "head tracking (look at a point)"
+    ]
+   },
+   "scale": 0.98,
+   "bodyType": "female build"
+  },
+  {
+   "id": "bottle",
+   "name": "Bottle",
+   "category": "props",
+   "categories": [
+    "props",
+    "weapons"
+   ],
+   "kind": "model",
+   "description": "The bar's all-purpose bottle: lines the back-bar shelves, sits on every table, and is the main improvised weapon in the bar fight (grab, throw, or smash over someone).",
+   "usedIn": [
+    "Back-bar shelves",
+    "Tables",
+    "Bar counter",
+    "Bar fight: grab / throw / smash"
+   ],
+   "notes": [
+    "Origin at the base centre, Y up.",
+    "Six glass colours and three label colours are mixed along the shelves; a variant set (or a tintable material) keeps that variety.",
+    "When thrown it spins end over end, so the silhouette should read from any angle.",
+    "Held in the first-person fight anchor and in patrons' right hands."
+   ],
+   "tags": [
+    "bottle",
+    "throwable",
+    "weapon",
+    "glass"
+   ],
+   "source": "src/world/Bar.js · Bar.bottle",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/bottle-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/bottle-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/bottle-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.078,
+    "h": 0.342,
+    "d": 0.082
+   },
+   "tris": 124,
+   "verts": 190,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#1a4a2a",
+     "roughness": 0.15,
+     "metalness": 0.1,
+     "opacity": 0.9,
+     "transmission": 0.3
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#eeeeee",
+     "roughness": 0.8
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#1a4a2a",
+    "#8a8a8a",
+    "#eeeeee"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 124
+  },
+  {
+   "id": "pint-glass",
+   "name": "Pint glass (half-finished)",
+   "category": "props",
+   "categories": [
+    "props"
+   ],
+   "kind": "model",
+   "description": "A pint of lager left on the bar and tables, and the glass the regulars hold while they drink.",
+   "usedIn": [
+    "Bar counter",
+    "Tables",
+    "Patrons' hands"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it."
+   ],
+   "tags": [
+    "glass",
+    "pint",
+    "drink"
+   ],
+   "source": "src/world/Bar.js · Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/pint-glass-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/pint-glass-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/pint-glass-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.078,
+    "h": 0.16,
+    "d": 0.08
+   },
+   "tris": 140,
+   "verts": 206,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d89a2a",
+     "roughness": 0.15,
+     "opacity": 0.92
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#d89a2a"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "rocks-glass",
+   "name": "Rocks glass",
+   "category": "props",
+   "categories": [
+    "props",
+    "weapons"
+   ],
+   "kind": "model",
+   "description": "Short glass with a spirit in it. Sits on the tables and is a throwable in the bar fight (lighter than a bottle).",
+   "usedIn": [
+    "Tables",
+    "Bar fight: grab / throw / smash"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it."
+   ],
+   "tags": [
+    "glass",
+    "throwable",
+    "weapon",
+    "drink"
+   ],
+   "source": "src/world/Bar.js · Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/rocks-glass-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/rocks-glass-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/rocks-glass-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.068,
+    "h": 0.09,
+    "d": 0.07
+   },
+   "tris": 140,
+   "verts": 206,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#a85a1a",
+     "roughness": 0.15,
+     "opacity": 0.92
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#a85a1a"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "pool-cue",
+   "name": "Pool cue",
+   "category": "props",
+   "categories": [
+    "props",
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "Two-piece cue: ash shaft with a blue tip and a dark wrapped butt. Used by you (first person and on the table) and by Shark.",
+   "usedIn": [
+    "Billiards: your cue on the table",
+    "Billiards: carried in first person",
+    "Billiards: Shark's cue"
+   ],
+   "notes": [
+    "Origin at the tip, the stick runs along -Z. The aim, power pull-back and strike all move it along that axis.",
+    "Current length is 1.88 m (longer than a real 1.47 m cue); a regulation cue is fine, the code places it by the tip."
+   ],
+   "tags": [
+    "cue",
+    "billiards",
+    "stick"
+   ],
+   "source": "src/minigames/billiards.js · makeCue",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/pool-cue-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/pool-cue-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/pool-cue-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.029,
+    "h": 0.03,
+    "d": 1.87
+   },
+   "tris": 112,
+   "verts": 180,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#c9a46a",
+     "roughness": 0.5
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a6bb0",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2a1a10",
+     "roughness": 0.6
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#c9a46a",
+    "#3a6bb0",
+    "#2a1a10"
+   ],
+   "pivot": "at the tip"
+  },
+  {
+   "id": "pool-balls",
+   "name": "Pool balls (full set)",
+   "category": "equipment",
+   "categories": [
+    "equipment",
+    "props"
+   ],
+   "kind": "model",
+   "description": "Sixteen balls: cue ball, solids 1 to 7, the 8, and stripes 9 to 15, shown racked. Each ball's texture is generated (number circle on both sides; stripes are a band).",
+   "usedIn": [
+    "Billiards",
+    "A few sit on the pool table between games (plain colours)"
+   ],
+   "notes": [
+    "Radius must stay 28.6 mm (57.2 mm diameter): the physics simulation uses it.",
+    "Balls roll by rotating the mesh, so put the numbers and stripes in a texture (or UV layout) that reads while rolling."
+   ],
+   "tags": [
+    "billiards",
+    "balls",
+    "set"
+   ],
+   "source": "src/minigames/billiards.js · ballTexture",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/pool-balls-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/pool-balls-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/pool-balls-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.292,
+    "h": 0.057,
+    "d": 0.38
+   },
+   "tris": 19456,
+   "verts": 11088,
+   "meshes": 16,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 1"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 9"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 2"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 10"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 8"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 3"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 11"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 4"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 12"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 5"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 13"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 6"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 14"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 15"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "metalness": 0.05,
+     "texture": "Ball 7"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.25,
+     "texture": "Cue ball"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Ball 1",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 9",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 2",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 10",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 8",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 3",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 11",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 4",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 12",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 5",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 13",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 6",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 14",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 15",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Ball 7",
+     "size": "256 x 128"
+    },
+    {
+     "name": "Cue ball",
+     "size": "256 x 128"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "bottom, centre (x), 42 mm (z)"
+  },
+  {
+   "id": "dart",
+   "name": "Dart",
+   "category": "equipment",
+   "categories": [
+    "equipment",
+    "props",
+    "weapons"
+   ],
+   "kind": "model",
+   "description": "Steel-tip dart: needle point, knurled tungsten barrel, nylon shaft with a gold ring, four printed flights. Blue flights are yours, red are Fergus's (shown side by side).",
+   "usedIn": [
+    "Darts (your throws and Fergus's)",
+    "Darts thrown by regulars at the board"
+   ],
+   "notes": [
+    "Origin at the point, the dart points along +Z. It is aimed by pointing +Z along its flight path and spins about that axis, and sticks into the board 8 mm deep.",
+    "About 139 mm long; flights span 35 mm.",
+    "Flights are self-lit slightly so they read with the board light in front of them; a flight texture with team colour is enough."
+   ],
+   "tags": [
+    "darts",
+    "throwable"
+   ],
+   "source": "src/minigames/darts.js · Darts.makeDart",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/dart-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/dart-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/dart-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.085,
+    "h": 0.025,
+    "d": 0.14
+   },
+   "tris": 5912,
+   "verts": 3322,
+   "meshes": 16,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#dedede",
+     "roughness": 0.18,
+     "metalness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8b9097",
+     "roughness": 0.32,
+     "metalness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#141414",
+     "roughness": 0.4,
+     "metalness": 0.2
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#c9a23a",
+     "roughness": 0.3,
+     "metalness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "emissive": "#ffffff",
+     "roughness": 0.55,
+     "texture": "generated"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#dedede",
+     "roughness": 0.18,
+     "metalness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8b9097",
+     "roughness": 0.32,
+     "metalness": 0.95
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#141414",
+     "roughness": 0.4,
+     "metalness": 0.2
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#c9a23a",
+     "roughness": 0.3,
+     "metalness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "emissive": "#ffffff",
+     "roughness": 0.55,
+     "texture": "generated"
+    }
+   ],
+   "textures": [
+    {
+     "name": "generated",
+     "size": "128 x 128"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#dedede",
+    "#8b9097",
+    "#141414",
+    "#c9a23a",
+    "#ffffff"
+   ],
+   "pivot": "at the point (per dart)"
+  },
+  {
+   "id": "coat-hanging",
+   "name": "Coat on the rack",
+   "category": "props",
+   "categories": [
+    "props"
+   ],
+   "kind": "model",
+   "description": "Somebody's coat that has been on the rack all night.",
+   "usedIn": [
+    "Coat rack by the door"
+   ],
+   "notes": [
+    "Hangs from the rack hook at 1.7 m."
+   ],
+   "tags": [
+    "coat",
+    "clothing"
+   ],
+   "source": "src/world/Bar.js · buildEntrance",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/coat-hanging-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/coat-hanging-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/coat-hanging-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.286,
+    "h": 0.72,
+    "d": 0.132
+   },
+   "tris": 272,
+   "verts": 162,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#2a2f3a",
+     "roughness": 0.95
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#2a2f3a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "coat-player",
+   "name": "Your coat",
+   "category": "props",
+   "categories": [
+    "props"
+   ],
+   "kind": "model",
+   "description": "The player's coat. Carried in front of the camera in the opening and hung on the rack.",
+   "usedIn": [
+    "Opening: carried in first person and hung on the rack"
+   ],
+   "notes": [
+    "Moved by its origin (centre) from just below the camera to the hook at 1.7 m, tilting as it goes."
+   ],
+   "tags": [
+    "coat",
+    "clothing",
+    "intro",
+    "player"
+   ],
+   "source": "src/world/Bar.js · buildEntrance + src/engine/Game.js · updateIntro",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/coat-player-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/coat-player-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/coat-player-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.234,
+    "h": 0.6,
+    "d": 0.108
+   },
+   "tris": 0,
+   "verts": 0,
+   "meshes": 0,
+   "materials": [],
+   "textures": [],
+   "lights": [],
+   "palette": [],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "pool-table",
+   "name": "Pool table",
+   "category": "equipment",
+   "categories": [
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "Seven-foot bar table: dark wood frame, green felt bed and cushions, six pockets, four square legs.",
+   "usedIn": [
+    "Billiards",
+    "NPCs shoot pool here"
+   ],
+   "notes": [
+    "Physics constraint: the playing surface (inside the cushions) is 2.30 x 1.15 m and the bed top sits at 0.82 m. Pockets are at the four corners and the middle of each long side (corner mouths 68 mm, side 58 mm). Keep these or update poolPhysics.js.",
+    "Origin at floor level under the table centre; the long axis runs along X.",
+    "The camera gets very close to the felt and the rails when aiming, so they deserve the most texture detail."
+   ],
+   "tags": [
+    "billiards",
+    "table",
+    "felt"
+   ],
+   "source": "src/world/Bar.js · buildPoolTable",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/pool-table-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/pool-table-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/pool-table-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 2.8,
+    "h": 0.88,
+    "d": 1.65
+   },
+   "tris": 1968,
+   "verts": 1782,
+   "meshes": 26,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 1,
+     "texture": "Pool felt"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#151210",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f7f3e8",
+     "roughness": 0.25
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f2c200",
+     "roughness": 0.25
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d62828",
+     "roughness": 0.25
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#1d4fd8",
+     "roughness": 0.25
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.25
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#1b7a3f",
+     "roughness": 0.25
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    },
+    {
+     "name": "Pool felt",
+     "size": "256 x 256",
+     "repeat": "4 x 2"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff",
+    "#151210",
+    "#f7f3e8",
+    "#f2c200",
+    "#d62828",
+    "#1d4fd8",
+    "#111111",
+    "#1b7a3f"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "cue-rack",
+   "name": "Cue rack",
+   "category": "equipment",
+   "categories": [
+    "equipment",
+    "decor"
+   ],
+   "kind": "model",
+   "description": "Four house cues standing against the wall behind the pool table.",
+   "usedIn": [
+    "East wall by the pool table"
+   ],
+   "notes": [
+    "Decorative only; a proper wall rack holding these would improve it."
+   ],
+   "tags": [
+    "billiards",
+    "cues",
+    "wall"
+   ],
+   "source": "src/world/Bar.js · buildPoolTable",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/cue-rack-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/cue-rack-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/cue-rack-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.572,
+    "h": 1.45,
+    "d": 0.028
+   },
+   "tris": 96,
+   "verts": 160,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.6,
+     "texture": "Wood"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Wood",
+     "size": "512 x 512",
+     "repeat": "2 x 1"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "dartboard",
+   "name": "Dartboard and cabinet",
+   "category": "equipment",
+   "categories": [
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "Regulation bristle board (451 mm) with a printed number ring, in a dark wood cabinet panel.",
+   "usedIn": [
+    "Darts",
+    "NPCs throw at it"
+   ],
+   "notes": [
+    "Scoring constraint: the board face is a disc of radius 225.5 mm; the double ring's outer edge is at 80% of it (180 mm) and all other rings scale from there (treble 58 to 63%, outer bull 9.4%, bull 3.7% of 180 mm). 20 at the top, numbers clockwise 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5. Keep the layout exact or scoring stops matching what players see.",
+    "Board centre is 1.73 m off the floor; the face points into the room.",
+    "During darts the board fills most of the screen, so it needs a high-resolution face texture (the current one is 2048 px)."
+   ],
+   "tags": [
+    "darts",
+    "board",
+    "wall"
+   ],
+   "source": "src/world/Bar.js · buildDarts + textures.js · dartboard",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/dartboard-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/dartboard-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/dartboard-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.1,
+    "h": 1.2,
+    "d": 0.12
+   },
+   "tris": 204,
+   "verts": 316,
+   "meshes": 2,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.85,
+     "texture": "Dartboard face"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    },
+    {
+     "name": "Dartboard face",
+     "size": "2048 x 2048"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "oche",
+   "name": "Oche (throw line)",
+   "category": "equipment",
+   "categories": [
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "The cream throw line on the floor, 2.37 m from the board face.",
+   "usedIn": [
+    "Darts"
+   ],
+   "notes": [
+    "Must stay 2.37 m from the board face."
+   ],
+   "tags": [
+    "darts",
+    "floor marker"
+   ],
+   "source": "src/world/Bar.js · buildDarts",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/oche-hero.webp"
+    },
+    {
+     "view": "top",
+     "label": "Top",
+     "file": "images/oche-top.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.04,
+    "h": 0.01,
+    "d": 0.9
+   },
+   "tris": 12,
+   "verts": 24,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#d8d0b0",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#d8d0b0"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "chalkboard",
+   "name": "Chalk scoreboard",
+   "category": "decor",
+   "categories": [
+    "decor",
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "Chalkboard by the dartboard with tonight's games written on it.",
+   "usedIn": [
+    "Wall beside the dartboard"
+   ],
+   "notes": [
+    "A flat textured panel; the text is part of the texture."
+   ],
+   "tags": [
+    "sign",
+    "chalk",
+    "wall"
+   ],
+   "source": "src/world/Bar.js · buildDarts + textures.js · chalkboard",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/chalkboard-front.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/chalkboard-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.7,
+    "h": 0.5,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 1,
+     "texture": "Chalkboard"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Chalkboard",
+     "size": "512 x 384"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "foosball-table",
+   "name": "Foosball table",
+   "category": "equipment",
+   "categories": [
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "Wooden foosball table with a printed pitch, open box sides, two goals, metal legs and eight rods. The bar version shown here uses simple block figures; the playable figures are the next entry.",
+   "usedIn": [
+    "Foosball",
+    "NPCs play here"
+   ],
+   "notes": [
+    "Physics constraint: the pitch is 1.20 x 0.70 m with its surface at 0.77 m; goals are 0.20 m wide in the middle of each end; rod rows are 0.15 m apart at x = -0.525 to +0.525. Keep these or update foosball.js.",
+    "Origin at floor level under the table centre; long axis along X.",
+    "During foosball the camera looks down the length of the table from behind your goal, filling the screen, so the pitch and inner walls need the most detail."
+   ],
+   "tags": [
+    "foosball",
+    "table"
+   ],
+   "source": "src/world/Bar.js · buildFoosball",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/foosball-table-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/foosball-table-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/foosball-table-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.36,
+    "h": 0.9,
+    "d": 1.42
+   },
+   "tris": 842,
+   "verts": 1407,
+   "meshes": 47,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.9,
+     "texture": "Foosball pitch"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#151210",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#bbbbbb",
+     "roughness": 0.3,
+     "metalness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2b5fd9",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d93b2b",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f4efe0",
+     "roughness": 1
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    },
+    {
+     "name": "Foosball pitch",
+     "size": "512 x 1024"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff",
+    "#151210",
+    "#8a8a8a",
+    "#bbbbbb",
+    "#2b5fd9",
+    "#d93b2b",
+    "#f4efe0"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "foosball-rod",
+   "name": "Foosball rod (3 figures)",
+   "category": "equipment",
+   "categories": [
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "A playable rod: steel bar, rubber handle on its owner's side, figures fixed to it. Rods come with 3 (goalie, forwards, defence on one side), 2 or 5 figures.",
+   "usedIn": [
+    "Foosball (8 rods per game)"
+   ],
+   "notes": [
+    "Origin on the rod axis at the table's centre line; Z runs across the table. The rod slides along Z and spins about Z.",
+    "The selected rod's handle is recoloured amber; keep the handle a separate mesh or material."
+   ],
+   "tags": [
+    "foosball",
+    "rod"
+   ],
+   "source": "src/minigames/foosball.js · makeFoosRod",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/foosball-rod-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/foosball-rod-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/foosball-rod-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.027,
+    "h": 0.091,
+    "d": 1.06
+   },
+   "tris": 384,
+   "verts": 449,
+   "meshes": 11,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#bbbbbb",
+     "roughness": 0.3,
+     "metalness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.8
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2b5fd9",
+     "roughness": 0.5
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#bbbbbb",
+    "#111111",
+    "#2b5fd9",
+    "#f1c9a5"
+   ],
+   "pivot": "77 mm up, centre (x), -180 mm (z)"
+  },
+  {
+   "id": "foosball-figure",
+   "name": "Foosball figure",
+   "category": "equipment",
+   "categories": [
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "One figure on a rod, in your blue and Nadia's red (shown side by side).",
+   "usedIn": [
+    "Foosball"
+   ],
+   "notes": [
+    "Origin where the rod passes through the chest; the feet hang 7 cm below it. Kick physics uses that foot length (65 mm from the rod axis).",
+    "Spins full circles on the rod, so it must look right upside down.",
+    "Two team colours: blue (you) and red (opponent)."
+   ],
+   "tags": [
+    "foosball",
+    "figure",
+    "team colours"
+   ],
+   "source": "src/minigames/foosball.js · makeFoosFigure",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/foosball-figure-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/foosball-figure-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/foosball-figure-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.082,
+    "h": 0.088,
+    "d": 0.026
+   },
+   "tris": 208,
+   "verts": 222,
+   "meshes": 6,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#2b5fd9",
+     "roughness": 0.5
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#111111",
+     "roughness": 0.8
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f1c9a5",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d93b2b",
+     "roughness": 0.5
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#2b5fd9",
+    "#111111",
+    "#f1c9a5",
+    "#d93b2b"
+   ],
+   "pivot": "77 mm up, centre (x), centre (z)"
+  },
+  {
+   "id": "fp-fight",
+   "name": "Fight arms and boot",
+   "category": "viewmodels",
+   "categories": [
+    "viewmodels",
+    "weapons"
+   ],
+   "kind": "model",
+   "description": "Your arms in the bar fight: two arms (sleeve to fist) for punching and blocking, and a boot that swings up for kicks. A grabbed bottle or glass is held at an anchor in front of the right hand.",
+   "usedIn": [
+    "Bar fight"
+   ],
+   "notes": [
+    "Camera-local: the camera is at the origin looking down -Z, 72 degree field of view. Each arm hangs from a shoulder pivot (x = +/-0.30, y = -0.32) and bends at an elbow pivot.",
+    "Guard, punch, high block and low block poses rotate those two pivots; keep them as separate bones.",
+    "The boot is normally hidden and only shown during a kick."
+   ],
+   "tags": [
+    "first person",
+    "arms",
+    "fists",
+    "boot",
+    "weapon"
+   ],
+   "source": "src/minigames/barfight.js · makeFightArms",
+   "views": [
+    {
+     "view": "fp",
+     "label": "In game (first person)",
+     "file": "images/fp-fight-fp.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/fp-fight-hero.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/fp-fight-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.72,
+    "h": 0.705,
+    "d": 0.614
+   },
+   "tris": 420,
+   "verts": 430,
+   "meshes": 7,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#6b3a1e",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#e8b790",
+     "roughness": 0.7
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#1a1410",
+     "roughness": 0.9
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#6b3a1e",
+    "#e8b790",
+    "#1a1410"
+   ],
+   "pivot": "top, centre (x), front (z)"
+  },
+  {
+   "id": "fp-drink",
+   "name": "Drinking hand",
+   "category": "viewmodels",
+   "categories": [
+    "viewmodels"
+   ],
+   "kind": "model",
+   "description": "Your right hand and sleeve in the drinking contest. Reaches down to the bar, takes the glass, brings it to your mouth and tips it back.",
+   "usedIn": [
+    "Drinking contest"
+   ],
+   "notes": [
+    "Camera-local; origin at the palm centre. The glass is parented to the hand while drinking, sitting 3 cm below the palm.",
+    "Rotates about X up to about 65 degrees to tip the glass toward the mouth."
+   ],
+   "tags": [
+    "first person",
+    "hand"
+   ],
+   "source": "src/minigames/drinking.js · makeDrinkHand",
+   "views": [
+    {
+     "view": "fp",
+     "label": "In game (first person)",
+     "file": "images/fp-drink-fp.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/fp-drink-hero.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/fp-drink-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.12,
+    "h": 0.273,
+    "d": 0.496
+   },
+   "tris": 184,
+   "verts": 175,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#e8b790",
+     "roughness": 0.7
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b3a1e",
+     "roughness": 0.9
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#e8b790",
+    "#6b3a1e"
+   ],
+   "pivot": "top, left (x), front (z)"
+  },
+  {
+   "id": "fp-cue",
+   "name": "Cue in hand and chalk",
+   "category": "viewmodels",
+   "categories": [
+    "viewmodels",
+    "equipment"
+   ],
+   "kind": "model",
+   "description": "While it is not your shot: your cue held low in the right hand, tip up and away. The left hand holds a cube of blue chalk and rubs the tip when you chalk your cue.",
+   "usedIn": [
+    "Billiards (while waiting and chalking)"
+   ],
+   "notes": [
+    "Camera-local. The chalking animation swings the cue tip up in front of the camera and moves the chalk hand to it.",
+    "The chalk hand is shown here beside the cue; in game it only appears while chalking."
+   ],
+   "tags": [
+    "first person",
+    "hand",
+    "cue",
+    "chalk"
+   ],
+   "source": "src/minigames/billiards.js · makeCueViewmodel",
+   "views": [
+    {
+     "view": "fp",
+     "label": "In game (first person)",
+     "file": "images/fp-cue-fp.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/fp-cue-hero.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/fp-cue-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.132,
+    "h": 1.768,
+    "d": 0.513
+   },
+   "tris": 348,
+   "verts": 366,
+   "meshes": 6,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#c9a46a",
+     "roughness": 0.5
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a6bb0",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2a1a10",
+     "roughness": 0.6
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#e8b790",
+     "roughness": 0.7
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2b6cc4",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#c9a46a",
+    "#3a6bb0",
+    "#2a1a10",
+    "#e8b790",
+    "#2b6cc4"
+   ],
+   "pivot": "642 mm up, -466 mm (x), front (z)"
+  },
+  {
+   "id": "bar-counter",
+   "name": "Bar counter",
+   "category": "furniture",
+   "categories": [
+    "furniture"
+   ],
+   "kind": "model",
+   "description": "The main bar: dark wood body, lighter top with an overhang, brass foot rail on posts, and a lift-up flap at the bartender's end.",
+   "usedIn": [
+    "North side of the room"
+   ],
+   "notes": [
+    "Gameplay constraint: the top surface is at 1.11 m. Drinking-contest glasses and the regulars' pints are placed at that height.",
+    "The front face is what players see most; seated patrons sit 0.85 m in front of it.",
+    "About 8.6 m long, built as long boxes; tiling textures or modular sections both work."
+   ],
+   "tags": [
+    "bar",
+    "counter",
+    "brass"
+   ],
+   "source": "src/world/Bar.js · buildBar",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/bar-counter-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/bar-counter-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/bar-counter-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 8.67,
+    "h": 1.11,
+    "d": 0.81
+   },
+   "tris": 164,
+   "verts": 284,
+   "meshes": 8,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.6,
+     "texture": "Wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#b08d3a",
+     "roughness": 0.3,
+     "metalness": 0.9
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    },
+    {
+     "name": "Wood",
+     "size": "512 x 512",
+     "repeat": "2 x 1"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff",
+    "#b08d3a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "beer-tap",
+   "name": "Beer tap",
+   "category": "furniture",
+   "categories": [
+    "furniture",
+    "props"
+   ],
+   "kind": "model",
+   "description": "Chrome tap with a handle; four sit along the middle of the bar. Handles alternate brass and wood.",
+   "usedIn": [
+    "Bar counter (x4)"
+   ],
+   "notes": [
+    "Static."
+   ],
+   "tags": [
+    "bar",
+    "tap",
+    "chrome"
+   ],
+   "source": "src/world/Bar.js · buildBar",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/beer-tap-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/beer-tap-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/beer-tap-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.067,
+    "h": 0.385,
+    "d": 0.07
+   },
+   "tris": 72,
+   "verts": 116,
+   "meshes": 2,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#b08d3a",
+     "roughness": 0.3,
+     "metalness": 0.9
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#8a8a8a",
+    "#b08d3a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 4
+  },
+  {
+   "id": "back-bar",
+   "name": "Back bar",
+   "category": "furniture",
+   "categories": [
+    "furniture"
+   ],
+   "kind": "model",
+   "description": "Low back counter, a long mirror, and three wooden shelves (the bottles on them are the Bottle asset).",
+   "usedIn": [
+    "Behind the bar (north wall)"
+   ],
+   "notes": [
+    "Bottles are placed every 19 cm along each shelf at 1.25, 1.67 and 2.09 m.",
+    "The neon \"Fox & Fiddle\" sign hangs above it."
+   ],
+   "tags": [
+    "bar",
+    "shelves",
+    "mirror"
+   ],
+   "source": "src/world/Bar.js · buildBar",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/back-bar-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/back-bar-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/back-bar-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 8,
+    "h": 2.55,
+    "d": 0.605
+   },
+   "tris": 62,
+   "verts": 124,
+   "meshes": 6,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.6,
+     "texture": "Wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a9aa8",
+     "roughness": 0.15,
+     "metalness": 0.9
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    },
+    {
+     "name": "Wood",
+     "size": "512 x 512",
+     "repeat": "2 x 1"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff",
+    "#8a9aa8"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "bar-stool",
+   "name": "Bar stool",
+   "category": "furniture",
+   "categories": [
+    "furniture"
+   ],
+   "kind": "model",
+   "description": "Round red leather seat on a chrome pole with a foot ring and a round base.",
+   "usedIn": [
+    "Along the bar (x10)"
+   ],
+   "notes": [
+    "Gameplay constraint: seat height 0.72 m (the seated pose is fitted to it), seat radius 0.18 m.",
+    "Origin at the floor under the pole."
+   ],
+   "tags": [
+    "stool",
+    "seat",
+    "leather",
+    "chrome"
+   ],
+   "source": "src/world/Bar.js · Bar.stool",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/bar-stool-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/bar-stool-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/bar-stool-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.39,
+    "h": 0.75,
+    "d": 0.4
+   },
+   "tris": 336,
+   "verts": 347,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#5a1f1a",
+     "roughness": 0.7
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#5a1f1a",
+    "#8a8a8a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 9
+  },
+  {
+   "id": "pub-table",
+   "name": "Pub table",
+   "category": "furniture",
+   "categories": [
+    "furniture"
+   ],
+   "kind": "model",
+   "description": "Round wooden table top on a metal pedestal.",
+   "usedIn": [
+    "Four around the room"
+   ],
+   "notes": [
+    "Top surface at 0.76 m (glasses and bottles are placed on it).",
+    "Three chairs sit around each table at 0.7 m."
+   ],
+   "tags": [
+    "table"
+   ],
+   "source": "src/world/Bar.js · buildTables",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/pub-table-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/pub-table-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/pub-table-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.827,
+    "h": 0.76,
+    "d": 0.84
+   },
+   "tris": 160,
+   "verts": 252,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.6,
+     "texture": "Wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    }
+   ],
+   "textures": [
+    {
+     "name": "Wood",
+     "size": "512 x 512",
+     "repeat": "2 x 1"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff",
+    "#8a8a8a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 4
+  },
+  {
+   "id": "chair",
+   "name": "Chair",
+   "category": "furniture",
+   "categories": [
+    "furniture"
+   ],
+   "kind": "model",
+   "description": "Simple wooden chair.",
+   "usedIn": [
+    "Around the tables (x12)"
+   ],
+   "notes": [
+    "Gameplay constraint: seat height 0.46 m (the seated pose is fitted to it).",
+    "Origin at the floor centre; the seat faces +Z (backrest at -Z)."
+   ],
+   "tags": [
+    "chair",
+    "seat"
+   ],
+   "source": "src/world/Bar.js · Bar.chair",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/chair-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/chair-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/chair-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.4,
+    "h": 0.925,
+    "d": 0.4
+   },
+   "tris": 72,
+   "verts": 144,
+   "meshes": 6,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 12
+  },
+  {
+   "id": "coat-rack",
+   "name": "Coat rack",
+   "category": "furniture",
+   "categories": [
+    "furniture"
+   ],
+   "kind": "model",
+   "description": "Brass pole with four hooks on a round wooden base.",
+   "usedIn": [
+    "By the entrance"
+   ],
+   "notes": [
+    "Hooks at 1.7 m: the opening animation hangs your coat there."
+   ],
+   "tags": [
+    "coat rack",
+    "brass",
+    "entrance"
+   ],
+   "source": "src/world/Bar.js · buildEntrance",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/coat-rack-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/coat-rack-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/coat-rack-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.52,
+    "h": 1.8,
+    "d": 0.52
+   },
+   "tris": 176,
+   "verts": 288,
+   "meshes": 6,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#b08d3a",
+     "roughness": 0.3,
+     "metalness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#b08d3a",
+    "#ffffff"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "jukebox",
+   "name": "Jukebox",
+   "category": "furniture",
+   "categories": [
+    "furniture",
+    "lighting",
+    "decor"
+   ],
+   "kind": "model",
+   "description": "Arched red cabinet with a glowing amber panel and a pink neon tube round the arch. Lights up its corner of the room.",
+   "usedIn": [
+    "South-east corner",
+    "Rose leans on it"
+   ],
+   "notes": [
+    "Origin at the floor centre; the front faces +Z.",
+    "The glow panel and neon tube are self-lit (emissive) and there is a warm point light 0.8 m in front of the panel.",
+    "Rose stands 0.9 m in front of it with one hand on the cabinet."
+   ],
+   "tags": [
+    "jukebox",
+    "neon",
+    "emissive",
+    "music"
+   ],
+   "source": "src/world/Bar.js · buildJukebox",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/jukebox-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/jukebox-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/jukebox-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.9,
+    "h": 1.95,
+    "d": 0.635
+   },
+   "tris": 472,
+   "verts": 373,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#5a1a1a",
+     "roughness": 0.5
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#5a1a1a",
+     "roughness": 0.5
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffd080",
+     "emissive": "#ff9040",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ff5a8c",
+     "emissive": "#ff5a8c",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [
+    {
+     "type": "point",
+     "color": "#ff8a5a",
+     "intensity": 3,
+     "distance": 4
+    }
+   ],
+   "palette": [
+    "#5a1a1a",
+    "#ffd080",
+    "#ff5a8c"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "neon-sign",
+   "name": "Neon sign \"Fox & Fiddle\"",
+   "category": "decor",
+   "categories": [
+    "decor",
+    "lighting"
+   ],
+   "kind": "model",
+   "description": "The bar's name in pink neon script above the back bar. Flickers occasionally.",
+   "usedIn": [
+    "Above the back bar"
+   ],
+   "notes": [
+    "Currently an unlit transparent plane (4.2 x 1.05 m) with a painted glow; a pink point light in front of it lights the bar.",
+    "Flicker is done by fading the material's opacity, so keep it one material."
+   ],
+   "tags": [
+    "neon",
+    "sign",
+    "emissive",
+    "branding"
+   ],
+   "source": "src/world/Bar.js · buildDecor + textures.js · neonText",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/neon-sign-front.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/neon-sign-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 4.2,
+    "h": 1.05,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshBasic",
+     "color": "#ffffff",
+     "texture": "Neon \"Fox & Fiddle\""
+    }
+   ],
+   "textures": [
+    {
+     "name": "Neon \"Fox & Fiddle\"",
+     "size": "1024 x 256"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "open-sign",
+   "name": "Neon sign \"OPEN\"",
+   "category": "decor",
+   "categories": [
+    "decor",
+    "lighting"
+   ],
+   "kind": "model",
+   "description": "Blue neon OPEN in the front window.",
+   "usedIn": [
+    "Front window"
+   ],
+   "notes": [
+    "Unlit transparent plane, 1.1 x 0.35 m, with a blue point light inside the window."
+   ],
+   "tags": [
+    "neon",
+    "sign",
+    "emissive"
+   ],
+   "source": "src/world/Bar.js · buildEntrance",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/open-sign-front.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/open-sign-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.1,
+    "h": 0.35,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshBasic",
+     "color": "#ffffff",
+     "texture": "Neon \"OPEN\""
+    }
+   ],
+   "textures": [
+    {
+     "name": "Neon \"OPEN\"",
+     "size": "512 x 160"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "middle, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "poster-live-music",
+   "name": "Poster: Live music",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "\"LIVE MUSIC — every Friday, the Lonesome Pines\".",
+   "usedIn": [
+    "North wall, west end"
+   ],
+   "notes": [
+    "0.6 x 0.9 m flat panel; artwork is the texture (256 x 384)."
+   ],
+   "tags": [
+    "poster",
+    "wall"
+   ],
+   "source": "src/world/Bar.js · buildDecor + textures.js · poster",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/poster-live-music-front.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.6,
+    "h": 0.9,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.9,
+     "texture": "generated"
+    }
+   ],
+   "textures": [
+    {
+     "name": "generated",
+     "size": "256 x 384"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "middle, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "poster-fox-fiddle",
+   "name": "Poster: Fox & Fiddle",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "\"FOX & FIDDLE — est. 1974, cold beer, warm welcome\".",
+   "usedIn": [
+    "South wall"
+   ],
+   "notes": [
+    "0.6 x 0.9 m flat panel; artwork is the texture (256 x 384)."
+   ],
+   "tags": [
+    "poster",
+    "wall",
+    "branding"
+   ],
+   "source": "src/world/Bar.js · buildDecor + textures.js · poster",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/poster-fox-fiddle-front.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.6,
+    "h": 0.9,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.9,
+     "texture": "generated"
+    }
+   ],
+   "textures": [
+    {
+     "name": "generated",
+     "size": "256 x 384"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "middle, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "poster-no-fighting",
+   "name": "Poster: No fighting",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "\"NO FIGHTING — (we mean it, Mick)\".",
+   "usedIn": [
+    "East wall"
+   ],
+   "notes": [
+    "0.6 x 0.9 m flat panel; artwork is the texture (256 x 384)."
+   ],
+   "tags": [
+    "poster",
+    "wall"
+   ],
+   "source": "src/world/Bar.js · buildDecor + textures.js · poster",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/poster-no-fighting-front.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.6,
+    "h": 0.9,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.9,
+     "texture": "generated"
+    }
+   ],
+   "textures": [
+    {
+     "name": "generated",
+     "size": "256 x 384"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "middle, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "poster-darts-league",
+   "name": "Poster: Darts league",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "\"DARTS LEAGUE — Tuesdays, sign up at the bar\".",
+   "usedIn": [
+    "East wall near the dartboard"
+   ],
+   "notes": [
+    "0.6 x 0.9 m flat panel; artwork is the texture (256 x 384)."
+   ],
+   "tags": [
+    "poster",
+    "wall",
+    "darts"
+   ],
+   "source": "src/world/Bar.js · buildDecor + textures.js · poster",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/poster-darts-league-front.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.6,
+    "h": 0.9,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.9,
+     "texture": "generated"
+    }
+   ],
+   "textures": [
+    {
+     "name": "generated",
+     "size": "256 x 384"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "middle, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "poster-happy-hour",
+   "name": "Poster: Happy hour",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "\"HAPPY HOUR — 5 til 7, half price regrets\".",
+   "usedIn": [
+    "West wall"
+   ],
+   "notes": [
+    "0.6 x 0.9 m flat panel; artwork is the texture (256 x 384)."
+   ],
+   "tags": [
+    "poster",
+    "wall"
+   ],
+   "source": "src/world/Bar.js · buildDecor + textures.js · poster",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/poster-happy-hour-front.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.6,
+    "h": 0.9,
+    "d": 0
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.9,
+     "texture": "generated"
+    }
+   ],
+   "textures": [
+    {
+     "name": "generated",
+     "size": "256 x 384"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "middle, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "tv",
+   "name": "TV",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "Wall-mounted TV angled into the room, showing a blue glow.",
+   "usedIn": [
+    "North-west corner"
+   ],
+   "notes": [
+    "The screen is a separate self-lit plane; a moving texture (sports, static) would add life."
+   ],
+   "tags": [
+    "tv",
+    "screen",
+    "emissive"
+   ],
+   "source": "src/world/Bar.js · buildDecor",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/tv-front.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/tv-hero.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/tv-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.9,
+    "h": 0.55,
+    "d": 0.092
+   },
+   "tris": 14,
+   "verts": 28,
+   "meshes": 2,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#151210",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#244a6a",
+     "emissive": "#2a6a9a",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#151210",
+    "#244a6a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "ceiling-fan",
+   "name": "Ceiling fan",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "Four wooden blades on a metal downrod.",
+   "usedIn": [
+    "Ceiling, mid-room"
+   ],
+   "notes": [
+    "Origin at the hub; spins about Y continuously (2.2 rad/s)."
+   ],
+   "tags": [
+    "fan",
+    "ceiling",
+    "animated"
+   ],
+   "source": "src/world/Bar.js · buildDecor",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/ceiling-fan-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/ceiling-fan-front.webp"
+    },
+    {
+     "view": "below",
+     "label": "From below",
+     "file": "images/ceiling-fan-below.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.9,
+    "h": 0.355,
+    "d": 1.9
+   },
+   "tris": 80,
+   "verts": 148,
+   "meshes": 5,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#8a8a8a",
+    "#ffffff"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 1
+  },
+  {
+   "id": "ceiling-pipe",
+   "name": "Ceiling pipe",
+   "category": "architecture",
+   "categories": [
+    "architecture",
+    "decor"
+   ],
+   "kind": "model",
+   "description": "Exposed metal pipe running the length of the ceiling (two of them).",
+   "usedIn": [
+    "Ceiling, along the north and south walls"
+   ],
+   "notes": [
+    "15.6 m long, 0.1 m diameter; fittings and brackets would help."
+   ],
+   "tags": [
+    "pipe",
+    "ceiling",
+    "industrial"
+   ],
+   "source": "src/world/Bar.js · buildDecor",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/ceiling-pipe-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/ceiling-pipe-front.webp"
+    }
+   ],
+   "dims": {
+    "w": 15.6,
+    "h": 0.1,
+    "d": 0.1
+   },
+   "tris": 32,
+   "verts": 52,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#8a8a8a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 2
+  },
+  {
+   "id": "radiator",
+   "name": "Radiator",
+   "category": "decor",
+   "categories": [
+    "decor",
+    "architecture"
+   ],
+   "kind": "model",
+   "description": "Metal radiator under the front window.",
+   "usedIn": [
+    "South wall"
+   ],
+   "notes": [
+    "Currently a plain box; fins would sell it."
+   ],
+   "tags": [
+    "radiator",
+    "metal"
+   ],
+   "source": "src/world/Bar.js · buildDecor",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/radiator-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/radiator-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/radiator-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.9,
+    "h": 0.6,
+    "d": 0.12
+   },
+   "tris": 12,
+   "verts": 24,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#8a8a8a",
+     "roughness": 0.35,
+     "metalness": 0.8
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#8a8a8a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "potted-plant",
+   "name": "Potted plant",
+   "category": "decor",
+   "categories": [
+    "decor"
+   ],
+   "kind": "model",
+   "description": "A tired plant in a terracotta pot.",
+   "usedIn": [
+    "South-west corner"
+   ],
+   "notes": [
+    "Currently a cone; any leafy low-poly plant."
+   ],
+   "tags": [
+    "plant",
+    "pot"
+   ],
+   "source": "src/world/Bar.js · buildDecor",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/potted-plant-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/potted-plant-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/potted-plant-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.682,
+    "h": 1.2,
+    "d": 0.665
+   },
+   "tris": 54,
+   "verts": 95,
+   "meshes": 2,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#7a4a2a",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2f6a2a",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#7a4a2a",
+    "#2f6a2a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "pendant-lamp",
+   "name": "Pendant lamp",
+   "category": "lighting",
+   "categories": [
+    "lighting"
+   ],
+   "kind": "model",
+   "description": "Green enamel shade with a warm bulb on a black cord. Hangs over the bar, tables, pool table and foosball.",
+   "usedIn": [
+    "Throughout the room (x14)"
+   ],
+   "notes": [
+    "Origin at the shade; the cord runs up to the ceiling, so its length varies per lamp (1.0 to 1.4 m).",
+    "The bulb is self-lit and a point light hangs just below it; two of them cast shadows."
+   ],
+   "tags": [
+    "lamp",
+    "light",
+    "emissive"
+   ],
+   "source": "src/world/Bar.js · buildLights",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/pendant-lamp-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/pendant-lamp-front.webp"
+    },
+    {
+     "view": "below",
+     "label": "From below",
+     "file": "images/pendant-lamp-below.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.429,
+    "h": 1.16,
+    "d": 0.44
+   },
+   "tris": 142,
+   "verts": 139,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#151210",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#2a4a3a",
+     "roughness": 0.6,
+     "metalness": 0.4
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffe0b0",
+     "emissive": "#ffc070",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [
+    {
+     "type": "point",
+     "color": "#ffb060",
+     "intensity": 6,
+     "distance": 7
+    }
+   ],
+   "palette": [
+    "#151210",
+    "#2a4a3a",
+    "#ffe0b0"
+   ],
+   "pivot": "bottom, centre (x), centre (z)",
+   "instances": 12
+  },
+  {
+   "id": "wall-sconce",
+   "name": "Wall lamp",
+   "category": "lighting",
+   "categories": [
+    "lighting"
+   ],
+   "kind": "model",
+   "description": "Half-globe wall lamp above the coat rack, so the opening is lit.",
+   "usedIn": [
+    "West wall above the coat rack"
+   ],
+   "notes": [
+    "Self-lit with a warm point light 0.27 m out from the wall."
+   ],
+   "tags": [
+    "lamp",
+    "light",
+    "emissive",
+    "entrance"
+   ],
+   "source": "src/world/Bar.js · buildLights",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/wall-sconce-front.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/wall-sconce-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.14,
+    "h": 0.14,
+    "d": 0.07
+   },
+   "tris": 140,
+   "verts": 99,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffe0b0",
+     "emissive": "#ffc070",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#ffe0b0"
+   ],
+   "pivot": "middle, centre (x), back (z)",
+   "instances": 1
+  },
+  {
+   "id": "floor",
+   "name": "Floor",
+   "category": "architecture",
+   "categories": [
+    "architecture"
+   ],
+   "kind": "model",
+   "description": "Dark wooden plank floor covering the whole room.",
+   "usedIn": [
+    "Whole room"
+   ],
+   "notes": [
+    "16 x 11 m. The plank texture repeats 10 x 7 times.",
+    "The camera is always about 1.6 m above it, so it fills the lower part of most views."
+   ],
+   "tags": [
+    "floor",
+    "planks",
+    "tiling"
+   ],
+   "source": "src/world/Bar.js · build + textures.js · woodPlanks",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/floor-hero.webp"
+    },
+    {
+     "view": "top",
+     "label": "Top",
+     "file": "images/floor-top.webp"
+    }
+   ],
+   "dims": {
+    "w": 16,
+    "h": 0,
+    "d": 11
+   },
+   "tris": 2,
+   "verts": 4,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.85,
+     "texture": "Floor planks"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Floor planks",
+     "size": "512 x 512",
+     "repeat": "10 x 7"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "ceiling",
+   "name": "Ceiling and beams",
+   "category": "architecture",
+   "categories": [
+    "architecture"
+   ],
+   "kind": "model",
+   "description": "Dark ceiling at 3.4 m with seven exposed wooden beams.",
+   "usedIn": [
+    "Whole room"
+   ],
+   "notes": [
+    "Room height 3.4 m; beams 0.18 x 0.22 m, 2.3 m apart."
+   ],
+   "tags": [
+    "ceiling",
+    "beams"
+   ],
+   "source": "src/world/Bar.js · build",
+   "views": [
+    {
+     "view": "below",
+     "label": "From below",
+     "file": "images/ceiling-below.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/ceiling-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 16,
+    "h": 0.22,
+    "d": 11
+   },
+   "tris": 86,
+   "verts": 172,
+   "meshes": 8,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#2a1e18",
+     "roughness": 1
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#2a1e18",
+    "#ffffff"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "wall-brick",
+   "name": "Brick walls",
+   "category": "architecture",
+   "categories": [
+    "architecture"
+   ],
+   "kind": "model",
+   "description": "Exposed red brick on the north (behind the bar) and east (darts, pool) walls, with a black skirting board.",
+   "usedIn": [
+    "North and east walls"
+   ],
+   "notes": [
+    "North wall 16 m, east wall 11 m, both 3.4 m high. Brick texture repeats 6 x 2 (north) and 4 x 2 (east)."
+   ],
+   "tags": [
+    "wall",
+    "brick",
+    "tiling"
+   ],
+   "source": "src/world/Bar.js · build + textures.js · brick",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/wall-brick-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 16.2,
+    "h": 3.4,
+    "d": 11.2
+   },
+   "tris": 48,
+   "verts": 96,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.95,
+     "texture": "Brick"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.95,
+     "texture": "generated"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#151210",
+     "roughness": 0.9
+    }
+   ],
+   "textures": [
+    {
+     "name": "Brick",
+     "size": "512 x 512",
+     "repeat": "6 x 2"
+    },
+    {
+     "name": "generated",
+     "size": "512 x 512",
+     "repeat": "4 x 2"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff",
+    "#151210"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "wall-plaster",
+   "name": "Plaster walls with wainscot",
+   "category": "architecture",
+   "categories": [
+    "architecture"
+   ],
+   "kind": "model",
+   "description": "Stained brown plaster on the south (entrance) and west walls, with dark wood panelling to 1 m.",
+   "usedIn": [
+    "South and west walls"
+   ],
+   "notes": [
+    "South wall 16 m, west wall 11 m, 3.4 m high; wainscot 1 m high."
+   ],
+   "tags": [
+    "wall",
+    "plaster",
+    "wainscot",
+    "tiling"
+   ],
+   "source": "src/world/Bar.js · build + textures.js · plaster",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/wall-plaster-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 16.2,
+    "h": 3.4,
+    "d": 11.2
+   },
+   "tris": 48,
+   "verts": 96,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.95,
+     "texture": "Plaster"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    }
+   ],
+   "textures": [
+    {
+     "name": "Plaster",
+     "size": "512 x 512",
+     "repeat": "4 x 1"
+    },
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "door",
+   "name": "Entrance door",
+   "category": "architecture",
+   "categories": [
+    "architecture"
+   ],
+   "kind": "model",
+   "description": "Dark wooden front door with a black frame and a brass knob.",
+   "usedIn": [
+    "South wall (you enter here)"
+   ],
+   "notes": [
+    "1.0 x 2.2 m. The opening starts just inside it."
+   ],
+   "tags": [
+    "door",
+    "entrance"
+   ],
+   "source": "src/world/Bar.js · buildEntrance",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/door-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/door-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/door-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.2,
+    "h": 2.3,
+    "d": 0.16
+   },
+   "tris": 80,
+   "verts": 148,
+   "meshes": 5,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#ffffff",
+     "roughness": 0.7,
+     "texture": "Dark wood"
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#151210",
+     "roughness": 0.9
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#b08d3a",
+     "roughness": 0.3,
+     "metalness": 0.9
+    }
+   ],
+   "textures": [
+    {
+     "name": "Dark wood",
+     "size": "512 x 512"
+    }
+   ],
+   "lights": [],
+   "palette": [
+    "#ffffff",
+    "#151210",
+    "#b08d3a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "window",
+   "name": "Front window",
+   "category": "architecture",
+   "categories": [
+    "architecture"
+   ],
+   "kind": "model",
+   "description": "Dark night-time window in the front wall (the OPEN sign hangs in it).",
+   "usedIn": [
+    "South wall"
+   ],
+   "notes": [
+    "1.4 x 0.9 m, centre 2.0 m up. Currently a dark reflective panel; a night street view would add depth."
+   ],
+   "tags": [
+    "window",
+    "night"
+   ],
+   "source": "src/world/Bar.js · buildEntrance",
+   "views": [
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/window-front.webp"
+    },
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/window-hero.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.4,
+    "h": 0.9,
+    "d": 0.05
+   },
+   "tris": 12,
+   "verts": 24,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#0a0d1a",
+     "emissive": "#101830",
+     "roughness": 0.2,
+     "metalness": 0.4
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#0a0d1a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "doormat",
+   "name": "Doormat",
+   "category": "architecture",
+   "categories": [
+    "architecture",
+    "props"
+   ],
+   "kind": "model",
+   "description": "Brown mat inside the door.",
+   "usedIn": [
+    "Entrance"
+   ],
+   "notes": [
+    "1.2 x 0.7 m."
+   ],
+   "tags": [
+    "mat",
+    "entrance"
+   ],
+   "source": "src/world/Bar.js · buildEntrance",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/doormat-hero.webp"
+    },
+    {
+     "view": "top",
+     "label": "Top",
+     "file": "images/doormat-top.webp"
+    }
+   ],
+   "dims": {
+    "w": 1.2,
+    "h": 0.02,
+    "d": 0.7
+   },
+   "tris": 12,
+   "verts": 24,
+   "meshes": 1,
+   "materials": [
+    {
+     "type": "MeshStandard",
+     "color": "#4a2a1a",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#4a2a1a"
+   ],
+   "pivot": "placed in world space (no local origin); bottom centre recommended",
+   "instances": 1
+  },
+  {
+   "id": "drink-1",
+   "name": "Pint of lager",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 1 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 1"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #e3a82a, 80% full."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "pint glass",
+    "no garnish",
+    "foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-1-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-1-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-1-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.078,
+    "h": 0.16,
+    "d": 0.08
+   },
+   "tris": 196,
+   "verts": 294,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#e3a82a",
+     "roughness": 0.15,
+     "opacity": 0.92
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#fff4dc",
+     "roughness": 0.9
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#e3a82a",
+    "#fff4dc"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-2",
+   "name": "Pint of stout",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 2 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 2"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #1a0f0a, 80% full."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "pint glass",
+    "no garnish",
+    "foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-2-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-2-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-2-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.078,
+    "h": 0.16,
+    "d": 0.08
+   },
+   "tris": 196,
+   "verts": 294,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#1a0f0a",
+     "roughness": 0.15,
+     "opacity": 0.92
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#fff4dc",
+     "roughness": 0.9
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#1a0f0a",
+    "#fff4dc"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-3",
+   "name": "Whiskey, neat",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 3 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 3"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #b8651c, 45% full."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "rocks glass",
+    "no garnish",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-3-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-3-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-3-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.068,
+    "h": 0.09,
+    "d": 0.07
+   },
+   "tris": 140,
+   "verts": 206,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#b8651c",
+     "roughness": 0.15,
+     "opacity": 0.92
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#b8651c"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-4",
+   "name": "Tequila shot",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 4 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 4"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #f3e6b0, 50% full, 80% opaque."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "rocks glass",
+    "garnish: lime",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-4-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-4-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-4-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.079,
+    "h": 0.111,
+    "d": 0.07
+   },
+   "tris": 188,
+   "verts": 282,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f3e6b0",
+     "roughness": 0.15,
+     "opacity": 0.8
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#9bd44a",
+     "roughness": 0.6
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#f3e6b0",
+    "#9bd44a"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-5",
+   "name": "Rum and coke",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 5 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 5"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #3a1a0c, 80% full."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "pint glass",
+    "garnish: lime",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-5-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-5-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-5-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.088,
+    "h": 0.181,
+    "d": 0.08
+   },
+   "tris": 188,
+   "verts": 282,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3a1a0c",
+     "roughness": 0.15,
+     "opacity": 0.92
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#9bd44a",
+     "roughness": 0.6
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#3a1a0c",
+    "#9bd44a"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-6",
+   "name": "Double bourbon",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 6 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 6"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #a8521a, 50% full."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "rocks glass",
+    "no garnish",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-6-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-6-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-6-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.068,
+    "h": 0.09,
+    "d": 0.07
+   },
+   "tris": 140,
+   "verts": 206,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#a8521a",
+     "roughness": 0.15,
+     "opacity": 0.92
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#a8521a"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-7",
+   "name": "Long Island iced tea",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 7 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 7"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #8f5a2a, 85% full."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "pint glass",
+    "garnish: straw",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-7-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-7-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-7-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.083,
+    "h": 0.205,
+    "d": 0.08
+   },
+   "tris": 164,
+   "verts": 246,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#8f5a2a",
+     "roughness": 0.15,
+     "opacity": 0.92
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#d62828",
+     "roughness": 1
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#8f5a2a",
+    "#d62828"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-8",
+   "name": "Flaming sambuca",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 8 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 8"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #f7f7ff, 50% full, 60% opaque."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "rocks glass",
+    "no garnish",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-8-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-8-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-8-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.068,
+    "h": 0.09,
+    "d": 0.07
+   },
+   "tris": 140,
+   "verts": 206,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#f7f7ff",
+     "roughness": 0.15,
+     "opacity": 0.6
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#f7f7ff"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-9",
+   "name": "The house special (do not ask)",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 9 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 9"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #3cb043, 75% full."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "rocks glass",
+    "garnish: olive",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-9-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-9-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-9-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.068,
+    "h": 0.09,
+    "d": 0.07
+   },
+   "tris": 220,
+   "verts": 269,
+   "meshes": 4,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#3cb043",
+     "roughness": 0.15,
+     "opacity": 0.92
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#5a6b2a",
+     "roughness": 0.6
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#3cb043",
+    "#5a6b2a"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "drink-10",
+   "name": "Whatever is left in the well",
+   "category": "drinks",
+   "categories": [
+    "drinks"
+   ],
+   "kind": "model",
+   "description": "Round 10 of the drinking contest. Dee serves two of these, one for you and one for Sal.",
+   "usedIn": [
+    "Drinking contest, round 10"
+   ],
+   "notes": [
+    "Origin at the base centre; Y up. The base sits exactly on the surface it is placed on.",
+    "Keep the liquid as its own mesh, anchored at the base: drinking scales its height down from the bottom (setGlassLevel), and the foam layer rides on top of it.",
+    "The glass shell is drawn transparent after the liquid (renderOrder 2 vs 1); keep the shell thin and open-topped so the liquid reads through it.",
+    "Liquid colour #6b5a2a, 80% full, 85% opaque."
+   ],
+   "tags": [
+    "drink",
+    "glass",
+    "pint glass",
+    "no garnish",
+    "no foam"
+   ],
+   "source": "src/minigames/drinking.js · SPECS + Bar.glass",
+   "views": [
+    {
+     "view": "hero",
+     "label": "3/4",
+     "file": "images/drink-10-hero.webp"
+    },
+    {
+     "view": "front",
+     "label": "Front",
+     "file": "images/drink-10-front.webp"
+    },
+    {
+     "view": "side",
+     "label": "Side",
+     "file": "images/drink-10-side.webp"
+    }
+   ],
+   "dims": {
+    "w": 0.078,
+    "h": 0.16,
+    "d": 0.08
+   },
+   "tris": 140,
+   "verts": 206,
+   "meshes": 3,
+   "materials": [
+    {
+     "type": "MeshPhysical",
+     "color": "#dfeee6",
+     "roughness": 0.05,
+     "metalness": 0.1,
+     "opacity": 0.28
+    },
+    {
+     "type": "MeshStandard",
+     "color": "#6b5a2a",
+     "roughness": 0.15,
+     "opacity": 0.85
+    }
+   ],
+   "textures": [],
+   "lights": [],
+   "palette": [
+    "#dfeee6",
+    "#6b5a2a"
+   ],
+   "pivot": "bottom, centre (x), centre (z)"
+  },
+  {
+   "id": "tex-floor-planks",
+   "name": "Floor planks",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Dark wood planks with grain lines and seams.",
+   "usedIn": [
+    "Floor"
+   ],
+   "notes": [
+    "Tiles 10 x 7 across the 16 x 11 m floor (one tile covers 1.6 x 1.57 m)."
+   ],
+   "tags": [
+    "texture",
+    "wood",
+    "tiling"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-floor-planks-image.webp"
+    }
+   ],
+   "textureSize": "512 x 512"
+  },
+  {
+   "id": "tex-wood-light",
+   "name": "Wood",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Mid-brown wood.",
+   "usedIn": [
+    "Bar top",
+    "Back-bar top and shelves",
+    "Table tops",
+    "Cue shafts on the rack"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "wood",
+    "tiling"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-wood-light-image.webp"
+    }
+   ],
+   "textureSize": "512 x 512"
+  },
+  {
+   "id": "tex-wood-dark",
+   "name": "Dark wood",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Dark stained wood.",
+   "usedIn": [
+    "Bar counter body",
+    "Back bar",
+    "Pool and foosball tables",
+    "Chairs",
+    "Door",
+    "Ceiling beams",
+    "Wainscot",
+    "Fan blades"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "wood",
+    "tiling"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-wood-dark-image.webp"
+    }
+   ],
+   "textureSize": "512 x 512"
+  },
+  {
+   "id": "tex-brick",
+   "name": "Brick",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Red brick with dark mortar and soot patches.",
+   "usedIn": [
+    "North and east walls"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "brick",
+    "tiling",
+    "wall"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-brick-image.webp"
+    }
+   ],
+   "textureSize": "512 x 512"
+  },
+  {
+   "id": "tex-plaster",
+   "name": "Plaster",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Stained brown plaster.",
+   "usedIn": [
+    "South and west walls"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "plaster",
+    "tiling",
+    "wall"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-plaster-image.webp"
+    }
+   ],
+   "textureSize": "512 x 512"
+  },
+  {
+   "id": "tex-felt",
+   "name": "Pool felt",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Green baize with fine grain.",
+   "usedIn": [
+    "Pool table bed and cushions"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "felt",
+    "tiling",
+    "billiards"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-felt-image.webp"
+    }
+   ],
+   "textureSize": "256 x 256"
+  },
+  {
+   "id": "tex-dartboard",
+   "name": "Dartboard face",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Full board face: segments, rings, wires, number ring and rim.",
+   "usedIn": [
+    "Dartboard"
+   ],
+   "notes": [
+    "Ring radii are tied to scoring (see the Dartboard entry). Painted at 2048 px because the board fills the screen during darts."
+   ],
+   "tags": [
+    "texture",
+    "darts",
+    "scoring"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-dartboard-image.webp"
+    }
+   ],
+   "textureSize": "2048 x 2048"
+  },
+  {
+   "id": "tex-foosball-pitch",
+   "name": "Foosball pitch",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Green pitch with white lines, centre circle and goal boxes.",
+   "usedIn": [
+    "Foosball table"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "foosball",
+    "pitch"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-foosball-pitch-image.webp"
+    }
+   ],
+   "textureSize": "512 x 1024"
+  },
+  {
+   "id": "tex-chalkboard",
+   "name": "Chalkboard",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Tonight's games in chalk, wooden frame.",
+   "usedIn": [
+    "Chalk scoreboard"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "chalk",
+    "sign"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-chalkboard-image.webp"
+    }
+   ],
+   "textureSize": "512 x 384"
+  },
+  {
+   "id": "tex-neon-fox",
+   "name": "Neon \"Fox & Fiddle\"",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Pink neon script with a painted glow, on transparency.",
+   "usedIn": [
+    "Neon sign above the bar"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "neon",
+    "branding",
+    "transparent"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-neon-fox-image.webp"
+    }
+   ],
+   "textureSize": "1024 x 256"
+  },
+  {
+   "id": "tex-neon-open",
+   "name": "Neon \"OPEN\"",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Blue neon OPEN on transparency.",
+   "usedIn": [
+    "Front window"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "neon",
+    "transparent"
+   ],
+   "source": "src/world/textures.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-neon-open-image.webp"
+    }
+   ],
+   "textureSize": "512 x 160"
+  },
+  {
+   "id": "tex-pool-balls",
+   "name": "Pool ball textures",
+   "category": "textures",
+   "categories": [
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "All sixteen ball textures (cue ball, 1 to 15), each a 256 x 128 wrap with the number circle on both sides.",
+   "usedIn": [
+    "Pool balls"
+   ],
+   "notes": [
+    "Stripes (9 to 15) are a colour band on white; solids are the full colour."
+   ],
+   "tags": [
+    "texture",
+    "billiards",
+    "balls"
+   ],
+   "source": "src/minigames/billiards.js · ballTexture",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-pool-balls-image.webp"
+    }
+   ],
+   "textureSize": "256 x 128 each (16)"
+  },
+  {
+   "id": "tex-hit-flash",
+   "name": "Hit flash",
+   "category": "ui",
+   "categories": [
+    "ui",
+    "textures"
+   ],
+   "kind": "texture",
+   "description": "Radial white-to-orange flash drawn as a sprite where a punch or kick lands.",
+   "usedIn": [
+    "Bar fight"
+   ],
+   "notes": [],
+   "tags": [
+    "texture",
+    "effect",
+    "sprite",
+    "transparent"
+   ],
+   "source": "src/minigames/barfight.js · flashTexture",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/tex-hit-flash-image.webp"
+    }
+   ],
+   "textureSize": "64 x 64"
+  },
+  {
+   "id": "app-icon",
+   "name": "App icon",
+   "category": "ui",
+   "categories": [
+    "ui"
+   ],
+   "kind": "file",
+   "description": "Fox face in a neon ring, used as the browser tab icon and home-screen icon.",
+   "usedIn": [
+    "Browser tab",
+    "Home screen (iOS \"Add to Home Screen\")"
+   ],
+   "notes": [
+    "Generated at 192 and 512 px, plus a 512 px full-bleed version for Android masks."
+   ],
+   "tags": [
+    "icon",
+    "branding"
+   ],
+   "source": "scripts/make-icons.js",
+   "views": [
+    {
+     "view": "image",
+     "label": "Image",
+     "file": "images/app-icon.png"
+    }
+   ],
+   "file": "public/icons/icon-512.png"
+  }
+ ]
+}

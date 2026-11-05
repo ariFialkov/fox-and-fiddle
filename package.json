@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "start": "NODE_ENV=production node server/index.js",
     "test": "node --test test/*.test.js",
-    "icons": "node scripts/make-icons.js"
+    "icons": "node scripts/make-icons.js",
+    "catalog": "node scripts/catalog-render.mjs"
   },
   "dependencies": {
     "express": "^4.21.2",

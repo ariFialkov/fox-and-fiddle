@@ -98,6 +98,24 @@ they need (`busy`) and evict NPC activities from the station in use.
 
 Debug flags: `?skipintro=1`, `?lowend=1` (no bloom/shadows, fewer lights), `?timescale=4`.
 
+## Asset catalog
+
+`asset-catalog/` is a browsable catalog of every character, prop, piece of furniture, texture and
+first-person model, for artists reskinning the game. GitHub Pages serves it at
+`/<repo>/asset-catalog/` (the Pages workflow copies it in; it is not part of the game build).
+
+Its images and measurements (size, triangles, materials, textures, origin, character joints) are
+generated from the game's own code, so regenerate them after changing a model:
+
+```bash
+npm i -D playwright && npx playwright install chromium   # once
+npm run catalog                                          # everything (about a minute)
+npm run catalog -- jukebox dart                          # just these asset ids
+```
+
+Descriptions, usage and reskin notes live in `catalog-studio/registry.js`. The studio page itself
+(`/catalog-studio/` under `npm run dev`) renders the images; `scripts/catalog-render.mjs` drives it.
+
 ## Layout
 
 ```
@@ -110,4 +128,6 @@ src/world/           procedural textures, the bar, patrons, NPC director (Npc.js
 src/minigames/       one file per game + poolPhysics.js (pure, tested)
 src/net/             API client + offline fallback engine
 public/              service worker, icons (npm run icons)
+asset-catalog/       the asset catalog page, images and catalog.json (generated)
+catalog-studio/      asset registry + render studio that generates the catalog
 ```

@@ -9,7 +9,7 @@ import { MiniGame } from './base.js';
 import { DRINKS, SAL } from '../content/lines.js';
 
 /** What each round's drink looks like. */
-const SPECS = [
+export const SPECS = [
   { color: 0xe3a82a, foam: true },
   { color: 0x1a0f0a, foam: true },
   { color: 0xb8651c, fill: 0.45 },
@@ -21,6 +21,18 @@ const SPECS = [
   { color: 0x3cb043, garnish: 'olive', fill: 0.75 },
   { color: 0x6b5a2a, opacity: 0.85 },
 ];
+
+/** First-person drinking hand, camera-local: palm, fingers and sleeved forearm. Origin = palm centre. */
+export function makeDrinkHand() {
+  const hand = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
+  const palm = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), skin); palm.scale.set(1, 0.75, 1.1);
+  const fingers = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.03, 0.09), skin); fingers.position.set(0, 0.02, -0.03);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.42, 8), new THREE.MeshStandardMaterial({ color: 0x6b3a1e, roughness: 0.9 }));
+  arm.rotation.x = Math.PI / 2 - 0.5; arm.position.set(0.02, 0.1, 0.22);
+  hand.add(palm, fingers, arm);
+  return hand;
+}
 
 export class Drinking extends MiniGame {
   async start() {
@@ -34,13 +46,7 @@ export class Drinking extends MiniGame {
     this.headTilt = 0;
     this.hud.setHints(null);
     // first-person arm
-    this.hand = new THREE.Group();
-    const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
-    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), skin); palm.scale.set(1, 0.75, 1.1);
-    const fingers = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.03, 0.09), skin); fingers.position.set(0, 0.02, -0.03);
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.42, 8), new THREE.MeshStandardMaterial({ color: 0x6b3a1e, roughness: 0.9 }));
-    arm.rotation.x = Math.PI / 2 - 0.5; arm.position.set(0.02, 0.1, 0.22);
-    this.hand.add(palm, fingers, arm);
+    this.hand = makeDrinkHand();
     this.handRest = new THREE.Vector3(0.32, -0.42, -0.5);
     this.hand.position.copy(this.handRest);
     this.camera.add(this.hand);

@@ -14,7 +14,7 @@ import * as P from './poolPhysics.js';
 
 const BALL_COLORS = { 1: 0xf2c200, 2: 0x1d4fd8, 3: 0xd62828, 4: 0x6a1b9a, 5: 0xf57c00, 6: 0x1b7a3f, 7: 0x7b1e1e, 8: 0x111111 };
 const texCache = {};
-function ballTexture(id) {
+export function ballTexture(id) {
   if (texCache[id]) return texCache[id];
   const c = document.createElement('canvas'); c.width = 256; c.height = 128;
   const ctx = c.getContext('2d');
@@ -33,7 +33,7 @@ function ballTexture(id) {
   return t;
 }
 
-function makeCue() {
+export function makeCue() {
   const g = new THREE.Group();
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.013, 1.45, 10), new THREE.MeshStandardMaterial({ color: 0xc9a46a, roughness: 0.5 }));
   shaft.rotation.x = Math.PI / 2; shaft.position.z = -(0.725 + 0.03);
@@ -43,6 +43,27 @@ function makeCue() {
   butt.rotation.x = Math.PI / 2; butt.position.z = -(1.45 + 0.03 + 0.2);
   g.add(shaft, tip, butt);
   return g; // tip at the origin, stick extends along -z
+}
+
+/**
+ * First-person viewmodel while it is not your shot: your cue held low in the right hand, tip up
+ * and away, plus the left hand holding a cube of chalk (shown during the chalking animation).
+ * Positions are camera-local.
+ */
+export function makeCueViewmodel() {
+  const handCue = new THREE.Group();
+  const hc = makeCue(); hc.rotation.x = Math.PI / 2 - 0.3; hc.position.set(0, 0.0, 0); // held low near the butt, tip up and away
+  handCue.add(hc);
+  handCue.position.set(0.46, -0.62, -0.45); handCue.rotation.set(0.1, 0.1, -0.35);
+  const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), skin); handR.scale.set(1, 0.8, 1.1); handR.position.set(0, 0.02, 0.0); // grips the stick near the butt
+  handCue.add(handR);
+  const handL = new THREE.Group();
+  const palm = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), skin); palm.scale.set(1, 0.8, 1.1);
+  const chalkCube = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.024, 0.024), new THREE.MeshStandardMaterial({ color: 0x2b6cc4 }));
+  chalkCube.position.set(0, -0.03, -0.03);
+  handL.add(palm, chalkCube);
+  return { handCue, handR, handL };
 }
 
 export class Billiards extends MiniGame {
@@ -76,19 +97,9 @@ export class Billiards extends MiniGame {
     this.chalk = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.022, 0.022), new THREE.MeshStandardMaterial({ color: 0x2b6cc4 }));
     this.chalk.visible = false; this.group.add(this.chalk);
     // cue carried in hand while waiting (camera child), with a chalk hand
-    this.handCue = new THREE.Group();
-    const hc = makeCue(); hc.rotation.x = Math.PI / 2 - 0.3; hc.position.set(0, 0.0, 0); // held low near the butt, tip up and away
-    this.handCue.add(hc);
-    this.handCue.position.set(0.46, -0.62, -0.45); this.handCue.rotation.set(0.1, 0.1, -0.35);
-    this.handCue.visible = false;
-    const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
-    this.handR = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), skin); this.handR.scale.set(1, 0.8, 1.1); this.handR.position.set(0, 0.02, 0.0); // grips the stick near the butt
-    this.handCue.add(this.handR);
-    this.handL = new THREE.Group(); this.handL.visible = false;
-    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), skin); palm.scale.set(1, 0.8, 1.1);
-    const chalkCube = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.024, 0.024), new THREE.MeshStandardMaterial({ color: 0x2b6cc4 }));
-    chalkCube.position.set(0, -0.03, -0.03);
-    this.handL.add(palm, chalkCube);
+    const vm = makeCueViewmodel();
+    this.handCue = vm.handCue; this.handR = vm.handR; this.handL = vm.handL;
+    this.handCue.visible = false; this.handL.visible = false;
     this.camera.add(this.handCue, this.handL);
     this.chalkT = -1;
     // aim guide

@@ -29,6 +29,8 @@ jobs:
       - run: npm test
       - name: Build with the repository name as base path
         run: BASE_PATH="/${GITHUB_REPOSITORY#*/}/" npm run build
+      - name: Add the asset catalog (served at /<repo>/asset-catalog/; not part of the game build)
+        run: cp -r asset-catalog dist/asset-catalog
       - uses: actions/configure-pages@v5
         with:
           enablement: true

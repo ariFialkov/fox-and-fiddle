@@ -19,6 +19,50 @@ const ROWS = [
   { x: 0.525, team: 'bot', n: 3, slide: 0.13 },
 ];
 const OFFSETS = { 1: [0], 2: [-0.12, 0.12], 3: [-0.18, 0, 0.18], 5: [-0.24, -0.12, 0, 0.12, 0.24] };
+/** Materials shared by the foosball rods and figures. */
+export function foosMaterials() {
+  return {
+    rodMat: new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.9, roughness: 0.3 }),
+    youMat: new THREE.MeshStandardMaterial({ color: 0x2b5fd9, roughness: 0.5 }),
+    botMat: new THREE.MeshStandardMaterial({ color: 0xd93b2b, roughness: 0.5 }),
+    handleMat: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 }),
+    skinMat: new THREE.MeshStandardMaterial({ color: 0xf1c9a5 }),
+  };
+}
+
+/** One foosball figure. Origin = where the rod passes through the chest; the feet hang 7cm below. */
+export function makeFoosFigure(teamMat, mats) {
+  const m = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.045, 0.026), teamMat);
+  body.position.y = -0.03;
+  const legs = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.03, 0.02), mats.handleMat);
+  legs.position.y = -0.062;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), mats.skinMat);
+  head.position.y = 0.0;
+  m.add(body, legs, head);
+  return m;
+}
+
+/**
+ * One rod: steel bar, rubber handle on its owner's side, and a figure at each offset.
+ * The group's origin is the rod axis at the table's centre line; z runs across the table.
+ */
+export function makeFoosRod(team, offsets, mats) {
+  const group = new THREE.Group();
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, W + 0.36, 8), mats.rodMat);
+  rod.rotation.x = Math.PI / 2; rod.position.z = team === 'you' ? 0.18 : -0.18; group.add(rod);
+  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.1, 10), mats.handleMat);
+  handle.rotation.x = Math.PI / 2; handle.position.z = team === 'you' ? W / 2 + 0.3 : -(W / 2 + 0.3); group.add(handle);
+  const menGroup = new THREE.Group(); group.add(menGroup);
+  const men = [];
+  for (const off of offsets) {
+    const m = makeFoosFigure(team === 'you' ? mats.youMat : mats.botMat, mats);
+    m.position.z = off;
+    menGroup.add(m); men.push(m);
+  }
+  return { group, rod, handle, menGroup, men };
+}
+
 const KEYS = { Digit1: 'fwd', Digit2: 'mid', Digit3: 'def', Digit4: 'goalie', Numpad1: 'fwd', Numpad2: 'mid', Numpad3: 'def', Numpad4: 'goalie' };
 
 export class Foosball extends MiniGame {
@@ -37,30 +81,13 @@ export class Foosball extends MiniGame {
     this.sel = this.rods.findIndex((r) => r.key === 'mid');
 
     // geometry
-    const rodMat = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.9, roughness: 0.3 });
-    const youMat = new THREE.MeshStandardMaterial({ color: 0x2b5fd9, roughness: 0.5 });
-    const botMat = new THREE.MeshStandardMaterial({ color: 0xd93b2b, roughness: 0.5 });
-    const handleMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+    const mats = foosMaterials();
+    this.foosMats = mats;
     for (const r of this.rods) {
-      const g = new THREE.Group();
+      const built = makeFoosRod(r.team, r.offsets, mats);
+      const g = built.group;
       g.position.set(this.cx + r.x, this.ty + 0.07, this.cz);
-      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, W + 0.36, 8), rodMat);
-      rod.rotation.x = Math.PI / 2; rod.position.z = r.team === 'you' ? 0.18 : -0.18; g.add(rod);
-      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.1, 10), handleMat);
-      handle.rotation.x = Math.PI / 2; handle.position.z = r.team === 'you' ? W / 2 + 0.3 : -(W / 2 + 0.3); g.add(handle);
-      r.rodMesh = rod; r.handle = handle;
-      r.menGroup = new THREE.Group(); g.add(r.menGroup);
-      for (const off of r.offsets) {
-        const m = new THREE.Group(); m.position.z = off;
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.045, 0.026), r.team === 'you' ? youMat : botMat);
-        body.position.y = -0.03;
-        const legs = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.03, 0.02), handleMat);
-        legs.position.y = -0.062;
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), new THREE.MeshStandardMaterial({ color: 0xf1c9a5 }));
-        head.position.y = 0.0;
-        m.add(body, legs, head);
-        r.menGroup.add(m); r.men.push(m);
-      }
+      r.rodMesh = built.rod; r.handle = built.handle; r.menGroup = built.menGroup; r.men = built.men;
       this.group.add(g); r.group = g;
     }
     this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 14, 10), new THREE.MeshStandardMaterial({ color: 0xf4efe0, roughness: 0.4 }));
@@ -110,7 +137,7 @@ export class Foosball extends MiniGame {
     this.sel = this.rods.findIndex((r) => r.key === key);
     const order = ['fwd', 'mid', 'def', 'goalie'];
     this.hud.setRodTabs(['Forwards', 'Midfield', 'Defence', 'Goalie'], order.indexOf(key), (i) => this.selectKey(order[i]));
-    for (const r of this.rods) if (r.team === 'you') r.handle.material = r.key === key ? this.selMat() : this.rods[0].handle.material;
+    for (const r of this.rods) if (r.team === 'you') r.handle.material = r.key === key ? this.selMat() : this.foosMats.handleMat;
     this.updateScore(`${this.rods[this.sel].label} selected`);
   }
   selMat() { return this._selMat || (this._selMat = new THREE.MeshStandardMaterial({ color: 0xf0a84b, emissive: 0xf0a84b, emissiveIntensity: 0.5 })); }

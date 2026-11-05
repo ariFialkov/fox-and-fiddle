@@ -13,6 +13,30 @@ import { MiniGame } from './base.js';
 
 const damp = THREE.MathUtils.damp;
 
+/**
+ * First-person fight viewmodel, camera-local: two arms (shoulder -> elbow -> fist) for punching
+ * and blocking, a boot for kicks, and an anchor where a grabbed bottle or glass is held.
+ */
+export function makeFightArms() {
+  const hands = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
+  const sleeve = new THREE.MeshStandardMaterial({ color: 0x6b3a1e, roughness: 0.9 });
+  const arms = [];
+  for (const side of [-1, 1]) {
+    const shoulder = new THREE.Group(); shoulder.position.set(side * 0.3, -0.32, -0.12);
+    const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.3, 8), sleeve); upper.rotation.x = Math.PI / 2 - 0.9; upper.position.set(0, -0.06, -0.12);
+    const elbow = new THREE.Group(); elbow.position.set(0, -0.12, -0.24);
+    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.045, 0.3, 8), skin); fore.rotation.x = Math.PI / 2 + 0.3; fore.position.set(0, 0.04, -0.14);
+    const fist = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), skin); fist.scale.set(1, 0.85, 1.15); fist.position.set(0, 0.09, -0.3);
+    elbow.add(fore, fist); shoulder.add(upper, elbow); hands.add(shoulder);
+    arms.push({ side, shoulder, elbow, t: -1 });
+  }
+  const boot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.28), new THREE.MeshStandardMaterial({ color: 0x1a1410, roughness: 0.9 }));
+  boot.position.set(0.15, -0.9, -0.5); hands.add(boot);
+  const holdAnchor = new THREE.Group(); holdAnchor.position.set(0.22, -0.2, -0.4); hands.add(holdAnchor);
+  return { hands, arms, boot, holdAnchor };
+}
+
 export class BarFight extends MiniGame {
   start() {
     const flav = this.round.flavour || {};
@@ -42,23 +66,10 @@ export class BarFight extends MiniGame {
     for (const p of this.fighters) this.origins.set(p, p.root.position.clone());
 
     // first-person arms: upper arm -> forearm -> fist, so punches read as punches
-    this.hands = new THREE.Group();
+    const fp = makeFightArms();
+    this.hands = fp.hands; this.arms = fp.arms; this.boot = fp.boot; this.holdAnchor = fp.holdAnchor;
+    this.boot.visible = false;
     this.camera.add(this.hands);
-    const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
-    const sleeve = new THREE.MeshStandardMaterial({ color: 0x6b3a1e, roughness: 0.9 });
-    this.arms = [];
-    for (const side of [-1, 1]) {
-      const shoulder = new THREE.Group(); shoulder.position.set(side * 0.3, -0.32, -0.12);
-      const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.3, 8), sleeve); upper.rotation.x = Math.PI / 2 - 0.9; upper.position.set(0, -0.06, -0.12);
-      const elbow = new THREE.Group(); elbow.position.set(0, -0.12, -0.24);
-      const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.045, 0.3, 8), skin); fore.rotation.x = Math.PI / 2 + 0.3; fore.position.set(0, 0.04, -0.14);
-      const fist = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), skin); fist.scale.set(1, 0.85, 1.15); fist.position.set(0, 0.09, -0.3);
-      elbow.add(fore, fist); shoulder.add(upper, elbow); this.hands.add(shoulder);
-      this.arms.push({ side, shoulder, elbow, t: -1 });
-    }
-    this.boot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.28), new THREE.MeshStandardMaterial({ color: 0x1a1410, roughness: 0.9 }));
-    this.boot.position.set(0.15, -0.9, -0.5); this.boot.visible = false; this.hands.add(this.boot);
-    this.holdAnchor = new THREE.Group(); this.holdAnchor.position.set(0.22, -0.2, -0.4); this.hands.add(this.holdAnchor);
     this.kickT = -1; this.holdT = -1; this.held = null;
     this.block = null; this.recoil = 0;
     this.flashTex = flashTexture();
@@ -443,7 +454,7 @@ export class BarFight extends MiniGame {
   }
 }
 
-function flashTexture() {
+export function flashTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);
