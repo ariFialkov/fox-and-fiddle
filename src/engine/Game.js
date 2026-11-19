@@ -7,6 +7,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { Bar } from '../world/Bar.js';
+import { loadReskin } from '../world/reskin.js';
 import { Player } from './Player.js';
 import { NpcDirector } from '../world/Npc.js';
 import { Input } from './Input.js';
@@ -43,7 +44,11 @@ export class Game {
     this.camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.05, 60);
     this.scene.add(this.camera);
 
+    // the Western reskin's models, characters and textures load once, before the bar is built
+    const bootSub = document.querySelector('.boot-sub');
+    const reskinLoad = loadReskin((f) => { if (bootSub) bootSub.textContent = `opening up... ${Math.round(f * 100)}%`; });
     this.api = await new Api().init();
+    await reskinLoad;
     this.hud = new HUD(this.uiRoot, this.api);
     this.input = new Input(this.canvas, this.uiRoot);
     this.bar = new Bar(this.scene, { lowEnd: this.lowEnd });

@@ -98,6 +98,21 @@ they need (`busy`) and evict NPC activities from the station in use.
 
 Debug flags: `?skipintro=1`, `?lowend=1` (no bloom/shadows, fewer lights), `?timescale=4`.
 
+## Western reskin
+
+The Western art drops plug in without code changes. Unpack them, in order (W1 art, W1 models, W2,
+W4.4, W5, W6, so a later drop overwrites a repeated name), into `public/western/`. Any folder layout
+works: files are found by name. Then:
+
+- copy `code/dressPatron.js` (W6) to `src/world/dressPatron.js`, which dresses the 20 characters;
+- copy the drop's `icons/` (W1) over `public/icons/`;
+- rebuild (`npm run build`).
+
+`src/world/reskin.js` loads what is there before the bar is built, and `Bar.applyReskin()`, the
+character hooks and the first-person and table-soccer builders swap each asset in. Anything not
+found keeps today's procedural version, so the game works with none, some or all of the art.
+`preview/` and `screens/` folders are review material and are left out of the build.
+
 ## Asset catalog
 
 `asset-catalog/` is a browsable catalog of every character, prop, piece of furniture, texture and

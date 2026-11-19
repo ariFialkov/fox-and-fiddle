@@ -32,4 +32,6 @@ fs.writeFileSync(htmlPath, html);
 for (const f of used) fs.rmSync(f, { force: true });
 const assetsDir = path.join(dist, 'assets');
 if (fs.existsSync(assetsDir) && fs.readdirSync(assetsDir).length === 0) fs.rmdirSync(assetsDir);
+// review material unpacked with the art drops is not part of the game
+for (const d of ['preview', 'screens', '__MACOSX']) fs.rmSync(path.join(dist, 'western', d), { recursive: true, force: true });
 console.log(`inlined ${used.length} file(s) into index.html (${(fs.statSync(htmlPath).size / 1024).toFixed(0)} KB)`);

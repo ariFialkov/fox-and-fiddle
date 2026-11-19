@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
 import { DRINKS, SAL } from '../content/lines.js';
+import { reskin } from '../world/reskin.js';
 
 /** What each round's drink looks like. */
 export const SPECS = [
@@ -23,7 +24,9 @@ export const SPECS = [
 ];
 
 /** First-person drinking hand, camera-local: palm, fingers and sleeved forearm. Origin = palm centre. */
-export function makeDrinkHand() {
+export function makeDrinkHand(gltf = reskin.gltf('fp-drink.glb')) {
+  const src = gltf && gltf.scene.getObjectByName('fp_drink');
+  if (src) return src.clone(true);   // reskin: origin = palm centre, as below
   const hand = new THREE.Group();
   const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
   const palm = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), skin); palm.scale.set(1, 0.75, 1.1);
@@ -80,7 +83,8 @@ export class Drinking extends MiniGame {
   async bartenderBrings(i) {
     const dee = this.bar.bartender;
     const drink = DRINKS[Math.min(i, DRINKS.length - 1)];
-    const spec = SPECS[Math.min(i, SPECS.length - 1)];
+    const round = Math.min(i, SPECS.length - 1);
+    const spec = { ...SPECS[round], model: `drink-${round + 1}.glb` }; // reskin: drink-1..10.glb when present
     this.drink = drink;
     const home = dee.root.position.clone();
     const to = new THREE.Vector3(this.sitEye.x - 0.5, 0, this.bar.barZ - 0.75);
@@ -138,8 +142,9 @@ export class Drinking extends MiniGame {
 
   /** Wait until Sal's hand has actually arrived at the grab point (frame-rate independent). */
   async salHandAt(target, maxSec = 2) {
-    const t0 = performance.now();
-    while (!this.done && performance.now() - t0 < maxSec * 1000) {
+    // counted in game time, so a slow device waits for the arm instead of grabbing early
+    const t0 = this.t, w0 = performance.now();
+    while (!this.done && this.t - t0 < maxSec && performance.now() - w0 < 15000) {
       this.sal.root.updateMatrixWorld(true);
       if (this.sal.arms[1].hand.getWorldPosition(new THREE.Vector3()).distanceTo(target) < 0.025) return;
       await this.seq(0.04, () => {});

@@ -10,6 +10,7 @@
  */
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
+import { reskin } from '../world/reskin.js';
 
 const damp = THREE.MathUtils.damp;
 
@@ -17,7 +18,15 @@ const damp = THREE.MathUtils.damp;
  * First-person fight viewmodel, camera-local: two arms (shoulder -> elbow -> fist) for punching
  * and blocking, a boot for kicks, and an anchor where a grabbed bottle or glass is held.
  */
-export function makeFightArms() {
+export function makeFightArms(gltf = reskin.gltf('fp-fight.glb')) {
+  // reskin: modelled arms and boot with the same node names and rest transforms as below
+  const src = gltf && gltf.scene.getObjectByName('fp_fight');
+  if (src) {
+    const hands = src.clone(true);
+    const g = (n) => hands.getObjectByName(n);
+    const arms = [-1, 1].map((side) => ({ side, shoulder: g(side < 0 ? 'shoulder_L' : 'shoulder_R'), elbow: g(side < 0 ? 'elbow_L' : 'elbow_R'), t: -1 }));
+    if (arms.every((a) => a.shoulder && a.elbow) && g('boot') && g('holdAnchor')) return { hands, arms, boot: g('boot'), holdAnchor: g('holdAnchor') };
+  }
   const hands = new THREE.Group();
   const skin = new THREE.MeshStandardMaterial({ color: 0xe8b790, roughness: 0.7 });
   const sleeve = new THREE.MeshStandardMaterial({ color: 0x6b3a1e, roughness: 0.9 });
@@ -455,6 +464,8 @@ export class BarFight extends MiniGame {
 }
 
 export function flashTexture() {
+  const art = reskin.tex('tex-hit-flash');
+  if (art) return art;
   const c = document.createElement('canvas'); c.width = c.height = 64;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);

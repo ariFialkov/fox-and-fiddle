@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
 import { Patron } from '../world/Patron.js';
+import { reskin } from '../world/reskin.js';
 
 const L = 1.2, W = 0.7, R = 0.017, GOAL = 0.1, LEG = 0.065;
 const ROWS = [
@@ -30,8 +31,13 @@ export function foosMaterials() {
   };
 }
 
-/** One foosball figure. Origin = where the rod passes through the chest; the feet hang 7cm below. */
+/**
+ * One foosball figure. Origin = where the rod passes through the chest; the feet hang 7cm below.
+ * Reskin: a cavalry trooper for the player, an outlaw for the opponent (same origin and size).
+ */
 export function makeFoosFigure(teamMat, mats) {
+  const glb = reskin.model(teamMat === mats.youMat ? 'foosball-figure-cavalry.glb' : 'foosball-figure-outlaw.glb');
+  if (glb) return glb;
   const m = new THREE.Group();
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.045, 0.026), teamMat);
   body.position.y = -0.03;
@@ -60,7 +66,15 @@ export function makeFoosRod(team, offsets, mats) {
     m.position.z = off;
     menGroup.add(m); men.push(m);
   }
-  return { group, rod, handle, menGroup, men };
+  // reskin: the modelled rod replaces the steel bar and black handle, handle on its owner's side
+  const rodModel = reskin.model('foosball-rod.glb');
+  if (rodModel) {
+    rod.visible = false; handle.visible = false;
+    rodModel.position.z = team === 'you' ? 0.18 : -0.18;
+    rodModel.rotation.y = team === 'you' ? 0 : Math.PI;
+    group.add(rodModel);
+  }
+  return { group, rod, handle, menGroup, men, rodModel };
 }
 
 const KEYS = { Digit1: 'fwd', Digit2: 'mid', Digit3: 'def', Digit4: 'goalie', Numpad1: 'fwd', Numpad2: 'mid', Numpad3: 'def', Numpad4: 'goalie' };
@@ -87,12 +101,13 @@ export class Foosball extends MiniGame {
       const built = makeFoosRod(r.team, r.offsets, mats);
       const g = built.group;
       g.position.set(this.cx + r.x, this.ty + 0.07, this.cz);
-      r.rodMesh = built.rod; r.handle = built.handle; r.menGroup = built.menGroup; r.men = built.men;
+      r.rodMesh = built.rod; r.handle = built.handle; r.menGroup = built.menGroup; r.men = built.men; r.rodModel = built.rodModel;
       this.group.add(g); r.group = g;
     }
     this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 14, 10), new THREE.MeshStandardMaterial({ color: 0xf4efe0, roughness: 0.4 }));
     this.ballMesh.castShadow = true; this.group.add(this.ballMesh);
     this.opp = new Patron({ name: 'Nadia', female: true, shirt: 0xd93b2b, height: 0.98, seed: 909 });
+    reskin.dress(this.opp);
     this.opp.root.position.set(this.cx + 0.1, 0, this.cz - W / 2 - 0.55);
     this.opp.lookAt(new THREE.Vector3(this.cx, 0, this.cz)); this.opp.pose = 'foos'; this.group.add(this.opp.root);
 
@@ -332,6 +347,7 @@ export class Foosball extends MiniGame {
       r.menGroup.rotation.z = r.th;
       r.handle.position.z = (r.team === 'you' ? W / 2 + 0.3 : -(W / 2 + 0.3)) + r.s;
       r.rodMesh.position.z = (r.team === 'you' ? 0.18 : -0.18) + r.s;
+      if (r.rodModel) r.rodModel.position.z = (r.team === 'you' ? 0.18 : -0.18) + r.s; // the modelled rod slides with its figures
     }
     this.ballMesh.position.set(this.cx + this.ball.x, this.ty + R, this.cz + this.ball.z);
   }

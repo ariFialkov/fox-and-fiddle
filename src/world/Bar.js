@@ -6,10 +6,14 @@
  *  east wall x = 8 : dartboard, oche
  *  south wall z = 5.5: entrance door (x=-5), window with OPEN sign, jukebox (SE)
  *  west side       : foosball table
+ *
+ * Western reskin: art unpacked into public/western/ is swapped in by applyReskin() at the end of
+ * build(); anything missing keeps the procedural version (see src/world/reskin.js).
  */
 import * as THREE from 'three';
 import * as T from './textures.js';
 import { Patron } from './Patron.js';
+import { reskin, INVISIBLE } from './reskin.js';
 
 export const ROOM = { minX: -8, maxX: 8, minZ: -5.5, maxZ: 5.5, height: 3.4 };
 
@@ -32,8 +36,8 @@ export class Bar {
       darkWood: new THREE.MeshStandardMaterial({ map: T.woodPlanks([1, 1], '#3a2414'), roughness: 0.7 }),
       brick: new THREE.MeshStandardMaterial({ map: T.brick([6, 2]), roughness: 0.95 }),
       plaster: new THREE.MeshStandardMaterial({ map: T.plaster([4, 1], '#4a3a30'), roughness: 0.95 }),
-      ceiling: new THREE.MeshStandardMaterial({ color: 0x2a1e18, roughness: 1 }),
-      metal: new THREE.MeshStandardMaterial({ color: 0x8a8a8a, metalness: 0.8, roughness: 0.35 }),
+      ceiling: new THREE.MeshStandardMaterial({ color: 0x241a14, roughness: 1 }),
+      metal: new THREE.MeshStandardMaterial({ color: 0x3a3632, metalness: 0.8, roughness: 0.55 }), // dark iron, not chrome
       brass: new THREE.MeshStandardMaterial({ color: 0xb08d3a, metalness: 0.9, roughness: 0.3 }),
       leather: new THREE.MeshStandardMaterial({ color: 0x5a1f1a, roughness: 0.7 }),
       felt: new THREE.MeshStandardMaterial({ map: T.felt('#1f6b3a'), roughness: 1 }),
@@ -90,6 +94,7 @@ export class Bar {
     this.catBegin('wallBrick');
     this.box(W, H, 0.2, M.brick, 0, H / 2, ROOM.minZ - 0.1, { shadow: false });
     const wallE = this.box(0.2, H, D, M.brick, ROOM.maxX + 0.1, H / 2, 0, { shadow: false });
+    this.wallE = wallE;
     wallE.material = M.brick.clone(); wallE.material.map = T.brick([4, 2]);
     this.box(W, 0.12, 0.05, M.black, 0, 0.06, ROOM.minZ + 0.025, { shadow: false });
     this.box(0.05, 0.12, D, M.black, ROOM.maxX - 0.025, 0.06, 0, { shadow: false });
@@ -112,6 +117,7 @@ export class Bar {
     this.buildDecor();
     this.buildLights();
     this.buildPatrons();
+    this.applyReskin();
   }
 
   buildEntrance() {
@@ -127,11 +133,12 @@ export class Bar {
     this.catEnd();
     // small window with OPEN sign
     this.catBegin('window');
-    const win = this.box(1.4, 0.9, 0.05, new THREE.MeshStandardMaterial({ color: 0x0a0d1a, roughness: 0.2, metalness: 0.4 }), -2.4, 2.0, ROOM.maxZ - 0.03, { shadow: false });
+    const win = this.windowGlass = this.box(1.4, 0.9, 0.05, new THREE.MeshStandardMaterial({ color: 0x0a0d1a, roughness: 0.2, metalness: 0.4 }), -2.4, 2.0, ROOM.maxZ - 0.03, { shadow: false });
     win.material.emissive = new THREE.Color(0x101830);
     const open = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.35), new THREE.MeshBasicMaterial({ map: T.neonText('OPEN', '#4fd9ff', 512, 160, 'bold 110px Georgia'), transparent: true }));
     this.catBegin('openSign');
     open.position.set(-2.4, 2.0, ROOM.maxZ - 0.07); open.rotation.y = Math.PI; this.group.add(open);
+    this.openSign = open;
     this.catEnd();
     this.catEnd();
     // coat rack by the door
@@ -166,6 +173,7 @@ export class Bar {
   buildBar() {
     const { mats: M } = this;
     const z = -4.25, x0 = -4.5, x1 = 3.5, len = x1 - x0, cx = (x0 + x1) / 2;
+    this.barCX = cx;
     // counter body + top + brass rail
     this.catBegin('barCounter');
     this.box(len, 1.05, 0.62, M.darkWood, cx, 0.525, z, { collide: true });
@@ -234,6 +242,8 @@ export class Bar {
 
   /** A glass with a liquid in it. spec: { color, fill 0..1, foam, garnish: 'lime'|'olive'|null, opacity } */
   glass(x, y, z, pint = true, group = this.group, spec = {}) {
+    const model = reskin.model(spec.model || (pint ? 'pint-glass.glb' : 'rocks-glass.glb'));
+    if (model) return this.glassFromModel(model, x, y, z, pint, group);
     const g = new THREE.Group(); g.position.set(x, y, z);
     const h = pint ? 0.16 : 0.09, r = pint ? 0.04 : 0.035;
     const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, h, 14, 1, true), this.mats.glass); m.position.y = h / 2; m.renderOrder = 2;
@@ -262,8 +272,46 @@ export class Bar {
     if (tracked) this.catEnd();
     return g;
   }
+  /**
+   * A reskinned glass or drink. The model's liquid (a node whose name contains "liquid") drains from
+   * its base and any "foam" node rides on top, so setGlassLevel works as with the built glasses.
+   */
+  glassFromModel(model, x, y, z, pint, group) {
+    const g = new THREE.Group(); g.position.set(x, y, z);
+    g.add(model);
+    let liquid = null, foam = null;
+    model.traverse((o) => {
+      const n = (o.name || '').toLowerCase();
+      if (!liquid && n.includes('liquid')) liquid = o;
+      else if (!foam && n.includes('foam')) foam = o;
+    });
+    g.updateMatrixWorld(true);
+    if (liquid) {
+      const box = new THREE.Box3().setFromObject(liquid);
+      const inv = new THREE.Matrix4().copy(liquid.parent.matrixWorld).invert();
+      const lo = box.min.clone().applyMatrix4(inv), hi = box.max.clone().applyMatrix4(inv); // in the liquid's parent space
+      g.userData.model = { liquid, foam, y0: liquid.position.y, s0: liquid.scale.y, bottom: Math.min(lo.y, hi.y), top: Math.max(lo.y, hi.y), foamY0: foam ? foam.position.y : 0 };
+    }
+    g.userData.h = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y || (pint ? 0.16 : 0.09);
+    const tracked = group === this.group;
+    if (tracked) this.catBegin(pint ? 'pintGlass' : 'rocksGlass');
+    group.add(g);
+    if (tracked) this.catEnd();
+    return g;
+  }
+
   /** Scale a glass's liquid down to `k` of its original fill. */
   setGlassLevel(g, k) {
+    const mdl = g.userData.model;
+    if (mdl) {
+      const kk = Math.max(0.02, k);
+      // keep the liquid's bottom where it is while its height shrinks
+      mdl.liquid.scale.y = mdl.s0 * kk;
+      mdl.liquid.position.y = mdl.y0 + (mdl.bottom - mdl.y0) * (1 - kk);
+      if (mdl.foam) { mdl.foam.position.y = mdl.foamY0 - (mdl.top - mdl.bottom) * (1 - kk); mdl.foam.visible = k > 0.05; }
+      return;
+    }
+    if (!g.userData.liquid) return;
     const l = g.userData.liquid, h = g.userData.h, fill = g.userData.fill;
     l.scale.y = Math.max(0.02, k); l.position.y = 0.006 + h * fill * Math.max(0.02, k) / 2;
     if (g.userData.foam) { g.userData.foam.position.y = 0.006 + h * fill * Math.max(0.02, k) + 0.006; g.userData.foam.visible = k > 0.05; }
@@ -325,6 +373,7 @@ export class Bar {
     // cylinder axis -> world -x (cap faces the room); extra local-Y turn so the 20 sits at the top
     board.rotation.set(0, 0, Math.PI / 2, 'ZYX'); // cap faces -x; spun so the 20 sits at the top
     board.position.set(x - 0.08, y, z);
+    this.dartFace = board;
     this.group.add(board);
     this.catEnd();
     // scoring radius: texture ring outer edge = 0.47 of the 0.451m texture span
@@ -355,7 +404,8 @@ export class Bar {
     this.foos = { group: g, cx, cz, L, W: Wd, y };
     this.box(L + 0.16, 0.12, Wd + 0.16, M.darkWood, 0, y - 0.19, 0, { group: g });
     const pitch = new THREE.Mesh(new THREE.PlaneGeometry(Wd, L), new THREE.MeshStandardMaterial({ map: T.foosballPitch(), roughness: 0.9 }));
-    pitch.rotation.set(-Math.PI / 2, 0, Math.PI / 2); pitch.position.y = y - 0.129; pitch.receiveShadow = true; g.add(pitch);
+    pitch.rotation.set(-Math.PI / 2, 0, Math.PI / 2); pitch.position.y = y - 0.129; pitch.receiveShadow = true; pitch.name = 'pitch'; g.add(pitch);
+    this.foosPitch = pitch;
     // walls of the box (open top)
     this.box(L + 0.16, 0.14, 0.08, M.darkWood, 0, y - 0.07, -(Wd / 2 + 0.04), { group: g });
     this.box(L + 0.16, 0.14, 0.08, M.darkWood, 0, y - 0.07, Wd / 2 + 0.04, { group: g });
@@ -474,14 +524,17 @@ export class Bar {
     this.fan = fan;
     // TV in the corner
     this.catBegin('tv');
-    const tv = this.box(0.9, 0.55, 0.06, M.black, -7.0, 2.4, ROOM.minZ + 0.5, { shadow: false });
-    tv.rotation.y = 0.5;
+    // (was a TV angled off the wall; now the Main Street window, flush on the north wall)
+    const tv = this.box(0.9, 0.55, 0.06, M.black, -5.55, 2.05, ROOM.minZ + 0.03, { shadow: false });
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.47), new THREE.MeshStandardMaterial({ color: 0x244a6a, emissive: 0x2a6a9a, emissiveIntensity: 0.8 }));
-    screen.position.set(-6.98, 2.4, ROOM.minZ + 0.52); screen.rotation.y = 0.5; screen.position.x += Math.sin(0.5) * 0.035; screen.position.z += Math.cos(0.5) * 0.035;
+    screen.position.set(-5.55, 2.05, ROOM.minZ + 0.02); screen.rotation.y = 0;
+    if (!reskin.gltf('tv.glb')) screen.position.z = ROOM.minZ + 0.061; // in front of the stand-in box until the frame arrives
     this.group.add(screen);
+    this.tvBox = tv; this.tvScreen = screen;
     this.catEnd();
     // pipes along the ceiling
-    for (const z of [-4.6, 4.8]) { this.catBegin('ceilingPipe'); const p = this.cyl(0.05, 0.05, 15.6, M.metal, 0, ROOM.height - 0.3, z, 8); p.rotation.z = Math.PI / 2; p.castShadow = false; this.catEnd(); }
+    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x1e1a17, roughness: 0.7, metalness: 0.3 }); // dark iron stovepipe
+    for (const z of [-4.6, 4.8]) { this.catBegin('ceilingPipe'); const p = this.cyl(0.05, 0.05, 15.6, pipeMat, 0, ROOM.height - 0.3, z, 8); p.rotation.z = Math.PI / 2; p.castShadow = false; this.catEnd(); }
     // a radiator and a plant for good measure
     this.catBegin('radiator');
     this.box(0.9, 0.6, 0.12, M.metal, -0.5, 0.35, ROOM.maxZ - 0.1, { shadow: false });
@@ -497,16 +550,18 @@ export class Bar {
   buildLights() {
     const low = this.lowEnd;
     this.scene.add(new THREE.AmbientLight(0xffb070, low ? 0.45 : 0.32));
-    const hemi = new THREE.HemisphereLight(0xffd0a0, 0x1a0e08, low ? 0.5 : 0.42); this.scene.add(hemi);
-    const pendant = (x, y, z, color = 0xffb060, intensity = 6, dist = 7, shadow = false) => {
+    const hemi = new THREE.HemisphereLight(0xffe2c4, 0x1c140f, low ? 0.5 : 0.42); this.scene.add(hemi);
+    // warm white throughout: keeps the golden lamp-lit mood without turning the wood red
+    const LAMP = 0xffd2a0;
+    const pendant = (x, y, z, color = LAMP, intensity = 6, dist = 7, shadow = false) => {
       this.catBegin('pendantLamp');
       const g = new THREE.Group(); g.position.set(x, y, z); this.group.add(g);
       this.catEnd();
-      const cord = this.cyl(0.006, 0.006, ROOM.height - y, this.mats.black, 0, (ROOM.height - y) / 2, 0, 4, g); cord.castShadow = false;
+      const cord = this.cyl(0.006, 0.006, ROOM.height - y, this.mats.black, 0, (ROOM.height - y) / 2, 0, 4, g); cord.castShadow = false; cord.name = 'cord';
       const shade = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.2, 14, 1, true), new THREE.MeshStandardMaterial({ color: 0x2a4a3a, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.4 }));
-      shade.position.y = 0.05; g.add(shade);
+      shade.position.y = 0.05; shade.name = 'shade'; g.add(shade);
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 3 }));
-      bulb.position.y = -0.02; g.add(bulb);
+      bulb.position.y = -0.02; bulb.name = 'bulb'; g.add(bulb);
       if (low && intensity < 4) return g; // low-end: small pendants are emissive only, fewer lights in the shader
       const l = new THREE.PointLight(color, low ? intensity * 0.8 : intensity, dist, 2);
       l.position.y = -0.08;
@@ -515,11 +570,11 @@ export class Bar {
       this.lights.push(l);
       return g;
     };
-    pendant(-3, 2.3, -3.6); pendant(-0.5, 2.3, -3.6, 0xffb060, 6, 7, true); pendant(2, 2.3, -3.6);
-    pendant(this.pool.cx - 0.6, 2.0, this.pool.cz, 0xffd090, 5, 5, true); pendant(this.pool.cx + 0.6, 2.0, this.pool.cz, 0xffd090, 5, 5);
-    for (const t of this.tables) pendant(t.x, 2.2, t.z, 0xffa050, 3.5, 5);
-    pendant(this.foos.cx, 2.2, this.foos.cz, 0xffc080, 4, 5);
-    pendant(-3.6, 2.4, 4.0, 0xffb060, 3.5, 6); pendant(5.6, 2.3, 3.6, 0xffb060, 3, 6);
+    pendant(-3, 2.3, -3.6); pendant(-0.5, 2.3, -3.6, LAMP, 6, 7, true); pendant(2, 2.3, -3.6);
+    pendant(this.pool.cx - 0.6, 2.0, this.pool.cz, LAMP, 5, 5, true); pendant(this.pool.cx + 0.6, 2.0, this.pool.cz, LAMP, 5, 5);
+    for (const t of this.tables) pendant(t.x, 2.2, t.z, LAMP, 3.5, 5);
+    pendant(this.foos.cx, 2.2, this.foos.cz, LAMP, 4, 5);
+    pendant(-3.6, 2.4, 4.0, LAMP, 3.5, 6); pendant(5.6, 2.3, 3.6, LAMP, 3, 6);
     // wall lamp over the coat rack so the entrance reads
     const sconce = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 2.5, side: THREE.DoubleSide }));
     this.catBegin('wallSconce');
@@ -531,14 +586,16 @@ export class Bar {
     spot.position.set(ROOM.maxX - 1.6, 3.0, this.dartboard.pos.z); spot.target.position.copy(this.dartboard.pos);
     this.group.add(spot, spot.target);
     // neon glow
-    const neonL = new THREE.PointLight(0xff5a8c, low ? 4 : 8, 6, 2); neonL.position.set(-0.5, 2.7, ROOM.minZ + 0.6); this.group.add(neonL);
-    const openL = new THREE.PointLight(0x4fd9ff, 3, 4, 2); openL.position.set(-2.4, 2.0, ROOM.maxZ - 0.5); this.group.add(openL);
+    // the signboard is painted wood lit by a lamp now, not pink neon (70% of the old neon's strength)
+    const neonL = new THREE.PointLight(0xffa04a, low ? 2.8 : 5.6, 6, 2); neonL.position.set(-0.5, 2.7, ROOM.minZ + 0.6); this.group.add(neonL);
+    const openL = new THREE.PointLight(0xffd2a0, 1.8, 4, 2); // the OPEN sign is a hanging painted board openL.position.set(-2.4, 2.0, ROOM.maxZ - 0.5); this.group.add(openL);
     this.neonLight = neonL;
   }
 
   buildPatrons() {
     const add = (opts, x, z, lookX, lookZ, sit = false) => {
       const p = new Patron(opts);
+      reskin.dress(p);
       p.root.position.set(x, 0, z);
       if (sit) p.sit();
       p.lookAt(new THREE.Vector3(lookX, 0, lookZ));
@@ -578,12 +635,169 @@ export class Bar {
     });
   }
 
+  // ---------------------------------------------------------------------------------------------
+  // Western reskin (integration notes, sections 2 and 5). Runs after the procedural build: each
+  // swap hides that asset's primitive parts and adds its model or texture. A missing file keeps
+  // today's version, so this is safe with none, some or all of the art drops in place.
+  // ---------------------------------------------------------------------------------------------
+  applyReskin() {
+    const R = reskin, M = this.mats;
+    const cat = (id) => this.catalog[id] || [];
+    const hideAll = (objs) => { for (const o of objs) o.visible = false; };
+    const place = (file, x, y, z, yaw = 0, parent = this.group) => {
+      const m = R.model(file);
+      if (!m) return null;
+      m.position.set(x, y, z); m.rotation.y = yaw; parent.add(m);
+      return m;
+    };
+    /** Hide a group's own meshes (keeping lights and the named children listed) and add a model at its origin. */
+    const intoGroup = (file, group, keep = []) => {
+      const m = R.model(file);
+      if (!m) return null;
+      for (const c of group.children) if ((c.isMesh || c.isGroup) && !keep.includes(c.name)) c.visible = false;
+      group.add(m);
+      return m;
+    };
+    const setMap = (mat, stem, repeat) => {
+      const t = R.tex(stem, repeat);
+      if (!t) return false;
+      mat.map = t; if (mat.color) mat.color.set(0xffffff); mat.needsUpdate = true;
+      return true;
+    };
+
+    // ---- textures on the shared materials ----
+    setMap(M.floor, 'tex-floor-planks', [10, 7]);
+    setMap(M.wood, 'tex-wood-light', [2, 1]);
+    setMap(M.darkWood, 'tex-wood-dark', [1, 1]);
+    setMap(M.brick, 'tex-brick', [6, 2]);
+    setMap(this.wallE.material, 'tex-brick', [4, 2]);
+    setMap(M.plaster, 'tex-plaster', [4, 1]);
+    setMap(M.felt, 'tex-felt', [4, 2]);
+    // ---- signs, posters, boards ----
+    setMap(this.neon.material, 'tex-neon-fox');
+    setMap(this.openSign.material, 'tex-neon-open');
+    setMap(this.dartFace.material, 'tex-dartboard');
+    setMap(this.foosPitch.material, 'tex-foosball-pitch');
+    for (const o of cat('chalkboard').flat()) setMap(o.material, 'tex-chalkboard');
+    for (const [id, stem] of [['posterLiveMusic', 'poster-live-music'], ['posterFoxFiddle', 'poster-fox-fiddle'], ['posterNoFighting', 'poster-no-fighting'], ['posterDartsLeague', 'poster-darts-league'], ['posterHappyHour', 'poster-happy-hour']]) {
+      for (const o of cat(id).flat()) setMap(o.material, stem);
+    }
+
+    // ---- front window: daylight outside, not a lit screen; frame model; OPEN board hangs in front ----
+    const street = R.tex('tex-window-street');
+    if (street) {
+      const w = this.windowGlass.material;
+      w.map = street; w.emissiveMap = street; w.emissive.set(0xffffff); w.emissiveIntensity = 0.35;
+      w.roughness = 0.4; w.color.set(0xffffff); w.metalness = 0; w.needsUpdate = true;
+    }
+    place('window-frame.glb', -2.4, 2.0, ROOM.maxZ - 0.056, Math.PI);
+
+    // ---- Main Street window (was the TV): frame flush on the wall, street video on the pane ----
+    if (place('tv.glb', -5.55, 2.05, ROOM.minZ)) this.tvBox.visible = false;
+    if (R.videoUrl) {
+      const v = document.createElement('video');
+      Object.assign(v, { src: R.videoUrl, muted: true, loop: true, playsInline: true, autoplay: true, crossOrigin: 'anonymous', preload: 'auto' });
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+      const vt = new THREE.VideoTexture(v); vt.colorSpace = THREE.SRGBColorSpace;
+      this.tvScreen.material = new THREE.MeshBasicMaterial({ map: vt, color: 0xd8c8b0 });
+      this.video = v;
+      v.play().catch(() => {
+        // some browsers wait for a first tap before playing even muted video
+        const go = () => { v.play().catch(() => {}); removeEventListener('pointerdown', go); removeEventListener('keydown', go); };
+        addEventListener('pointerdown', go); addEventListener('keydown', go);
+      });
+    }
+
+    // ---- chandelier (was the ceiling fan): blades and hub hidden, wagon wheel hung below the ceiling ----
+    const chand = R.model('ceiling-fan.glb');
+    if (chand) {
+      for (const c of this.fan.children) c.visible = false;
+      chand.position.y = ROOM.height - 0.776 - this.fan.position.y;
+      this.fan.add(chand);
+    }
+
+    // ---- world-space models ----
+    if (R.gltf('bar-counter.glb')) {
+      for (const inst of cat('barCounter')) hideAll(inst);
+      for (let i = 0; i < 4; i++) place('bar-counter.glb', this.barCX + (i - 1.5) * 2.1675, 0, -4.25); // 4 x 2.1675 m = 8.67 m, top at 1.11 m
+    }
+    if (R.gltf('back-bar.glb')) {
+      for (const inst of cat('backBar')) hideAll(inst);
+      for (const dx of [-2.0, 2.0]) place('back-bar.glb', this.barCX + dx, 0, ROOM.minZ + 0.31);
+    }
+    if (R.gltf('beer-tap.glb')) for (const inst of cat('beerTap')) { hideAll(inst); place('beer-tap.glb', inst[0].position.x, 1.11, inst[0].position.z); }
+    if (R.gltf('bar-stool.glb')) for (const inst of cat('barStool')) { hideAll(inst); place('bar-stool.glb', inst[0].position.x, 0, inst[0].position.z); }
+    if (R.gltf('pub-table.glb')) for (const inst of cat('pubTable')) { hideAll(inst); place('pub-table.glb', inst[0].position.x, 0, inst[0].position.z); }
+    if (R.gltf('potted-plant.glb')) for (const inst of cat('pottedPlant')) { hideAll(inst); place('potted-plant.glb', inst[0].position.x, 0, inst[0].position.z); }
+    if (R.gltf('door.glb')) { for (const inst of cat('door')) hideAll(inst); place('door.glb', -5, 0, ROOM.maxZ - 0.06, Math.PI); }
+    if (R.gltf('radiator.glb')) {
+      // the radiator becomes a pot-bellied stove standing out in the room, so it gets a collider
+      for (const inst of cat('radiator')) hideAll(inst);
+      const stove = place('radiator.glb', -0.5, 0, ROOM.maxZ - 0.38, Math.PI);
+      stove.updateMatrixWorld(true);
+      const b = new THREE.Box3().setFromObject(stove);
+      this.colliders.push({ minX: b.min.x, maxX: b.max.x, minZ: b.min.z, maxZ: b.max.z });
+    }
+    if (R.gltf('cue-rack.glb')) {
+      for (const inst of cat('cueRack')) {
+        const zc = inst.reduce((s2, o) => s2 + o.position.z, 0) / inst.length;
+        hideAll(inst); place('cue-rack.glb', ROOM.maxX, 0, zc, -Math.PI / 2);
+      }
+    }
+    if (R.gltf('wall-sconce.glb')) for (const inst of cat('wallSconce')) { hideAll(inst); place('wall-sconce.glb', ROOM.minX, inst[0].position.y, inst[0].position.z, Math.PI / 2); }
+    if (R.gltf('coat-hanging.glb')) { for (const inst of cat('coat')) hideAll(inst); place('coat-hanging.glb', -6.6, 1.72, 4.88, Math.PI); }
+    if (R.gltf('dartboard.glb')) {
+      // keep the code's board face (it carries the scoring layout); only the old cabinet box goes
+      for (const inst of cat('dartboard')) inst[0].visible = false;
+      const d = this.dartboard;
+      place('dartboard.glb', d.x + 0.02, d.pos.y, d.pos.z, -Math.PI / 2);
+    }
+
+    // ---- models inside existing groups ----
+    for (const inst of cat('chair')) intoGroup('chair.glb', inst[0]);
+    for (const inst of cat('coatRack')) intoGroup('coat-rack.glb', inst[0]);
+    intoGroup('jukebox.glb', this.jukebox);                               // the upright piano; its point light stays
+    intoGroup('pool-table.glb', this.pool.group, ['poolDecor']);
+    if (intoGroup('foosball-table.glb', this.foos.group, ['foosDecor', 'pitch'])) this.foosPitch.position.y += 0.004; // clear the new table's floor
+    for (const inst of cat('pendantLamp')) {
+      const g = inst[0];
+      const lantern = R.model('pendant-lamp.glb');
+      if (!lantern) break;
+      for (const c of g.children) if (c.name === 'shade' || c.name === 'bulb') c.visible = false;
+      lantern.position.y = 0.95; // its origin is the top of the chain
+      g.add(lantern);
+    }
+    const coat = R.model('coat-player.glb');
+    if (coat) {
+      // the intro moves and shows/hides the capsule, so it stays as an invisible carrier
+      this.playerCoat.material = INVISIBLE;
+      coat.position.y = 0.3; coat.scale.set(1 / 1.3, 1, 1 / 0.6);
+      this.playerCoat.add(coat);
+    }
+
+    // ---- bottles: shelves, tables and throwables; glass and label keep their per-bottle tints ----
+    if (R.gltf('bottle.glb')) {
+      for (const [g] of cat('bottle')) {
+        const glassColor = g.children[0]?.material?.color?.clone();
+        const labelColor = g.children[3]?.material?.color?.clone();
+        const m = R.model('bottle.glb');
+        const tint = (name, color) => {
+          const node = m.getObjectByName(name);
+          if (!node || !color) return;
+          node.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.color.copy(color); } });
+        };
+        tint('glass', glassColor); tint('label', labelColor);
+        for (const c of g.children.slice()) g.remove(c);
+        g.add(m);
+      }
+    }
+  }
+
   update(dt, t) {
     for (const p of this.patrons) p.update(dt);
-    this.fan.rotation.y += dt * 2.2;
-    // neon flicker
+    // (the chandelier hangs still; the sign is an opaque board, so only its lamp flickers)
     const f = 0.92 + Math.sin(t * 17) * 0.03 + (Math.sin(t * 61) > 0.97 ? -0.3 : 0);
-    this.neon.material.opacity = f;
-    this.neonLight.intensity = (this.lowEnd ? 4 : 8) * f;
+    this.neonLight.intensity = (this.lowEnd ? 2.8 : 5.6) * f;
+    if (this.video && this.video.paused && this.video.readyState >= 2 && !this.videoBlocked) this.video.play().catch(() => { this.videoBlocked = true; });
   }
 }

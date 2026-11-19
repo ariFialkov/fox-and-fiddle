@@ -1,16 +1,16 @@
 /** Dialogue for the drinking contest and the pick-up lines game. */
 
 export const DRINKS = [
-  { name: 'a pint of lager', pint: true },
-  { name: 'a pint of stout', pint: true },
-  { name: 'a whiskey, neat', pint: false },
-  { name: 'a tequila shot', pint: false },
-  { name: 'a rum and coke', pint: true },
-  { name: 'a double bourbon', pint: false },
-  { name: 'a Long Island iced tea', pint: true },
-  { name: 'a flaming sambuca', pint: false },
-  { name: 'the house special (do not ask)', pint: false },
-  { name: 'whatever is left in the well', pint: true },
+  { name: 'a beer', pint: true },
+  { name: 'a porter', pint: true },
+  { name: 'a redeye whiskey', pint: false },
+  { name: 'a mescal with lime', pint: false },
+  { name: 'a sarsaparilla', pint: true },
+  { name: 'a double rye', pint: false },
+  { name: 'an absinthe', pint: true },
+  { name: 'a flaming whiskey shot', pint: false },   // the flame stays the game's effect
+  { name: 'a Coffin Varnish', pint: false },
+  { name: 'a Tarantula Juice', pint: true },
 ];
 
 export const SAL = {

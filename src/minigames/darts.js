@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
 import { Patron } from '../world/Patron.js';
+import { reskin } from '../world/reskin.js';
 
 const NUMS = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
 const VALID = [0, 25, 50];
@@ -79,6 +80,7 @@ export class Darts extends MiniGame {
     this.onResize = () => this.fitCamera(); addEventListener('resize', this.onResize);
 
     this.bot = new Patron({ name: 'Fergus', shirt: 0x3d6b3a, height: 1.02, seed: 77 });
+    reskin.dress(this.bot);
     this.bot.root.position.set(st.x + 1.0, 0, st.z + 1.05);
     this.bot.lookAt(new THREE.Vector3(b.pos.x, 0, b.pos.z));
     this.group.add(this.bot.root);

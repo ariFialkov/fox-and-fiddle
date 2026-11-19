@@ -11,11 +11,14 @@ import { MiniGame } from './base.js';
 import { Patron } from '../world/Patron.js';
 import { turnToward } from '../engine/Player.js';
 import * as P from './poolPhysics.js';
+import { reskin } from '../world/reskin.js';
 
 const BALL_COLORS = { 1: 0xf2c200, 2: 0x1d4fd8, 3: 0xd62828, 4: 0x6a1b9a, 5: 0xf57c00, 6: 0x1b7a3f, 7: 0x7b1e1e, 8: 0x111111 };
 const texCache = {};
 export function ballTexture(id) {
   if (texCache[id]) return texCache[id];
+  const art = reskin.poolBall(id);           // reskin: painted ball textures, same wrap as these
+  if (art) return (texCache[id] = art);
   const c = document.createElement('canvas'); c.width = 256; c.height = 128;
   const ctx = c.getContext('2d');
   const col = '#' + (BALL_COLORS[id > 8 ? id - 8 : id] || 0xffffff).toString(16).padStart(6, '0');
@@ -50,7 +53,18 @@ export function makeCue() {
  * and away, plus the left hand holding a cube of chalk (shown during the chalking animation).
  * Positions are camera-local.
  */
-export function makeCueViewmodel() {
+export function makeCueViewmodel(gltf = reskin.gltf('fp-cue-hands.glb')) {
+  // reskin: modelled hands with the same node names and rest transforms; the code's cue stick stays
+  const root = gltf && gltf.scene.getObjectByName('fp_cue_hands');
+  if (root) {
+    const vm = root.clone(true);
+    const handCue = vm.getObjectByName('handCue'), handL = vm.getObjectByName('handL'), handR = vm.getObjectByName('handR');
+    if (handCue && handL) {
+      handCue.removeFromParent(); handL.removeFromParent();
+      const hc = makeCue(); hc.rotation.x = Math.PI / 2 - 0.3; handCue.add(hc);
+      return { handCue, handR, handL, cue: hc };
+    }
+  }
   const handCue = new THREE.Group();
   const hc = makeCue(); hc.rotation.x = Math.PI / 2 - 0.3; hc.position.set(0, 0.0, 0); // held low near the butt, tip up and away
   handCue.add(hc);
@@ -63,7 +77,7 @@ export function makeCueViewmodel() {
   const chalkCube = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.024, 0.024), new THREE.MeshStandardMaterial({ color: 0x2b6cc4 }));
   chalkCube.position.set(0, -0.03, -0.03);
   handL.add(palm, chalkCube);
-  return { handCue, handR, handL };
+  return { handCue, handR, handL, cue: hc };
 }
 
 export class Billiards extends MiniGame {
@@ -98,7 +112,7 @@ export class Billiards extends MiniGame {
     this.chalk.visible = false; this.group.add(this.chalk);
     // cue carried in hand while waiting (camera child), with a chalk hand
     const vm = makeCueViewmodel();
-    this.handCue = vm.handCue; this.handR = vm.handR; this.handL = vm.handL;
+    this.handCue = vm.handCue; this.handR = vm.handR; this.handL = vm.handL; this.cueStick = vm.cue;
     this.handCue.visible = false; this.handL.visible = false;
     this.camera.add(this.handCue, this.handL);
     this.chalkT = -1;
@@ -110,6 +124,7 @@ export class Billiards extends MiniGame {
     this.group.add(this.guide, this.guide2, this.ghost);
     // Shark
     this.shark = new Patron({ name: 'Shark', shirt: 0x151515, height: 1.05, seed: 404 });
+    reskin.dress(this.shark);
     this.sharkRest = new THREE.Vector3(this.cx + P.L / 2 + 0.95, 0, this.cz - 0.35);
     this.shark.root.position.copy(this.sharkRest);
     this.sharkYaw = Math.atan2(this.cx - this.sharkRest.x, this.cz - this.sharkRest.z);
@@ -260,7 +275,7 @@ export class Billiards extends MiniGame {
     this.handCue.position.set(0.46 - e * 0.3, -0.62 + e * 0.35, -0.45 - e * 0.1);
     this.handCue.rotation.set(0.1 - e * 1.25, 0.1 - e * 0.4, -0.35 + e * 0.3);
     this.handL.visible = e > 0.3;
-    const tip = this.handCue.children[0].localToWorld(new THREE.Vector3(0, 0, 0));
+    const tip = this.cueStick.localToWorld(new THREE.Vector3(0, 0, 0)); // the cue's origin is its tip
     const local = this.camera.worldToLocal(tip);
     this.handL.position.copy(local).add(new THREE.Vector3(Math.sin(k * 45) * 0.012 * e, 0.035 + Math.cos(k * 45) * 0.01 * e, -0.01));
     this.handL.rotation.set(0.4, 0, Math.sin(k * 45) * 0.3 * e);
