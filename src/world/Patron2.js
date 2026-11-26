@@ -88,6 +88,8 @@ const REACT = {
 };
 // sips: the part of each drinking clip where the glass is at the mouth (s), and how fast to play it
 const SIP = { sit: ['sitDrinkM', 2.9, 8.2, 1.35], stand: ['standDrink', 1.9, 6.1, 1.2] };
+/** Share of a clip's collarbone turn the clavicle keeps (the rest moves to the upper arm): see applyClips. */
+const CLAV_KEEP = 0.35;
 const SOFT_ACTS = new Set(['gesture', 'nod', 'laugh', 'cheer']);
 /** Mask for seated clips: the chair keeps the hips and legs (seat height, feet on the floor or rail). */
 export const LOWER_BODY = new Set(['Hips', 'LeftUpLeg', 'LeftLeg', 'LeftFoot', 'RightUpLeg', 'RightLeg', 'RightFoot']);
@@ -385,6 +387,20 @@ export class Patron {
     for (const a of this.arms) {
       const q = a.wrist.quaternion; _q.set(0, q.y, 0, q.w).normalize();
       a.twist.quaternion.copy(_qid).slerp(_q, 0.5);
+    }
+    // Collarbones: the library clips turn the clavicle 20-40 degrees in everyday motions (70+ in a cheer). Our clavicle
+    // runs from the spine to the shoulder joint (about 0.23 m), far longer than the clip rig's, so those angles throw
+    // the shoulder joint up and in by 10-28 cm and the arms seem to grow out of the neck. Keep a third of the clavicle
+    // turn and give the rest to the upper arm, so each arm still points where the clip puts it.
+    let cw = 0; for (const l of this.layers) if (!(l.mask && l.mask.has('LeftShoulder'))) cw += l.w;
+    const keep = 1 - (1 - CLAV_KEEP) * Math.min(1, cw);
+    if (keep < 0.999) {
+      for (const a of this.arms) {
+        _q1.copy(a.clav.quaternion);                       // full clavicle turn
+        a.clav.quaternion.copy(_qid).slerp(_q1, keep);      // reduced
+        _q2.copy(a.clav.quaternion).invert().multiply(_q1); // the part taken out ...
+        a.pivot.quaternion.premultiply(_q2);                // ... goes to the upper arm (same world direction)
+      }
     }
   }
 

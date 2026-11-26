@@ -108,6 +108,16 @@ How far v2 moves from v1, measured across the poses (`qa/cmp.mjs`):
   - Jaw, the lower lip and chin, with a hinge in front of the ears.
 - **v1 hand joint** becomes the wrist.
 
+### Arm fixes applied at load (dressPatron2 / Patron2)
+
+The built GLBs had two arm problems that made every character's arms look stretched and rubbery in motion. The game corrects them when a character is dressed, so the current GLBs work as they are:
+
+- **Elbows sat in front of the arm.** Every elbow joint was placed straight under the shoulder, but the modelled arms hang with the elbows back, so the joint was 4-8 cm in front of the real elbow (Rose: 2.5 cm behind). `dressPatron2` moves each `ForeArm` joint (and `ForeArmTwist`, half way to the wrist) to the centre of the arm's cross-section at elbow height and adjusts the inverse binds to match, so the rest pose is unchanged.
+- **Sleeves tied to the spine.** Some upper-arm vertices carried up to a third of their weight on Spine/Spine1. Past 40-55% of the way from shoulder to elbow, a vertex that is mostly arm now follows the arm only.
+- **Collarbones turning too far.** The library clips turn the clavicle 20-40° in ordinary motions (over 70° in `cheerBothHands`). Our clavicle runs from the spine to the shoulder joint (about 0.23 m), so those angles threw the shoulder joint 10-28 cm. While clips play, `Patron2.applyClips` keeps 35% of the clavicle turn (`CLAV_KEEP`) and gives the rest to the upper arm, which keeps each arm pointing where the clip puts it.
+
+For future builds, place the elbow joint in the middle of the arm, keep upper-arm vertices off the spine bones, and start the clavicle nearer the shoulder (Mixamo's is about 0.12 m long). Then the load-time elbow and sleeve fixes find nothing to change.
+
 ## Switching characters to v2
 
 `reskin.patron(opts)` builds a character with Patron v2 when its `<name>-v2.glb` is present (else v1) and dresses it; the bar and all three mini-games (billiards, darts, foosball) use it. URL overrides:
