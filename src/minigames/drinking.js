@@ -179,7 +179,7 @@ export class Drinking extends MiniGame {
     await this.seq(0.35, () => {});
     await this.seq(drainSec, (e, k) => { sal.tiltR = Math.min(1, k * 3); this.bar.setGlassLevel(glass, 1 - k); });
     sal.tiltR = 0; sal.liftR = 0;
-    if (lose) { sal.laugh(); return; }
+    if (lose) { sal.laugh(); sal.react?.('win'); return; }
     await this.seq(0.45, () => {});
     sal.headTarget = this.salSpot.clone().add(new THREE.Vector3(0, 0.08, 0));
     await this.salTurn(this.salBarYaw, 0.4);
@@ -200,6 +200,7 @@ export class Drinking extends MiniGame {
   updateSalHold(dt) {
     const h = this.salHold;
     const sal = this.sal;
+    if (sal.grip) sal.grip[1] = h ? 1 : 0;   // Patron v2 closes his hand round the glass
     // tip the top of the glass back towards his mouth as he drinks, eased like his arm
     const want = -(0.25 * sal.liftR + 1.55 * sal.tiltR) * sal.liftR;
     this.salTilt = THREE.MathUtils.damp(this.salTilt || 0, want, 8, dt);

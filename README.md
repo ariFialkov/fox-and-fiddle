@@ -100,18 +100,30 @@ Debug flags: `?skipintro=1`, `?lowend=1` (no bloom/shadows, fewer lights), `?tim
 
 ## Western reskin
 
-The Western art drops plug in without code changes. Unpack them, in order (W1 art, W1 models, W2,
-W4.4, W5, W6, so a later drop overwrites a repeated name), into `public/western/`. Any folder layout
-works: files are found by name. Then:
-
-- copy `code/dressPatron.js` (W6) to `src/world/dressPatron.js`, which dresses the 20 characters;
-- copy the drop's `icons/` (W1) over `public/icons/`;
-- rebuild (`npm run build`).
+The Western art (drops W1 to W6 and V2) is committed under `public/western/`: models, textures, posters,
+signs, the first-person models, the window loop, the 20 characters (`characters/` for Patron v1,
+`characters/v2/` for Patron v2) and the animation clips (`anim/patron-clips.json`). Files are found by
+name, so any folder layout works; a later drop overwrites a repeated name. Review material from the drops
+(`preview/`, `screens/`, `masters/`, `refs/`, `thumbs/`) is not committed; `preview/` and `screens/` are left
+out of the build if you unpack them anyway.
 
 `src/world/reskin.js` loads what is there before the bar is built, and `Bar.applyReskin()`, the
 character hooks and the first-person and table-soccer builders swap each asset in. Anything not
 found keeps today's procedural version, so the game works with none, some or all of the art.
-`preview/` and `screens/` folders are review material and are left out of the build.
+
+### Patron v2 and animation clips
+
+Characters run on Patron v2 (`src/world/Patron2.js`, dressed by `src/world/dressPatron2.js`): the same
+API as Patron v1 on a 31-bone Mixamo-named skeleton, with knees, feet that stay on the floor or the bar's
+foot rail, hands that grip props, a jaw, blinking eyelids and 35 motion-capture clips (ambient idle, talk,
+jukebox and seated motion, sips, win and lose reactions). `reskin.patron(opts)` builds v2 when a
+character has a `<name>-v2.glb`, else v1. `?v2=off` forces v1; `?v2=sal,dee` limits v2 to those characters.
+
+The full spec, the clip list and how to add clips are in [`docs/RIG_SPEC.md`](docs/RIG_SPEC.md).
+`rigv2.html` (open `/rigv2.html?c=sal` on the dev server) shows v1 and v2 side by side for any pose
+or clip. `node qa/cmp.mjs` compares v1 and v2 hand, head and glass positions across the poses.
+`tools/western/` holds the Python pipeline that built the characters and clips (Meshy API, rigging,
+retargeting), for reference; paths in it point at the machine it ran on.
 
 ## Asset catalog
 

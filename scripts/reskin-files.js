@@ -9,7 +9,7 @@ import path from 'node:path';
 const VIRTUAL = 'virtual:reskin-files';
 const RESOLVED = '\0' + VIRTUAL;
 const SKIP_DIRS = new Set(['preview', 'screens', '__MACOSX']);   // review material, not game assets
-const EXT = /\.(glb|gltf|png|jpe?g|webp|webm|mp4)$/i;
+const EXT = /\.(glb|gltf|png|jpe?g|webp|webm|mp4|json)$/i;
 
 export function scanReskin(root) {
   const base = path.join(root, 'public', 'western');

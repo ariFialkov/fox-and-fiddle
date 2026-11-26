@@ -8,7 +8,6 @@
  */
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
-import { Patron } from '../world/Patron.js';
 import { turnToward } from '../engine/Player.js';
 import * as P from './poolPhysics.js';
 import { reskin } from '../world/reskin.js';
@@ -123,8 +122,7 @@ export class Billiards extends MiniGame {
     this.ghost.rotation.x = -Math.PI / 2;
     this.group.add(this.guide, this.guide2, this.ghost);
     // Shark
-    this.shark = new Patron({ name: 'Shark', shirt: 0x151515, height: 1.05, seed: 404 });
-    reskin.dress(this.shark);
+    this.shark = reskin.patron({ name: 'Shark', shirt: 0x151515, height: 1.05, seed: 404 });
     this.sharkRest = new THREE.Vector3(this.cx + P.L / 2 + 0.95, 0, this.cz - 0.35);
     this.shark.root.position.copy(this.sharkRest);
     this.sharkYaw = Math.atan2(this.cx - this.sharkRest.x, this.cz - this.sharkRest.z);
@@ -368,7 +366,7 @@ export class Billiards extends MiniGame {
       this.phase = 'over';
       const win = out.winner === 'you';
       this.updateScore(out.message);
-      if (win) this.shark.stagger(); else this.shark.cheer();
+      if (win) { if (!this.shark.react?.('lose')) this.shark.stagger(); } else this.shark.cheer();
       this.after(1.6, () => this.finish({
         win, title: win ? 'Rack cleared' : 'Shark wins',
         line: win ? (out.message === '8-ball down' ? 'Shark racks his cue without a word. The table is yours.' : `Shark ${out.message.toLowerCase()}. You will take it.`) : (out.message === '8-ball down' ? '"Pleasure doing business," says Shark.' : `${out.message}. Shark smiles for the first time tonight.`),

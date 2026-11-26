@@ -531,6 +531,7 @@ const ACTS = {
             const a = Math.random() * Math.PI * 2, sp = rr(0.8, 2.2);
             ball.userData.vel = { x: Math.cos(a) * sp, z: Math.sin(a) * sp };
             if (Math.random() < 0.25) { p.cheer(); if (partner) partner.patron.stagger(); }
+            else if (Math.random() < 0.25) p.react?.('lose');
             d.shotPhase = 'watch'; d.aimT = 1.8; p.pose = 'idle';
           }
         } else if (d.shotPhase === 'watch') {
@@ -572,6 +573,7 @@ const ACTS = {
         d.thrown++; d.wait = d.thrown >= 3 ? 1.2 : rr(2, 3.2);
         if (d.thrown >= 3) { d.collecting = true; d.wait = 2.2; dir.goTo(n, new THREE.Vector3(b.x - 0.6, 0, b.pos.z), new THREE.Vector3(b.pos.x, 0, b.pos.z)); }
         if (Math.random() < 0.15) dir.after?.(0.5, () => p.cheer());
+        else if (Math.random() < 0.1) dir.after?.(0.5, () => p.react?.('lose'));
       }
       if (n.timer > n.data.until && !d.darts.length) return true;
       return false;

@@ -10,10 +10,19 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import index from 'virtual:reskin-files';
+import { Patron } from './Patron.js';
+import { Patron as Patron2, loadPatronClips } from './Patron2.js';
+
+// Patron v2 (standard skeleton): a character uses it when its <name>-v2.glb is present. URL overrides:
+// ?v2=off (everyone on v1), ?v2=sal,dee (only those), ?v2=all (the default).
+const V2_PARAM = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('v2')) || '';
 
 // dressPatron.js ships in drop W6; it is picked up when copied to src/world/. Bundled eagerly: the
 // game ships as one inlined page, where a separately loaded chunk would be looked for in the wrong folder.
-const dressModules = import.meta.glob('./dressPatron.js', { eager: true });
+const dressModules = import.meta.glob(['./dressPatron.js', './dressPatron2.js'], { eager: true });
+
+/** Characters on the Patron v2 skeleton: their GLB is named <name>-v2.glb (e.g. sal-v2.glb). */
+export const v2File = (file) => file.replace(/\.glb$/, '-v2.glb');
 
 /** The 20 characters: Patron name -> GLB. */
 export const CHARACTER_FILES = {
@@ -26,7 +35,7 @@ export const CHARACTER_FILES = {
 const MODELS = [
   // world space
   'bar-counter.glb', 'back-bar.glb', 'beer-tap.glb', 'bar-stool.glb', 'pub-table.glb', 'potted-plant.glb', 'door.glb',
-  'radiator.glb', 'cue-rack.glb', 'wall-sconce.glb', 'coat-hanging.glb', 'dartboard.glb', 'tv.glb', 'window-frame.glb',
+  'radiator.glb', 'cue-rack.glb', 'wall-sconce.glb', 'coat-hanging.glb', 'dartboard.glb', 'tv.glb', 'window-frame.glb', 'foot-rail.glb',
   // inside existing groups
   'chair.glb', 'coat-rack.glb', 'jukebox.glb', 'pool-table.glb', 'foosball-table.glb', 'pendant-lamp.glb', 'ceiling-fan.glb', 'coat-player.glb',
   // props and drinks
@@ -45,6 +54,7 @@ const gltfs = new Map();      // file name -> gltf
 const textures = new Map();   // stem -> Texture
 const poolBalls = [];         // index 0..15 -> Texture
 let dressPatronFn = null;
+let dressPatron2Fn = null;
 let videoUrl = null;
 let loaded = false;
 
@@ -65,7 +75,7 @@ export async function loadReskin(onProgress = () => {}) {
   const gltfLoader = new GLTFLoader();
   const texLoader = new THREE.TextureLoader();
   const jobs = [];
-  for (const name of [...MODELS, ...Object.values(CHARACTER_FILES)]) {
+  for (const name of [...MODELS, ...Object.values(CHARACTER_FILES), ...Object.values(CHARACTER_FILES).map(v2File)]) {
     const f = fileFor(name);
     if (f && !gltfs.has(name)) jobs.push(() => gltfLoader.loadAsync(url(f)).then((g) => gltfs.set(name, g)));
   }
@@ -87,8 +97,13 @@ export async function loadReskin(onProgress = () => {}) {
     const probe = document.createElement('video');
     videoUrl = url(webm && probe.canPlayType('video/webm') ? webm : (mp4 || webm));
   }
+  // animation clips for Patron v2 (retargeted library motions)
+  const clipsFile = fileFor('patron-clips.json');
+  if (clipsFile) jobs.push(() => fetch(url(clipsFile)).then((r) => r.json()).then((j) => loadPatronClips(j)));
   const dm = dressModules['./dressPatron.js'];
   if (dm) dressPatronFn = dm.dressPatron || dm.default || null;
+  const dm2 = dressModules['./dressPatron2.js'];
+  if (dm2) dressPatron2Fn = dm2.dressPatron2 || null;
   let done = 0;
   const total = jobs.length;
   // a few at a time keeps phones responsive while 20 characters stream in
@@ -132,9 +147,25 @@ export const reskin = {
   /** Skin a Patron with its character GLB, if both the GLB and dressPatron.js are present. */
   dress(patron) {
     const file = CHARACTER_FILES[patron.name];
-    const g = file && gltfs.get(file);
-    if (!g || !dressPatronFn) return false;
-    try { dressPatronFn(patron, g); return true; } catch (e) { console.warn(`[reskin] could not dress ${patron.name}`, e); return false; }
+    const v2 = patron.version === 2;
+    const g = file && gltfs.get(v2 ? v2File(file) : file);
+    const fn = v2 ? dressPatron2Fn : dressPatronFn;
+    if (!g || !fn) return false;
+    try { fn(patron, g); return true; } catch (e) { console.warn(`[reskin] could not dress ${patron.name}`, e); return false; }
+  },
+  /** True when a v2 GLB exists for this Patron name (used to pick Patron v2 for it). */
+  hasV2(name) { const f = CHARACTER_FILES[name]; return !!(f && gltfs.get(v2File(f)) && dressPatron2Fn); },
+  /** True when this character should be built on Patron v2 (its v2 GLB is here and the URL allows it). */
+  useV2(name) {
+    if (V2_PARAM === 'off') return false;
+    const list = V2_PARAM && V2_PARAM !== 'all' ? V2_PARAM.toLowerCase().split(',') : null;
+    return (!list || list.includes(name.toLowerCase())) && this.hasV2(name);
+  },
+  /** A new Patron for these options, v1 or v2 as available, dressed in its character GLB. */
+  patron(opts) {
+    const p = this.useV2(opts.name) ? new Patron2(opts) : new Patron(opts);
+    this.dress(p);
+    return p;
   },
 };
 

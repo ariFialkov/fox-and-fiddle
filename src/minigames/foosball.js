@@ -5,7 +5,6 @@
  */
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
-import { Patron } from '../world/Patron.js';
 import { reskin } from '../world/reskin.js';
 
 const L = 1.2, W = 0.7, R = 0.017, GOAL = 0.1, LEG = 0.065;
@@ -106,8 +105,7 @@ export class Foosball extends MiniGame {
     }
     this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 14, 10), new THREE.MeshStandardMaterial({ color: 0xf4efe0, roughness: 0.4 }));
     this.ballMesh.castShadow = true; this.group.add(this.ballMesh);
-    this.opp = new Patron({ name: 'Nadia', female: true, shirt: 0xd93b2b, height: 0.98, seed: 909 });
-    reskin.dress(this.opp);
+    this.opp = reskin.patron({ name: 'Nadia', female: true, shirt: 0xd93b2b, height: 0.98, seed: 909 });
     this.opp.root.position.set(this.cx + 0.1, 0, this.cz - W / 2 - 0.55);
     this.opp.lookAt(new THREE.Vector3(this.cx, 0, this.cz)); this.opp.pose = 'foos'; this.group.add(this.opp.root);
 

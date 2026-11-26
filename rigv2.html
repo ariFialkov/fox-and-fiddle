@@ -1,0 +1,75 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Patron v1 vs v2 - Sal</title>
+<style>body{margin:0;background:#1d1610;color:#f0dcc0;font:13px sans-serif;overflow:hidden}#ui{position:absolute;top:6px;left:8px}#ui b{margin-right:12px}</style></head>
+<body><div id="ui"><b>left: Patron v1 (today)</b><b>right: Patron v2 (standard skeleton)</b><span id="lbl"></span></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Patron } from '/src/world/Patron.js';
+import { Patron as Patron2, loadPatronClips, LOWER_BODY } from '/src/world/Patron2.js';
+await fetch('/western/anim/patron-clips.json').then(r => r.json()).then(loadPatronClips).catch(() => null);
+import { dressPatron } from '/src/world/dressPatron.js';
+import { dressPatron2 } from '/src/world/dressPatron2.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); r.setPixelRatio(1); r.shadowMap.enabled = true;
+r.outputColorSpace = THREE.SRGBColorSpace; document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x2a1f16);
+const cam = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.1, 50); cam.position.set(0, 1.25, 3.6); cam.lookAt(0, 0.95, 0);
+scene.add(new THREE.HemisphereLight(0xffe2c4, 0x3a2a1c, 1.1));
+const key = new THREE.DirectionalLight(0xffd2a0, 2.2); key.position.set(1.5, 3, 2.5); key.castShadow = true; scene.add(key);
+const rim = new THREE.DirectionalLight(0xa0b4ff, 0.6); rim.position.set(-2, 2, -2); scene.add(rim);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x4a3524, roughness: 0.9 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const L = new GLTFLoader();
+const Q = new URLSearchParams(location.search), CH = Q.get('c') || 'sal', FEM = Q.get('f') === '1', HT = +(Q.get('h') || 1.03);
+const V1 = Q.get('v1') || CH, V2URL = Q.get('v2url') || `/western/characters/v2/${CH}-v2.glb`;
+const [g1, g2] = await Promise.all([L.loadAsync(`/western/characters/${V1}.glb`), L.loadAsync(V2URL)]);
+const mk = (P, dress, g, x) => { const p = new P({ name: CH, female: FEM, shirt: 0x6b4a2a, height: HT, seed: 3 }); dress(p, g); p.root.position.x = x; scene.add(p.root);
+  const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.72, 16), new THREE.MeshStandardMaterial({ color: 0x5a3a22 })); stool.position.set(x, 0.36, -0.12); stool.visible = false; scene.add(stool); p.stool = stool;
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.12, 12), new THREE.MeshStandardMaterial({ color: 0xd9a040, transparent: true, opacity: 0.8 })); p.holdGlass(glass); return p; };
+// a brass foot rail 0.32 m in front of the stools, like the bar's
+const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 3, 16), new THREE.MeshStandardMaterial({ color: 0xb08d57, metalness: 1, roughness: 0.4 }));
+rail.rotation.z = Math.PI / 2; rail.position.set(0, 0.17, 0.32); scene.add(rail);
+Patron2.footRests.push({ a: [-2, 0.192, 0.32], b: [2, 0.192, 0.32] });
+window.__rail = (on) => { rail.visible = on; Patron2.footRests.length = 0; if (on) Patron2.footRests.push({ a: [-2, 0.192, 0.32], b: [2, 0.192, 0.32] }); };
+const A = mk(Patron, dressPatron, g1, -0.55), B = mk(Patron2, dressPatron2, g2, 0.55);
+const both = [A, B]; window.__both = both; window.__THREE = THREE;
+let yaw = 0;
+window.__set = (o) => { for (const p of both) { p.pose = 'idle'; p.walk = 0; p.ko = 0; p.slump = 0; p.liftR = 0; p.reachR = 0; p.tiltR = 0; p.mood = 0.5; p.acts = {};
+  if (o.pose === 'sit') { const h = o.seat || 0.72; p.sit(h); p.stool.scale.y = h / 0.72; p.stool.position.y = h / 2; } else if (o.pose) p.pose = o.pose; Object.assign(p, o.set || {}); if (o.act) p[o.act](); p.stool.visible = o.pose === 'sit'; p.root.rotation.y = o.yaw || 0; }
+  document.getElementById('lbl').textContent = o.label || ''; };
+window.__step = (sec) => { const n = Math.round(sec * 60); for (let i = 0; i < n; i++) for (const p of both) p.update(1 / 60); };
+window.__cam = (x, y, z, ty, tx = 0, tz = 0) => { cam.position.set(x, y, z); cam.lookAt(tx, ty, tz); };
+window.__only = (i) => both.forEach((p, k) => { p.root.visible = i < 0 || k === i; p.stool.visible = p.stool.visible && p.root.visible; });
+const loop = () => { r.render(scene, cam); requestAnimationFrame(loop); }; loop();
+
+// dominant-bone region stats for the dressed v2 Patron (index 1): lowest point of each region
+window.__stats = (i = 1) => { const p = both[i]; p.root.updateMatrixWorld(true); let sk = null; p.body.traverse(o => { if (o.isSkinnedMesh) sk = o; });
+  const bones = sk.skeleton.bones, ji = sk.geometry.attributes.skinIndex, wi = sk.geometry.attributes.skinWeight, v = new THREE.Vector3(), out = {};
+  for (let k = 0; k < ji.count; k++) { let best = 0, bw = -1; for (let c = 0; c < 4; c++) { const w = wi.getComponent(k, c); if (w > bw) { bw = w; best = ji.getComponent(k, c); } }
+    const n = bones[best].name; sk.getVertexPosition(k, v); sk.localToWorld(v); const o = out[n] || (out[n] = { minY: 1e9, maxY: -1e9, minZ: 1e9, maxZ: -1e9 });
+    o.minY = Math.min(o.minY, v.y); o.maxY = Math.max(o.maxY, v.y); o.minZ = Math.min(o.minZ, v.z); o.maxZ = Math.max(o.maxZ, v.z); }
+  for (const o of Object.values(out)) for (const k in o) o[k] = +o[k].toFixed(3); return out; };
+window.__setSeat = (h) => { for (const p of both) { p.sit(h); p.stool.scale.y = h / 0.72; p.stool.position.y = h / 2; } };
+
+// vertices that stick out the most after skinning, relative to their rest-pose neighbourhood (finds fins and spikes)
+window.__spikes = (i = 1, n = 8, yMax = 0.9) => { const p = both[i]; p.root.updateMatrixWorld(true); let sk = null; p.body.traverse(o => { if (o.isSkinnedMesh) sk = o; });
+  const g = sk.geometry, P = g.attributes.position, N = P.count, idx = g.index.array, bones = sk.skeleton.bones, ji = g.attributes.skinIndex, wi = g.attributes.skinWeight;
+  const rest = new Float32Array(N * 3), pose = new Float32Array(N * 3), v = new THREE.Vector3();
+  const key = new Map(), rep = new Int32Array(N);
+  for (let k = 0; k < N; k++) { const kk = P.getX(k).toFixed(4) + ',' + P.getY(k).toFixed(4) + ',' + P.getZ(k).toFixed(4); if (!key.has(kk)) key.set(kk, k); rep[k] = key.get(kk);
+    sk.getVertexPosition(k, v); sk.localToWorld(v); pose.set([v.x, v.y, v.z], k * 3); }
+  const nb = new Map(); const add = (a, b) => { a = rep[a]; b = rep[b]; if (a === b) return; (nb.get(a) || nb.set(a, new Set()).get(a)).add(b); };
+  for (let t = 0; t < idx.length; t += 3) { const [a, b, c] = [idx[t], idx[t + 1], idx[t + 2]]; add(a, b); add(b, a); add(b, c); add(c, b); add(a, c); add(c, a); }
+  const res = [];
+  for (const [a, set] of nb) { if (pose[a * 3 + 1] > yMax) continue; let mx = 0, my = 0, mz = 0; for (const b of set) { mx += pose[b * 3]; my += pose[b * 3 + 1]; mz += pose[b * 3 + 2]; }
+    const k = set.size; const d = Math.hypot(pose[a * 3] - mx / k, pose[a * 3 + 1] - my / k, pose[a * 3 + 2] - mz / k);
+    const w = []; for (let c = 0; c < 4; c++) { const ww = wi.getComponent(a, c); if (ww > 0.01) w.push(bones[ji.getComponent(a, c)].name + ':' + ww.toFixed(2)); }
+    res.push({ a, d: +d.toFixed(4), pos: [pose[a * 3], pose[a * 3 + 1], pose[a * 3 + 2]].map(x => +x.toFixed(3)), w: w.join(' ') }); }
+  if (n === 0) return res; res.sort((x, y) => y.d - x.d); return res.slice(0, n); };
+window.__redMouth = () => { for (const p of both) { p.mouth.material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); for (const l of p.lids || []) { l.material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); } } };
+window.__lids = (v) => { for (const p of both) for (const l of p.lids || []) { l.scale.y = v; l.visible = true; } };
+window.__camHand = (i, dx, dy, dz, arm = 1) => { const p = both[i]; p.root.updateMatrixWorld(true); const h = p.arms[arm].hand.getWorldPosition(new THREE.Vector3()); cam.position.set(h.x + dx, h.y + dy, h.z + dz); cam.lookAt(h); };
+for (const p of [A, B]) p.autoClips = !!Q.get('auto');
+window.__clip = (name, t) => { const p = B; p.layers = []; const l = p.playClip(name, { slot: 'act', fade: 0.001 }); if (!l) return 'no clip ' + name; l.w = 1; l.t = 0; const n = Math.round(t * 60); for (let i = 0; i < n; i++) p.update(1 / 60); l.w = 1; l.target = 1; return l.clip.duration; };
+window.__clipSit = (name, t) => { const p = B; p.layers = []; const l = p.playClip(name, { slot: 'act', fade: 0.001, mask: LOWER_BODY }); if (!l) return 'no clip ' + name; l.w = 1; l.t = 0; const n = Math.round(t * 60); for (let i = 0; i < n; i++) p.update(1 / 60); l.w = 1; l.target = 1; return l.clip.duration; };
+window.__clipNames = () => Object.keys(Patron2.clips?.clips || {});
+window.__ready = true;
+</script></body></html>

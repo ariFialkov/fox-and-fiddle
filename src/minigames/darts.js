@@ -10,7 +10,6 @@
  */
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
-import { Patron } from '../world/Patron.js';
 import { reskin } from '../world/reskin.js';
 
 const NUMS = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
@@ -79,8 +78,7 @@ export class Darts extends MiniGame {
     this.fitCamera();
     this.onResize = () => this.fitCamera(); addEventListener('resize', this.onResize);
 
-    this.bot = new Patron({ name: 'Fergus', shirt: 0x3d6b3a, height: 1.02, seed: 77 });
-    reskin.dress(this.bot);
+    this.bot = reskin.patron({ name: 'Fergus', shirt: 0x3d6b3a, height: 1.02, seed: 77 });
     this.bot.root.position.set(st.x + 1.0, 0, st.z + 1.05);
     this.bot.lookAt(new THREE.Vector3(b.pos.x, 0, b.pos.z));
     this.group.add(this.bot.root);
@@ -217,6 +215,7 @@ export class Darts extends MiniGame {
         this.rem.bot = this.visitStart;
         this.updateScore(`Fergus busts on ${s.label}`);
         this.hud.showToast('Bust!', `Fergus back to ${this.rem.bot}`, 1400);
+        this.bot.react?.('lose');
         return this.after(1.4, () => this.startPlayerVisit());
       }
       this.rem.bot -= s.score;
@@ -303,6 +302,7 @@ export class Darts extends MiniGame {
       ? ['"Lucky arrows," Fergus mutters, and buys the round.', '"Nobody beats me on a Tuesday." It is Thursday.']
       : ['"Practice makes perfect. You should try it."', 'Fergus chalks it up without looking at you.'];
     const t = title || (this.mode === '501' ? (win ? 'Game shot' : 'Fergus checks out') : (win ? `${this.you} beats ${this.bot.score}` : `${this.you} to ${this.bot.score}`));
+    this.bot.react?.(win ? 'lose' : 'win');
     this.finish({ win, title: t, line: lines[Math.floor(Math.random() * lines.length)] });
   }
 

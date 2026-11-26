@@ -13,6 +13,8 @@
 import * as THREE from 'three';
 import * as T from './textures.js';
 import { Patron } from './Patron.js';
+import { Patron as Patron2 } from './Patron2.js';
+
 import { reskin, INVISIBLE } from './reskin.js';
 
 export const ROOM = { minX: -8, maxX: 8, minZ: -5.5, maxZ: 5.5, height: 3.4 };
@@ -588,14 +590,14 @@ export class Bar {
     // neon glow
     // the signboard is painted wood lit by a lamp now, not pink neon (70% of the old neon's strength)
     const neonL = new THREE.PointLight(0xffa04a, low ? 2.8 : 5.6, 6, 2); neonL.position.set(-0.5, 2.7, ROOM.minZ + 0.6); this.group.add(neonL);
-    const openL = new THREE.PointLight(0xffd2a0, 1.8, 4, 2); // the OPEN sign is a hanging painted board openL.position.set(-2.4, 2.0, ROOM.maxZ - 0.5); this.group.add(openL);
+    const openL = new THREE.PointLight(0xffd2a0, 1.8, 4, 2); // the OPEN sign is a hanging painted board
+    openL.position.set(-2.4, 2.0, ROOM.maxZ - 0.5); this.group.add(openL);
     this.neonLight = neonL;
   }
 
   buildPatrons() {
     const add = (opts, x, z, lookX, lookZ, sit = false) => {
-      const p = new Patron(opts);
-      reskin.dress(p);
+      const p = reskin.patron(opts);   // Patron v2 where the character has a v2 GLB, else v1
       p.root.position.set(x, 0, z);
       if (sit) p.sit();
       p.lookAt(new THREE.Vector3(lookX, 0, lookZ));
@@ -641,6 +643,7 @@ export class Bar {
   // today's version, so this is safe with none, some or all of the art drops in place.
   // ---------------------------------------------------------------------------------------------
   applyReskin() {
+    Patron2.footRests.length = 0;
     const R = reskin, M = this.mats;
     const cat = (id) => this.catalog[id] || [];
     const hideAll = (objs) => { for (const o of objs) o.visible = false; };
@@ -720,6 +723,12 @@ export class Bar {
     if (R.gltf('bar-counter.glb')) {
       for (const inst of cat('barCounter')) hideAll(inst);
       for (let i = 0; i < 4; i++) place('bar-counter.glb', this.barCX + (i - 1.5) * 2.1675, 0, -4.25); // 4 x 2.1675 m = 8.67 m, top at 1.11 m
+      // brass foot rail along the bar front (its tube top at 0.192 m, 0.53 m in front of the counter's centre line);
+      // seated v2 Patrons rest their boots on it
+      if (R.gltf('foot-rail.glb')) {
+        for (let i = 0; i < 4; i++) place('foot-rail.glb', this.barCX + (i - 1.5) * 2.1675, 0, -4.25);
+        Patron2.footRests.push({ a: [this.barCX - 4.33, 0.192, -4.25 + 0.53], b: [this.barCX + 4.33, 0.192, -4.25 + 0.53] });
+      }
     }
     if (R.gltf('back-bar.glb')) {
       for (const inst of cat('backBar')) hideAll(inst);
