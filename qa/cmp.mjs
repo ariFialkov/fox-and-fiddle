@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { Patron as P1 } from '/home/claude/verify/src/world/Patron.js';
-import { Patron as P2 } from '/home/claude/verify/src/world/Patron2.js';
+import { Patron as P1 } from '../src/world/Patron.js';
+import { Patron as P2 } from '../src/world/Patron2.js';
 const v = new THREE.Vector3();
 const run = (P, setup, n = 150) => { const p = new P({ name: 'Sal', height: 1.03, seed: 3 }); setup(p); for (let i = 0; i < n; i++) p.update(1 / 60); p.root.updateMatrixWorld(true);
   return [p.arms[0].hand, p.arms[1].hand, p.head].map(o => o.getWorldPosition(v).toArray().map(x => +x.toFixed(3))); };
