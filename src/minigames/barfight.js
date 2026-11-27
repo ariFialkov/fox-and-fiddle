@@ -247,9 +247,11 @@ export class BarFight extends MiniGame {
     if (dist < 1.3 && e.cd <= 0 && !p.block) {
       e.cd = e.rate * (0.8 + Math.random() * 0.5);
       const kick = e.kicker && Math.random() < 0.35;
+      // thrown at your face; the hit lands as the punch (or kick) reaches full extension
+      p.punchTarget = this.player.eye().clone().add(new THREE.Vector3(0, -0.06, 0));
       if (kick) p.kick(); else p.punch();
       const side = p.punchArm ? 1 : -1;
-      this.after(kick ? 0.2 : 0.17, () => {
+      this.after(kick ? 0.27 : 0.23, () => {
         if (this.over || e.ko || e.stun > 0) return;
         if (this.toPlayer(e).length() < (kick ? 1.5 : 1.4)) this.hurt(e.dmg * (kick ? 1.3 : 1), e, side, kick ? 'low' : 'high');
       });
@@ -459,7 +461,7 @@ export class BarFight extends MiniGame {
     for (const l of this.labels) l.el.remove();
     if (this.held) this.returnProp(this.held);
     if (this.projectile) this.returnProp(this.projectile.pr);
-    for (const [p, pos] of this.origins) { p.root.position.copy(pos); p.ko = 0; p.pose = 'idle'; p.walk = 0; p.headTarget = null; p.block = null; p.stand(); }
+    for (const [p, pos] of this.origins) { p.root.position.copy(pos); p.ko = 0; p.pose = 'idle'; p.walk = 0; p.headTarget = null; p.block = null; p.punchTarget = null; p.stand(); }
   }
 }
 

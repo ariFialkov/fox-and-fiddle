@@ -52,6 +52,8 @@ export const PARENTS = {
 
 const _m4 = new THREE.Matrix4(), _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _yAxis = new THREE.Vector3(0, 1, 0), _xAxis = new THREE.Vector3(1, 0, 0), _q1 = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
 const _v3 = new THREE.Vector3(), _v4 = new THREE.Vector3(), _v5 = new THREE.Vector3(), _v6 = new THREE.Vector3();
+const _v7 = new THREE.Vector3(), _v8 = new THREE.Vector3(), _v9 = new THREE.Vector3(), _v10 = new THREE.Vector3(), _v11 = new THREE.Vector3(), _v12 = new THREE.Vector3(), _v13 = new THREE.Vector3();
+const _m5 = new THREE.Matrix4(), _q3 = new THREE.Quaternion(), _q4 = new THREE.Quaternion(), _qc = new THREE.Quaternion(), _qd = new THREE.Quaternion();
 
 /**
  * Animation clips: Meshy library motions retargeted to this skeleton (scripts/retarget.py), shared by every Patron.
@@ -89,6 +91,31 @@ function levelClip(clip, names) {
   const H = new THREE.Quaternion(), U = new THREE.Quaternion(), K = new THREE.Quaternion(), F = new THREE.Quaternion(), N = new THREE.Quaternion(), Hd = new THREE.Quaternion();
   const R = new THREE.Quaternion(), t = new THREE.Quaternion(), a = new THREE.Vector3(), j = new THREE.Vector3(), X = new THREE.Vector3(1, 0, 0);
   const hips = at('Hips'), legs = ['Left', 'Right'].map((s) => ({ up: at(s + 'UpLeg'), knee: at(s + 'Leg'), foot: at(s + 'Foot'), off: v3(L[s + 'UpLeg']) }));
+  // facing: the clips turn the hips (up to 14 degrees in 'chat' and 'agree') and twist the chest further (10-20 in
+  // some idles) on average, so two people facing each other talk past each other. Turn the hips back to face
+  // forward on average (their drift turns with them), then the chest. The boxing guard stands bladed on purpose.
+  const sp0 = at('Spine'), Yax = new THREE.Vector3(0, 1, 0);
+  if (hips >= 0 && sp0 >= 0 && clip.name !== 'boxingGuard') {
+    const yawOf = (q) => { j.set(0, 0, 1).applyQuaternion(q); return Math.atan2(j.x, j.z); };
+    const chestQ = (f, out) => { get(f, hips, out); for (const b of ['Spine', 'Spine1', 'Spine2'].map(at)) if (b >= 0) out.multiply(get(f, b, U)); return out; };
+    let hy = 0, cy = 0;
+    for (let f = 0; f < clip.frames; f++) { hy += yawOf(get(f, hips, H)); cy += yawOf(chestQ(f, K)); }
+    hy /= clip.frames; cy /= clip.frames;
+    if (Math.abs(hy) > 0.017) {
+      R.setFromAxisAngle(Yax, -hy);
+      const c = Math.cos(-hy), s = Math.sin(-hy), hp = clip.hips;
+      for (let f = 0; f < clip.frames; f++) {
+        put(f, hips, get(f, hips, H).premultiply(R));
+        const x = hp[f * 3], z = hp[f * 3 + 2];
+        hp[f * 3] = x * c + z * s; hp[f * 3 + 2] = -x * s + z * c;
+      }
+    }
+    const twist = cy - hy;                       // the chest's own average turn on the hips
+    if (Math.abs(twist) > 0.05) {
+      R.setFromAxisAngle(Yax, -(twist - Math.sign(twist) * 0.05));
+      for (let f = 0; f < clip.frames; f++) { get(f, hips, H); get(f, sp0, F); put(f, sp0, t.copy(H).invert().multiply(R).multiply(H).multiply(F).normalize()); }
+    }
+  }
   const shin = v3(L.LeftFoot), thigh = v3(L.LeftLeg);
   // legs: mean slope of hip-to-ankle, from straight down (positive = feet behind)
   if (!clip.name.startsWith('sit') && hips >= 0 && legs.every((l) => l.up >= 0 && l.knee >= 0 && l.foot >= 0)) {
@@ -159,9 +186,9 @@ function levelClip(clip, names) {
 
 // ambient clip sets by pose: picked at random, one after another, cross-faded
 const AMBIENT = {
-  idle: [['idle1', 2], ['idle3', 3], ['idle4', 3], ['idle7', 2], ['scratch', 0.5, 'free'], ['handRub', 0.4, 'free']],
+  idle: [['idle1', 0.5], ['idle3', 3], ['idle4', 3], ['idle7', 2.5], ['scratch', 0.5, 'free'], ['handRub', 0.4, 'free']],   // idle1 holds an arm out: now and then only
   talk: [['chat', 3], ['talkHandsOpen', 2], ['talkPassionate', 1], ['talkHandOnHip', 1.5], ['agree', 1], ['shrug', 1], ['listen', 2]],
-  juke: [['sway', 2], ['joyDance', 1.2]],
+  // juke: the dance is procedural (the library dances were made on another body and twist these arms through it)
   // seated: the chair keeps hips and legs (LOWER_BODY mask); '' = sit still for a few seconds
   sit: [['', 4], ['sitArmsCrossed', 1.5], ['sitTalk', 1.5], ['sitThumbsUp', 0.4], ['sitFingerWag', 0.4], ['sitLeanBack', 0.5, 'free']],
 };
@@ -276,6 +303,11 @@ export class Patron {
     this.mouthRest = this.mouth.position.clone();
     this.lids = [];                 // eyelid meshes (dressPatron2 adds them); closed = scale.y 1
     this.grip = [0, 0];             // set to 1 to close a hand round something the game places in it itself (arms[i] order)
+    this.fist = [0, 0];             // 1 = a closed fist (arms[i] order)
+    this.ik = [null, null];         // hand targets (reachHand), arms[i] order
+    this.gl = null;                 // a glass on a bar or table this Patron drinks from (glassOn)
+    this.punchTarget = null;        // a world point punches are thrown at (a face), or null for the plain swing
+    this.glassNeck = 0;
     this.layers = [];               // playing clips: {clip, t, w, target, fade, loop, slot, mask}
     this.autoClips = true;          // ambient clips for idle / talk / juke when a clip library is loaded
     this.ambient = null;
@@ -294,6 +326,14 @@ export class Patron {
   stand() { if (this.pose === 'sit') this.pose = 'idle'; }
   punch() { this.stopClips('act', 0.12); this.acts.punch = 0; this.punchArm = this.punchArm === 1 ? 0 : 1; }
   drink() {
+    // a glass on the bar or table in front of them: reach, take it, sip, set it back (at most every 6 s)
+    if (this.gl) {
+      if (!this.glassBusy && !this.gl.held && this.t - this.lastSip > 6 && this.ko < 0.05) {
+        this.lastSip = this.t;
+        this.pickUp(); this.sipGlass({ tilt: 0.75 + this.rnd() * 0.35, hold: 0.6 + this.rnd() * 0.7 }); this.putDown();
+      }
+      return;
+    }
     // with clips: a real sip from the drinking clip (glass guided to the mouth), at most every 10 s; else v1's quick one
     if (Patron.clips && this.autoClips && this.prop && this.propUpright) {
       if ((this.sip && this.layers.includes(this.sip)) || this.t - this.lastSip < 10) return;
@@ -348,6 +388,58 @@ export class Patron {
     this.acts[name] += dt * speed;
     if (this.acts[name] >= 1) { delete this.acts[name]; return 1; }
     return this.acts[name];
+  }
+
+  /**
+   * Keep arms out of the body. Clips made on a slimmer figure hang the arms where a broad or round character's
+   * hips and belly are. If a hand or elbow would be inside this character's torso (measured from its mesh at load:
+   * torsoProfile), the arm swings out at the shoulder just far enough to clear it, eased in and out.
+   * Arms placed by hand IK keep their targets.
+   */
+  clearArms(dt) {
+    const prof = this.torsoProfile;
+    if (!prof || !prof.length) return;
+    const B = this.bones;
+    this.root.updateMatrixWorld(true);
+    _m5.copy(B.Hips.matrixWorld).invert();
+    const at = (y) => {   // the slice at height y (body units from the hip joint), linearly between neighbours
+      if (y <= prof[0].y) return prof[0];
+      for (let i = 1; i < prof.length; i++) if (y <= prof[i].y) { const a = prof[i - 1], b = prof[i], k = (y - a.y) / (b.y - a.y); return { w: lerp(a.w, b.w, k), front: lerp(a.front, b.front, k), back: lerp(a.back, b.back, k) }; }
+      return prof[prof.length - 1];
+    };
+    for (let i = 0; i < 2; i++) {
+      const a = this.arms[i];
+      a.clearAng = a.clearAng || 0;
+      let need = 0;
+      if (!(this.ik[i] && this.ik[i].w > 0.5)) {
+        const S = _v1.copy(a.pivot.getWorldPosition(_v9)).applyMatrix4(_m5);
+        for (const j of [a.fore, a.hand]) {
+          const P = _v2.copy(j.getWorldPosition(_v9)).applyMatrix4(_m5);
+          const sl = at(P.y), margin = j === a.hand ? 0.045 : 0.05;
+          if (P.y > prof[prof.length - 1].y + 0.05 || P.y < prof[0].y - 0.05) continue;
+          if (P.z > sl.front + 0.02 || P.z < sl.back - 0.02) continue;          // in front of or behind the body
+          if (P.x * a.side < 0) continue;                                       // crossed over to the other side: a gesture
+          const gap = sl.w + margin - Math.abs(P.x);
+          if (gap > 0) need = Math.max(need, Math.atan2(gap, Math.max(0.15, S.y - P.y)));
+        }
+      }
+      a.clearAng = damp(a.clearAng, Math.min(need, 0.6), need > a.clearAng ? 18 : 5, dt);
+      if (a.clearAng > 0.002) {
+        // swing out about the body's forward axis, in the collarbone's frame
+        a.clav.getWorldQuaternion(_qa); this.bones.Hips.getWorldQuaternion(_qb);
+        const axis = _v3.set(0, 0, 1).applyQuaternion(_qb).applyQuaternion(_qa.invert());
+        a.pivot.quaternion.premultiply(_q1.setFromAxisAngle(axis, a.side * a.clearAng));
+      }
+    }
+  }
+
+  /** The dance's phase: one hip sway per two beats at ~105 bpm. */
+  danceT(t) { return t * Math.PI * 1.75 + this.shiftPhase; }
+  /** The dancer's occasional raised hand: { k: 0..1 envelope, arm }. */
+  danceLift(t) {
+    const bar = 4 / 1.75, cycle = bar * 4, u = ((t + this.shiftPhase * 3) % cycle) / bar;   // every fourth bar
+    const k = u < 1 ? Math.sin(Math.PI * u) : 0;
+    return { k: k * k * (3 - 2 * k), arm: Math.floor((t + this.shiftPhase * 3) / cycle) % 2 };
   }
 
   /** Leg proportions from the rest skeleton (body units): thigh / shin lengths and rest angles from straight down. */
@@ -538,7 +630,9 @@ export class Patron {
     switch (this.pose) {
       case 'sit':
         tg.hipL = tg.hipR = -1.35; tg.torsoH = this.seatH + 0.04;
-        tg.lx = tg.rx = -0.9; tg.lf = tg.rf = -1.6; tg.lz = 0.25; tg.rz = -0.25;
+        // forearms resting forward at lap / counter height (a held glass is placed by the hand IK, not this pose)
+        tg.lx = tg.rx = -0.55; tg.lf = tg.rf = -1.05; tg.lz = 0.22; tg.rz = -0.22;
+        if (this.prop && this.propArm === 1) { tg.rx = -0.9; tg.rf = -1.6; }   // a v1-style held glass
         break;
       case 'flirt': {
         const m = this.mood;
@@ -556,8 +650,8 @@ export class Patron {
         if (this.block === 'low') { tg.hipR = -1.1; tg.kneeR = 1.0; tg.torsoX = 0.3; tg.lx = -0.6; tg.rx = -0.6; tg.lf = -1.2; tg.rf = -1.2; tg.bodyY = 0.02; }
         break;
       }
-      case 'lean': // over a pool table, cue in the right hand
-        tg.torsoX = 0.85; tg.neckX = -0.6;
+      case 'lean': // down on a pool shot: chest low over the cue (chin ~20 cm above it), eyes along the line
+        tg.torsoX = 1.15; tg.neckX = -1.0;
         tg.lx = -1.6; tg.lf = -0.4; tg.lz = 0.5; tg.rx = -0.9; tg.rf = -0.9; tg.rz = -0.2;
         tg.hipL = -0.15; tg.hipR = 0.25;
         break;
@@ -567,9 +661,20 @@ export class Patron {
       case 'darts':
         tg.lx = -0.5; tg.lf = -1.5; tg.rx = -1.8; tg.rf = -1.5; tg.rz = -0.3; tg.torsoX = 0.05;
         break;
-      case 'juke': // leaning on the jukebox, one hand on it
-        tg.rx = -1.0; tg.rf = -0.5; tg.lx = 0.2; tg.lf = -0.8; tg.torsoX = 0.15; tg.torsoZ = -0.08;
+      case 'juke': { // dancing by the jukebox: an easy saloon two-step (legs and hips below, after the leg code)
+        const th = this.danceT(t), sn = Math.sin(th), lift = this.danceLift(t);
+        // arms loose, elbows bent, swinging against the hips and held clear of the body
+        // (z: negative takes arms[0] out from the body, positive takes arms[1] out)
+        tg.lx = -0.2 - 0.2 * sn; tg.rx = -0.2 + 0.2 * sn;
+        tg.lf = tg.rf = -1.45 - 0.15 * Math.cos(2 * th);
+        tg.lz = -(0.26 + 0.05 * sn); tg.rz = 0.26 - 0.05 * sn;
+        // every few bars one hand comes up out to the side (a little flourish), then back down
+        if (lift.k > 0) { const a = lift.arm ? 'r' : 'l'; tg[a + 'x'] = lerp(tg[a + 'x'], -1.9, lift.k); tg[a + 'f'] = lerp(tg[a + 'f'], -0.8, lift.k); tg[a + 'z'] = lerp(tg[a + 'z'], (lift.arm ? 1 : -1) * 0.75, lift.k); }
+        tg.torsoZ = 0.06 * sn; tg.torsoY = 0.14 * Math.sin(th + 0.6); tg.torsoX = 0.04;
+        tg.neckZ = -0.05 * sn; tg.neckX = 0.05 * Math.sin(2 * th);
+        tg.mouth = 1.4;
         break;
+      }
       case 'bartend':
         tg.lx = tg.rx = -0.6; tg.lf = tg.rf = -1.2; tg.torsoX = 0.07;   // stands at the counter, hands forward (v1 stooped 0.2)
         break;
@@ -594,6 +699,8 @@ export class Patron {
     tg.torsoX += Math.sin(t * 1.3 * this.sway) * 0.015 + Math.sin(t * 2.2) * 0.004;
     tg.neckY += this.headTarget ? 0 : Math.sin(t * 0.5 * this.sway) * 0.25 * idle;
     tg.neckZ += Math.sin(t * 0.7) * 0.05;
+    // drinking from a glass: the head tips back with it
+    if (this.glassNeck) tg.neckX -= this.glassNeck * 0.3;
     // ---- head tracking ----
     if (this.headTarget) {
       const local = this.root.worldToLocal(this.headTarget.clone());
@@ -612,7 +719,8 @@ export class Patron {
       const ext = k < 0.35 ? 0 : k < 0.55 ? (k - 0.35) / 0.2 : 1 - (k - 0.55) / 0.45;
       tg[a + 'x'] = -1.2 + wind * 0.5 - ext * 0.85; tg[a + 'f'] = -2.0 + ext * 2.0 - wind * 0.2; tg[a + 'z'] = sgn * (0.4 - ext * 0.3);
       tg.torsoY += sgn * (wind * -0.35 + ext * 0.45); tg.torsoX += ext * 0.12; tg.hipL += ext * sgn * 0.1; tg.hipR -= ext * sgn * 0.1;
-    }
+      this._lunge = 0.15 * ext * ext * (3 - 2 * ext);   // the hips drive in behind it (applied undamped, below)
+    } else this._lunge = 0;
     if ((k = this.act('kick', dt, 2.2)) >= 0) {
       // chamber then snap the right leg out
       const wind = k < 0.4 ? k / 0.4 : k < 0.6 ? 1 - (k - 0.4) / 0.2 : 0;
@@ -696,6 +804,7 @@ export class Patron {
       // planted-leg flex: the thigh tips forward by half the knee bend so the foot stays under the hip
       let flexL = 0.05, flexR = 0.05;                          // never locked straight
       if (fight) { flexL += 0.28; flexR += 0.28; }
+      if (this.pose === 'foos') { flexL += 0.3; flexR += 0.3; }     // athletic crouch at the table
       if (this.pose === 'lean') { flexL += 0.12; flexR += 0.22; }
       tg.kneeL += flexL; tg.kneeR += flexR; tg.hipL -= flexL / 2; tg.hipR -= flexR / 2;
       if (w > 0.01) {                                          // flex the swinging leg as it passes under the body
@@ -713,6 +822,14 @@ export class Patron {
     // leaning over a table: hips go in toward it, so the curved spine still puts the hands where v1's straight one did
     tg.hipsZ = this.pose === 'lean' ? 0.065 : 0;
     tg.kneeR += 0.14 * Math.max(0, shift); tg.kneeL += 0.14 * Math.max(0, -shift);
+    if (this.pose === 'juke' && w < 0.05 && this.ko < 0.05) {
+      // the two-step: weight over one foot then the other, the free knee softens and its heel lifts; a dip on the beat
+      const th = this.danceT(t), sn = Math.sin(th);
+      tg.hipsX = 0.05 * sn; tg.hipsRoll = -0.07 * sn;
+      tg.kneeL += 0.05 + 0.24 * Math.max(0, sn); tg.kneeR += 0.05 + 0.24 * Math.max(0, -sn);
+      tg.hipL -= 0.08 * Math.max(0, sn); tg.hipR -= 0.08 * Math.max(0, -sn);
+      tg.bodyY -= 0.012 * (1 - Math.cos(2 * th)) / 2;
+    }
     if (!sitting) {
       // feet stay near level: undo most of the leg's swing at the ankle
       tg.ankleL = -(tg.hipL + tg.kneeL) * 0.6; tg.ankleR = -(tg.hipR + tg.kneeR) * 0.6;
@@ -744,7 +861,7 @@ export class Patron {
     const rate = 9;
     for (const key of Object.keys(tg)) c[key] = c[key] == null ? tg[key] : damp(c[key], tg[key], key === 'bodyTilt' ? 4 : rate, dt);
     const B = this.bones, [L, R] = this.arms;   // arms[0] = x < 0 side (v1 "L"), arms[1] = x > 0 (v1 "R")
-    B.Hips.position.set(c.hipsX || 0, c.torsoH + 0.02, c.hipsZ || 0);
+    B.Hips.position.set(c.hipsX || 0, c.torsoH + 0.02, (c.hipsZ || 0) + (this._lunge || 0));
     B.Hips.rotation.set(0, 0, c.hipsRoll || 0);
     B.RightUpLeg.rotation.set(c.hipL, 0, -(c.hipsRoll || 0)); B.LeftUpLeg.rotation.set(c.hipR, 0, -(c.hipsRoll || 0));
     B.RightLeg.rotation.x = c.kneeL; B.LeftLeg.rotation.x = c.kneeR;
@@ -784,15 +901,24 @@ export class Patron {
       a.wrist.rotation.set((i ? c.wristR + 0.4 * (c.handR || 0) : c.wristL), twist, 0);
       a.twist.rotation.y = twist / 2;
       const tight = this.propUpright && i === this.propArm ? 0.6 : 1;   // a pint is fat: fingers wrap it, not through it
-      a.f1.rotation.z = sign * (0.18 + 0.95 * g * tight); a.f2.rotation.z = sign * (0.15 + 1.05 * g * tight);
+      // fingers: relaxed curl, wrapped round a prop, or a fist (fist[i] 0..1, eased)
+      // fighting: fists closed (in the guard and through every punch)
+      const fistWant = Math.max(this.fist[i], this.pose === 'fight' || this.acts.punch != null ? 1 : 0);
+      c['fist' + i] = damp(c['fist' + i] || 0, fistWant, 14, dt);
+      const fz = c['fist' + i];
+      a.f1.rotation.z = sign * Math.max(0.18 + 0.95 * g * tight, 0.18 + 1.25 * fz); a.f2.rotation.z = sign * Math.max(0.15 + 1.05 * g * tight, 0.15 + 1.45 * fz);
       a.hand.rotation.set(i ? 0.6 * (c.handR || 0) : 0, -twist, 0);
       a.hand.position.copy(a.socketRest).applyAxisAngle(_yAxis, -twist);
     }
     this.mouth.scale.x = c.mouth;
+    this.body.rotation.x = c.bodyTilt;
+    this.body.position.y = c.bodyY;
     // library clips over the procedural pose
     this.ambientClips(dt);
     this.applyClips(dt);
+    this.clearArms(dt);
     const sipTilt = this.sipFix();
+    this.handIK(dt);
     // an upright glass: world-upright in the body's heading, tipped back toward the mouth by the drink
     if (this.prop && this.propUpright && this.prop.parent) {
       this.root.getWorldQuaternion(_q1);
@@ -800,9 +926,279 @@ export class Patron {
       this.prop.parent.getWorldQuaternion(_q2);
       this.prop.quaternion.copy(_q2.invert().multiply(_q1));
     }
-    this.body.rotation.x = c.bodyTilt;
-    this.body.position.y = c.bodyY;
+  }
+
+  /**
+   * Put a hand on something: arms[i] reaches its palm (the prop socket) to a world point, with a natural elbow.
+   *   p.reachHand(i, point, { fingers, palm, pole, w })
+   * fingers / palm: world directions the fingers point along and the palm faces (both optional: without them
+   * the wrist keeps its pose); pole: where the elbow should point (default down, out and a little back);
+   * w: 0..1 blend over the animated arm. Call every frame while it should hold; when the calls stop the arm eases
+   * back to its animation. i follows arms[] (0 = the character's right hand, 1 = left).
+   */
+  reachHand(i, point, opts = {}) {
+    const k = this.ik[i] || (this.ik[i] = { w: 0, want: 0, pos: new THREE.Vector3(), fingers: new THREE.Vector3(), palm: new THREE.Vector3(), pole: new THREE.Vector3(), hasOri: false, hasPole: false, seen: 0 });
+    k.pos.copy(point);
+    k.hasOri = !!(opts.fingers && opts.palm);
+    if (k.hasOri) { k.fingers.copy(opts.fingers).normalize(); k.palm.copy(opts.palm).normalize(); }
+    k.hasPole = !!opts.pole; if (k.hasPole) k.pole.copy(opts.pole).normalize();
+    k.want = opts.w ?? 1;
+    k.speed = opts.speed ?? 10;
+    k.seen = 2;                                       // frames left before an unrefreshed target lets go
+    if (opts.snap) k.w = k.want;
+  }
+  /** Let go: the arm eases back to its animation. */
+  releaseHand(i) { if (this.ik[i]) this.ik[i].want = 0; }
+
+  handIK(dt) {
+    if (this.gl) this.glassRun(dt);
+    // a punch thrown at someone: the fist drives at punchTarget (their face) as the arm snaps out, knuckles first
+    if (this.acts.punch != null && this.punchTarget) {
+      const k = this.acts.punch, ext = k < 0.35 ? 0 : k < 0.55 ? (k - 0.35) / 0.2 : 1 - (k - 0.55) / 0.45;
+      const i = this.punchArm ? 1 : 0, a = this.arms[i];
+      this.root.updateMatrixWorld(true);
+      const S = a.pivot.getWorldPosition(_v1), to = _v2.copy(this.punchTarget).sub(S);
+      const reach = 0.5 * this.height * (this.armScale || 1);
+      const hit = _v3.copy(S).add(to.clampLength(0, reach));
+      this.reachHand(i, hit, { fingers: to.clone().normalize(), palm: _v4.set(0, -1, 0), w: smooth01(ext), snap: true });
+    }
+    let any = false;
+    for (let i = 0; i < 2; i++) {
+      const k = this.ik[i];
+      if (!k) continue;
+      if (k.seen > 0) k.seen--; else k.want = 0;
+      k.w = damp(k.w, k.want, k.speed, dt);
+      if (k.w < 0.002) { k.w = 0; continue; }
+      if (!any) { this.root.updateMatrixWorld(true); any = true; }
+      this.solveArm(this.arms[i], k);
+    }
+    if (this.gl) this.glassAfterSolve();
+  }
+
+  // ======== glasses: reach, take hold, drink, set it back down (hand IK) ========
+  /**
+   * A glass of this Patron's, standing on a bar or table at `spot` (world: the middle of its base). drink() then
+   * reaches for it, takes it, drinks and puts it back. arm: which hand (arms[] index, default 1).
+   */
+  glassOn(glass, spot, arm = 1) {
+    if (this.gl?.held) this.glassLetGo();
+    const box = new THREE.Box3().setFromObject(glass), size = box.getSize(new THREE.Vector3());
+    this.gl = { glass, spot: spot.clone(), arm, held: false, r: Math.max(0.025, Math.min(size.x, size.z) / 2), h: size.y || 0.15,
+      top: null, q: [], cur: null, t: 0, tilt: 0, home: glass.parent };
+  }
+  /** Forget the glass (it stays where it is). */
+  glassOff() {
+    const g = this.gl;
+    if (!g) return;
+    if (g.held) this.glassLetGo();
+    this.releaseHand(g.arm); this.fist[g.arm] = 0; this.glassNeck = 0;
+    for (const st of [g.cur, ...g.q]) st?.done?.();   // nobody waits on a cancelled move
+    this.gl = null;
+  }
+  /** True while a reach / drink / set-down is under way. */
+  get glassBusy() { return !!(this.gl && (this.gl.cur || this.gl.q.length)); }
+
+  /** Reach for the glass and take hold of it; resolves holding it in front of the chest. */
+  pickUp() {
+    return this.glassQueue([
+      { to: 'pre', dur: 0.5, fist: 0, w: 1, ramp: true },
+      { to: 'grip', dur: 0.28, fist: 0 },
+      { to: 'grip', dur: 0.14, fist: 1, attach: true },
+      { to: 'carry', dur: 0.55, fist: 1, arc: 0.05 },
+    ]);
+  }
+  /** Lift to the lips, tip it back (tilt rad, 0.9 a sip, 1.7 bottoms up), hold for `hold` s, and back to the chest.
+   *  onProgress(k) runs through the hold (0..1), for a falling liquid level. */
+  sipGlass({ tilt = 0.9, hold = 0.8, onProgress = null } = {}) {
+    return this.glassQueue([
+      { to: 'mouth', dur: 0.5, fist: 1, tilt: 0.15, arc: 0.04 },
+      { to: 'mouth', dur: 0.35, fist: 1, tilt: tilt * 0.6 },
+      { to: 'mouth', dur: hold, fist: 1, tilt, progress: onProgress },
+      { to: 'mouth', dur: 0.3, fist: 1, tilt: 0.15 },
+      { to: 'carry', dur: 0.45, fist: 1, tilt: 0, arc: 0.03 },
+    ]);
+  }
+  /** Set the glass back on its spot (or a new one) and let go; resolves once the hand is clear. */
+  putDown(spot = null) {
+    if (spot && this.gl) this.gl.spot.copy(spot);
+    return this.glassQueue([
+      { to: 'pre', dur: 0.45, fist: 1, held: true, arc: 0.03 },
+      { to: 'grip', dur: 0.3, fist: 1 },
+      { to: 'grip', dur: 0.14, fist: 0, detach: true },
+      { to: 'pre', dur: 0.3, fist: 0 },
+      { release: true, dur: 0.35 },
+    ]);
+  }
+  glassQueue(steps) {
+    if (!this.gl) return Promise.resolve();
+    return new Promise((res) => { steps[steps.length - 1].done = res; this.gl.q.push(...steps); });
+  }
+
+  /** Where the hand goes for a keyframe: { pos, fingers, palm } in world space. */
+  glassKey(name, tilt, out) {
+    const g = this.gl, a = this.arms[g.arm], side = a.side, up = _yAxis;
+    const fwd = out.fwd.set(0, 0, 1).applyQuaternion(this.root.quaternion);
+    const medial = out.medial.set(-side, 0, 0).applyQuaternion(this.root.quaternion);
+    if (name === 'pre' || name === 'grip') {
+      // on the glass: thumb up, palm against its outer side, fingers round the front, from the shoulder's direction
+      const S = a.pivot.getWorldPosition(_v1);
+      out.fingers.copy(g.spot).sub(S); out.fingers.y = 0; out.fingers.normalize();
+      out.palm.crossVectors(up, out.fingers); if (out.palm.dot(medial) < 0) out.palm.negate();
+      out.pos.copy(g.spot).addScaledVector(up, Math.min(0.065, g.h * 0.45)).addScaledVector(out.palm, -(g.r + 0.024));
+      if (name === 'pre') out.pos.addScaledVector(out.fingers, -0.08).addScaledVector(out.palm, -0.03).addScaledVector(up, 0.05);
+      return out;
+    }
+    out.fingers.copy(fwd); out.palm.copy(medial);
+    if (name === 'carry') {
+      // in front of the chest, a hand's width to the drinking side
+      this.bones.Spine2.getWorldPosition(out.pos);
+      out.pos.addScaledVector(fwd, 0.3 * this.height).addScaledVector(medial, -0.1 * this.height).addScaledVector(up, -0.02 * this.height);
+    } else {
+      // at the lips: the glass's near rim on the lower lip, tipped back by `tilt`
+      const axis = _v2.crossVectors(out.fingers, up).normalize();
+      _qa.setFromAxisAngle(axis, tilt);
+      out.fingers.applyQuaternion(_qa); out.palm.applyQuaternion(_qa);
+      const lips = this.mouth.getWorldPosition(_v3).addScaledVector(fwd, g.r * 0.9 + 0.01).addScaledVector(up, -0.01);
+      // the top of the glass, in the hand's frame (known once it is held), placed at the lips
+      if (g.top) {
+        const X = _v4.copy(out.palm).multiplyScalar(-side), Y = _v5.copy(out.fingers).negate(), Z = _v6.crossVectors(X, Y);
+        const R = _q3.setFromRotationMatrix(_m4.makeBasis(X, Y, Z));
+        out.pos.copy(lips).sub(_v7.copy(g.top).multiplyScalar(this.height).applyQuaternion(R));
+      } else out.pos.copy(lips).addScaledVector(up, -0.08);
+    }
+    return out;
+  }
+
+  glassRun(dt) {
+    const g = this.gl;
+    if (!g.cur) { if (!g.q.length) { if (g.held) this.glassHold(); return; } g.cur = g.q.shift(); g.t = 0; g.from = g.last || null; }
+    const st = g.cur;
+    g.t += dt;
+    const k = Math.min(1, g.t / st.dur), e = k * k * (3 - 2 * k);
+    if (st.release) {
+      this.releaseHand(g.arm);
+      this.fist[g.arm] = 0;
+    } else {
+      this.root.updateMatrixWorld(true);
+      g.tilt = st.tilt != null ? lerp(g.fromTilt ?? 0, st.tilt, e) : g.tilt;
+      const to = this.glassKey(st.to, g.tilt, g.keyB || (g.keyB = newKey()));
+      let pos = to.pos, fingers = to.fingers, palm = to.palm;
+      if (g.from) {
+        const from = this.glassKey(g.from, g.tilt, g.keyA || (g.keyA = newKey()));
+        pos = _v8.lerpVectors(from.pos, to.pos, e); if (st.arc) pos.y += st.arc * Math.sin(Math.PI * k);
+        fingers = _v9.lerpVectors(from.fingers, to.fingers, e).normalize(); palm = _v10.lerpVectors(from.palm, to.palm, e).normalize();
+      }
+      this.reachHand(g.arm, pos, { fingers, palm, speed: st.ramp ? 7 : 30 });
+      if (st.progress) st.progress(k);
+      // fingers: open while reaching, closing round the glass on contact
+      this.fist[g.arm] = lerp(g.fromFist ?? 0, st.fist ?? 0, e) * 0.7;   // 0.7: wrapped round a glass, not a fist
+      // drinking: the head tips back with the glass
+      this.glassNeck = g.tilt;
+    }
+    if (k >= 1) {
+      if (st.attach) g.wantAttach = true;
+      if (st.detach) g.wantDetach = true;
+      g.last = st.to || g.last; g.fromTilt = g.tilt; g.fromFist = st.fist ?? 0;
+      if (st.release) { g.last = null; g.fromTilt = 0; this.glassNeck = 0; }
+      const done = st.done; g.cur = null;
+      if (done) done();
+    }
+  }
+  /** Between moves while holding: keep the glass in front of the chest. */
+  glassHold() {
+    const key = this.glassKey('carry', 0, this.gl.keyB || (this.gl.keyB = newKey()));
+    this.reachHand(this.gl.arm, key.pos, { fingers: key.fingers, palm: key.palm, speed: 12 });
+    this.fist[this.gl.arm] = 0.7;
+  }
+  glassAfterSolve() {
+    const g = this.gl, socket = this.arms[g.arm].hand;
+    if (g.wantAttach) {
+      g.wantAttach = false; socket.updateMatrixWorld(true);
+      socket.attach(g.glass); g.held = true;
+      // the top of the glass in the hand's frame (body units), for putting its rim to the lips
+      const topW = new THREE.Vector3(0, g.h, 0).applyQuaternion(g.glass.getWorldQuaternion(new THREE.Quaternion())).add(g.glass.getWorldPosition(new THREE.Vector3()));
+      g.top = socket.worldToLocal(topW);
+    }
+    if (g.wantDetach) { g.wantDetach = false; this.glassLetGo(); }
+  }
+  glassLetGo() {
+    const g = this.gl;
+    (g.home || this.root.parent).attach(g.glass);
+    // it was put down where it belongs: square it up exactly
+    const p = g.glass.parent.worldToLocal(g.spot.clone());
+    g.glass.position.copy(p); g.glass.rotation.set(0, g.glass.rotation.y, 0);
+    g.held = false;
+  }
+
+  /** Two-bone arm IK: a hinge elbow (local x, as the rig bends) and a shoulder swing that aims the elbow at the pole. */
+  solveArm(a, k) {
+    const w = smooth01(k.w), side = a.side, h = this.height;
+    // the wrist orientation, if asked: fingers along local -y, palm along local +x (right hand) / -x (left hand)
+    let R = null;
+    if (k.hasOri) {
+      const F = _v1.copy(k.fingers), Pm = _v2.copy(k.palm).addScaledVector(F, -k.palm.dot(F)).normalize();
+      const X = _v3.copy(Pm).multiplyScalar(-side), Y = _v4.copy(F).negate(), Z = _v5.crossVectors(X, Y);
+      R = _q3.setFromRotationMatrix(_m4.makeBasis(X, Y, Z));
+    }
+    // the palm point (socket) sits off the wrist: aim the wrist so the socket lands on the target. Without a
+    // wrist orientation the offset turns with the arm, so solve, re-measure it, and solve again.
+    _qc.copy(a.pivot.quaternion); _qd.copy(a.fore.quaternion);
+    const Q = _q4;
+    let th = 0;
+    for (let it = 0; it < (R ? 1 : 3); it++) {
+      _v6.copy(a.socketRest).multiplyScalar(h);
+      if (R) _v6.applyQuaternion(R);
+      else { a.wrist.getWorldQuaternion(_qb); _v6.applyQuaternion(_qb); }
+      _v7.copy(k.pos).sub(_v6);
+      th = this.armSolution(a, k, _v7, Q);
+      if (!R) { a.pivot.quaternion.copy(Q); a.fore.quaternion.setFromAxisAngle(_xAxis, th); a.pivot.updateMatrixWorld(true); }
+    }
+    a.pivot.quaternion.copy(_qc).slerp(Q, w);
+    a.fore.quaternion.copy(_qd).slerp(_qb.setFromAxisAngle(_xAxis, th), w);
+    a.pivot.updateMatrixWorld(true);
+    if (R) {
+      a.fore.getWorldQuaternion(_qa);
+      a.wrist.quaternion.slerp(_qb.copy(_qa).invert().multiply(R), w);
+      // the socket turns with the wrist (no grip compensation); the forearm twist follows half the wrist's roll
+      a.hand.quaternion.slerp(_qid, w); a.hand.position.lerp(a.socketRest, w);
+      const q = a.wrist.quaternion; _qb.set(0, q.y, 0, q.w).normalize();
+      a.twist.quaternion.copy(_qid).slerp(_qb, 0.5);
+    }
+    a.pivot.updateMatrixWorld(true);
+  }
+
+  /** The shoulder rotation (into Q) and elbow bend (returned) that put arm a's wrist at wristT (world). */
+  armSolution(a, k, wristT, Q) {
+    const side = a.side;
+    // into the collarbone's frame (body units), relative to the shoulder joint
+    a.clav.updateWorldMatrix(true, false);
+    _m5.copy(a.clav.matrixWorld).invert();
+    const t = _v8.copy(wristT).applyMatrix4(_m5).sub(a.pivot.position);
+    const A = a.fore.position, Bv = a.wrist.position;
+    const la = A.length(), lb = Bv.length(), d = clamp(t.length(), Math.abs(la - lb) + 0.01, la + lb - 0.002);
+    // elbow bend about local x: |A + Rx(th) B| = d, shrinking as the elbow folds (negative th)
+    const rot = (th, out) => out.set(Bv.x, Bv.y * Math.cos(th) - Bv.z * Math.sin(th), Bv.y * Math.sin(th) + Bv.z * Math.cos(th)).add(A);
+    let hi = clamp(Math.atan2(A.z, -A.y) - Math.atan2(Bv.z, -Bv.y), -0.3, 0.3), lo = -2.6;   // hi: A and B lined up
+    for (let n = 0; n < 22; n++) { const mid = (lo + hi) / 2; if (rot(mid, _v9).length() > d) hi = mid; else lo = mid; }
+    const th = (lo + hi) / 2;
+    const v0 = rot(th, _v9);
+    // swing the upper arm: wrist onto the target line, then turn about that line so the elbow faces the pole
+    const tn = _v10.copy(t).normalize();
+    Q.setFromUnitVectors(_v11.copy(v0).normalize(), tn);
+    const e1 = _v11.copy(A).applyQuaternion(Q);
+    const pole = k.hasPole ? _v12.copy(k.pole) : _v12.set(side * 0.55, -1, -0.35).applyQuaternion(this.root.getWorldQuaternion(_qa));
+    pole.transformDirection(_m5);
+    e1.addScaledVector(tn, -e1.dot(tn)); pole.addScaledVector(tn, -pole.dot(tn));
+    if (e1.lengthSq() > 1e-8 && pole.lengthSq() > 1e-8) {
+      e1.normalize(); pole.normalize();
+      const ang = Math.atan2(_v13.crossVectors(e1, pole).dot(tn), e1.dot(pole));
+      Q.premultiply(_qa.setFromAxisAngle(tn, ang));
+    }
+    return th;
   }
 }
+
+function newKey() { return { pos: new THREE.Vector3(), fingers: new THREE.Vector3(), palm: new THREE.Vector3(), fwd: new THREE.Vector3(), medial: new THREE.Vector3() }; }
+function smooth01(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
 
 function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

@@ -41,6 +41,11 @@ export class Drinking extends MiniGame {
   async start() {
     const st = this.station;
     this.sal = st.patron;
+    // Sal's own drink (on the bar in front of him) steps aside for the contest's glasses; it comes back afterwards
+    const own = this.sal.gl;
+    this.salOwn = own ? { glass: own.glass, spot: own.spot.clone(), arm: own.arm } : null;
+    this.sal.glassOff?.();
+    if (this.salOwn) this.salOwn.glass.visible = false;
     this.steps = 0;
     this.busy = true;
     this.player.enabled = false;
@@ -165,6 +170,24 @@ export class Drinking extends MiniGame {
     const sal = this.sal, hand = sal.arms[1].hand;
     sal.headTarget = glass.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.08, 0));
     await this.salTurn(this.salBarYaw, 0.4);
+    if (sal.glassOn) {
+      // Patron v2: his hand reaches the glass, closes round it and carries it (it rides in his hand), he turns to
+      // you, puts the rim to his lips and tips it bottoms-up as it drains, then sets it back exactly where it was
+      sal.glassOn(glass, this.salSpot, 1);
+      await sal.pickUp();
+      sal.headTarget = this.sitEye.clone();
+      await this.salTurn(this.salFaceYaw, 0.4);
+      await sal.sipGlass({ tilt: 1.75, hold: drainSec, onProgress: (k) => this.bar.setGlassLevel(glass, 1 - k) });
+      if (lose) { sal.laugh(); sal.react?.('win'); return; }
+      await this.seq(0.35, () => {});
+      sal.headTarget = this.salSpot.clone().add(new THREE.Vector3(0, 0.08, 0));
+      await this.salTurn(this.salBarYaw, 0.4);
+      await sal.putDown(this.salSpot);
+      sal.glassOff();
+      sal.headTarget = this.sitEye.clone();
+      await this.salTurn(this.salFaceYaw, 0.4);
+      return;
+    }
     sal.reachR = 1;
     await this.seq(0.3, () => {});
     await this.salHandAt(this.salGrab);
@@ -347,7 +370,9 @@ export class Drinking extends MiniGame {
     this.camera.remove(this.hand);
     this.hud.setBlur(0); this.hud.setBlackout(0);
     this.salHold = null;
+    this.sal.glassOff?.();
     for (const g of this.allGlasses || []) g.parent?.remove(g);
+    if (this.salOwn) { this.salOwn.glass.visible = true; this.sal.glassOn(this.salOwn.glass, this.salOwn.spot, this.salOwn.arm); }
     for (const g of this.hiddenGlasses || []) g.visible = true;
     const sal = this.sal;
     sal.hold(null); sal.slump = 0; sal.headTarget = null; sal.reachR = 0; sal.liftR = 0; sal.tiltR = 0;

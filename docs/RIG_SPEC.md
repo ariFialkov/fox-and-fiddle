@@ -118,6 +118,17 @@ The built GLBs had two arm problems that made every character's arms look stretc
 
 - **Clips stooping forward.** Retargeted to this skeleton, the standing clips keep both thighs swung back (5-10° net), the talking clips bend the chest forward 10-18° (`chat`, `listen`, `agree`, `talkHandsOpen`), and the head tips down 10-20°, so the cast stood tipped forward, stooped, looking at the floor. `levelClip` in Patron2.js removes, per clip at load, the average backward slope of the legs (feet keep their angle to the floor), the chest's average forward bend beyond 3° (8° seated) and the head's average downward tilt beyond 5°. The motion around those averages is kept. Worth checking the retarget's rest-pose match when the clips are next exported.
 
+- **Arm length.** Shoulder-to-fingertip over shoulder height is about 0.54 for people; the cast ran 0.53-0.57. `dressPatron2` shortens the upper arm and forearm (not the hand) toward 0.525, by at most 9 %, the same on both sides (`p.armScale`). The bones move and the inverse binds stay, so the sleeve and forearm compress a little.
+- **Arms through the body.** At load `dressPatron2` measures the torso's width and depth slice by slice, hips to chest (`p.torsoProfile`). While animating, `Patron2.clearArms` swings an arm out at the shoulder just enough to keep the hand and elbow outside the body (broad characters such as Marge and Tiny).
+
+### Hands on things (Patron2)
+
+- `p.reachHand(i, point, { fingers, palm, pole, w, speed, snap })`: two-bone arm IK that puts arms[i]'s palm (the prop socket) on a world point, with the elbow aimed at `pole` and, optionally, the hand turned so the fingers point along `fingers` and the palm faces `palm`. It holds while called every frame and eases back to the animation when the calls stop (`releaseHand(i)` lets go at once).
+- `p.fist[i]` (0..1): closed fingers. Fighting closes both fists on its own.
+- Glasses: `p.glassOn(glass, spot)` gives a Patron a drink standing on a bar or table; `drink()` then reaches for it, takes it (the glass is parented to the hand), drinks with the rim at the lips and sets it back on its spot. `pickUp()`, `sipGlass({ tilt, hold, onProgress })` and `putDown()` are the steps, each a promise (the drinking contest uses them for Sal).
+- `p.punchTarget`: a world point (a face) that punches are thrown at; the fist drives to it as the arm snaps out, with the hips behind it.
+- Shared helpers: `world/foosHands.js` (two hands on rod handles, hopping between rods), `world/poolHands.js` (`shotHands`: a bridge on the felt and a grip on the cue; `CUE_CARRY`: a cue carried upright).
+
 For future builds, place the elbow joint in the middle of the arm, keep upper-arm vertices off the spine bones, and start the clavicle nearer the shoulder (Mixamo's is about 0.12 m long). Then the load-time elbow and sleeve fixes find nothing to change.
 
 ## Switching characters to v2

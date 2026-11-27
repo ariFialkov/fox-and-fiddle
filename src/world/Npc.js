@@ -8,17 +8,28 @@
 import * as THREE from 'three';
 import { Patron } from './Patron.js';
 import { wrap, turnToward } from '../engine/Player.js';
+import { FoosHands } from './foosHands.js';
+import { makeCue, CUE_CARRY, shotHands, cueOnLine } from './poolHands.js';
 
 const NODES = [
   [-5.0, 4.0], [-3.2, 2.6], [-6.0, 1.5], [-6.3, -0.8], [-3.0, -1.6], [-1.0, -2.3], [1.5, -2.4], [3.9, -2.6],
   [5.6, -1.0], [6.9, 1.2], [6.3, 3.0], [4.0, 3.3], [0.3, 1.6], [-1.6, 0.1], [2.2, 0.9], [-4.6, -2.3], [5.0, -4.3],
 ];
+/** Where Big Mick's group stands (the middle of their circle). */
+export const MICK_CIRCLE = [1.4, -0.95];
+
+// standing conversations: two places per spot, a comfortable 0.95 m apart; each talker turns to face the other
+const TALK_GAP = 0.95;
 const STAND_SPOTS = [
-  [[-2.3, 0.7, 0.9], [-1.5, 1.0, -2.2]],
-  [[-6.4, 3.4, 2.2], [-6.9, 2.7, -0.9]],
-  [[4.3, -3.6, 2.5], [4.9, -3.1, -0.6]],
-  [[6.6, 0.2, 2.8], [6.1, -0.4, -0.3]],
-];
+  [[-2.3, 0.7], [-1.5, 1.0]],
+  [[-6.4, 3.4], [-6.9, 2.7]],
+  [[4.3, -3.6], [4.9, -3.1]],
+  [[6.6, 0.2], [6.1, -0.4]],
+].map(([a, b]) => {
+  const dx = b[0] - a[0], dz = b[1] - a[1], d = Math.hypot(dx, dz);
+  const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, ux = dx / d * TALK_GAP / 2, uz = dz / d * TALK_GAP / 2;
+  return [[mx - ux, mz - uz, Math.atan2(dx, dz)], [mx + ux, mz + uz, Math.atan2(-dx, -dz)]];
+});
 
 export class NpcDirector {
   constructor(bar, scene, player) {
@@ -115,6 +126,8 @@ export class NpcDirector {
   end(n, keepPose = false) {
     const act = ACTS[n.activity];
     act?.exit?.(this, n);
+    n.patron.glassOff?.();
+    if (n.patron.fist) { n.patron.fist[0] = n.patron.fist[1] = 0; n.patron.releaseHand(0); n.patron.releaseHand(1); }
     for (const pr of n.props) pr.parent?.remove(pr);
     n.props = [];
     if (n.patron.prop) n.patron.hold(null);
@@ -197,15 +210,36 @@ export class NpcDirector {
   }
 
   // ---------- props ----------
+  /**
+   * A drink for a seated patron: on the bar (or their table) in front of them, a little to their drinking hand's
+   * side, where they reach for it, drink and set it back (Patron v2). v1 patrons hold it in their hand.
+   */
   glassFor(n, pint = true) {
-    const g = this.bar.glass(0, 0, 0, pint, this.fx);
-    n.patron.holdGlass(g); n.props.push(g);
+    const p = n.patron;
+    if (!p.glassOn) { const g = this.bar.glass(0, 0, 0, pint, this.fx); p.holdGlass(g); n.props.push(g); return g; }
+    p.root.updateMatrixWorld(true);
+    const b = this.bar, pos = p.root.position, side = p.arms[1].side;
+    const tbl = b.tables.find((t) => Math.hypot(t.x - pos.x, t.z - pos.z) < 1.0);
+    let spot;
+    if (tbl) {
+      // on the table, 0.2 m in from its edge on this side, a hand to the right or left
+      const out = new THREE.Vector3(pos.x - tbl.x, 0, pos.z - tbl.z).normalize();
+      const lat = new THREE.Vector3(side, 0, 0).applyQuaternion(p.root.quaternion);
+      spot = new THREE.Vector3(tbl.x, 0.76, tbl.z).addScaledVector(out, 0.22).addScaledVector(lat, 0.11);
+    } else {
+      // on the bar top, near its front edge, in front of the stool
+      spot = p.root.localToWorld(new THREE.Vector3(side * 0.13, 0, 0.55));
+      spot.y = b.barTopY; spot.z = THREE.MathUtils.clamp(spot.z, b.barZ - 0.2, b.barZ + 0.28);
+    }
+    const g = b.glass(spot.x, spot.y, spot.z, pint, this.fx);
+    p.glassOn(g, spot, 1); n.props.push(g);
     return g;
   }
   cueFor(n) {
-    const cue = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.013, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0xc9a46a, roughness: 0.5 }));
-    n.patron.hold(cue, 1, [0, -0.05, 0.2], [Math.PI / 2 + 0.1, 0, 0]);
+    const cue = makeCue();
+    n.patron.hold(cue, 1, CUE_CARRY.pos, CUE_CARRY.rot);
     n.props.push(cue);
+    n.data.cue = cue;
     return cue;
   }
   flyDart(from, to, color = 0xdd3333) {
@@ -366,19 +400,23 @@ const ACTS = {
     update(dir, n, dt) {
       const p = n.patron;
       if (p.pose !== 'flirt') p.pose = 'juke';
-      p.torso.rotation.z += Math.sin(dir.t * 3.2) * 0.03; // moving to the music
-      if (chance(dt, 0.15)) p.gesture();
+      // dancing: she turns slowly back and forth on the spot, between the jukebox and the room
+      n.data.baseYaw = n.data.baseYaw ?? n.yaw;
+      if (p.pose === 'juke') n.face = n.data.baseYaw + 0.55 * Math.sin(dir.t * 0.22) - 0.3;
       if (chance(dt, 0.08)) { const o = dir.randomPatronNear(n, 5); p.headTarget = o ? dir.headAt(o) : null; }
       return false;
     },
   },
   mickGroup: {
     enter(dir, n, opts) {
-      const spots = [[1.0, -0.6], [2.0, -1.0], [0.1, -1.3], [2.9, -0.2]];
+      // an open horseshoe round MICK_CIRCLE: Mick at the back facing out into the room (he has been eyeing your
+      // stool), his mates either side and front-right, each facing the middle of the group
+      const [cx, cz] = MICK_CIRCLE, r = 0.62;
+      const spots = [[cx, cz - r], [cx - r, cz - 0.05], [cx + 0.44, cz + 0.44], [cx + r, cz - 0.05]];
       const [x, z] = spots[opts.slot ?? 0];
       n.patron.root.position.set(x, 0, z); n.patron.pose = 'talk';
-      n.yaw = Math.atan2(1.3 - x, -0.8 - z); n.patron.root.rotation.set(0, n.yaw, 0);
-      if (opts.slot === 0) n.yaw = Math.atan2(1.0 - x, 3 - z), n.patron.root.rotation.set(0, n.yaw, 0);
+      n.yaw = Math.atan2(cx - x, cz - z); n.patron.root.rotation.set(0, n.yaw, 0);
+      n.face = n.yaw;
     },
     update(dir, n, dt) {
       const p = n.patron; p.pose = 'talk';
@@ -478,6 +516,8 @@ const ACTS = {
     update(dir, n, dt) {
       if (!dir.arrived(n)) return false;
       const other = dir.partner(n);
+      // square up to whoever you're talking to (live, so a partner who shuffles is still faced)
+      if (other && dir.arrived(other)) n.face = other.patron.root.position;
       n.patron.pose = other && dir.arrived(other) ? 'talk' : 'idle';
       chatter(dir, n, dt, other && dir.arrived(other) ? other.patron : null);
       if (n.session && n.session.t === 0) n.session.t = dir.t;
@@ -515,28 +555,76 @@ const ACTS = {
         // my shot: walk to a spot on the rail, lean, strike, roll a ball, hand over
         const d = n.data;
         if (!d.shotPhase) {
-          const side = Math.random() < 0.5 ? -1 : 1;
-          const u = rr(-pool.L / 2 + 0.3, pool.L / 2 - 0.3);
-          d.shotSpot = new THREE.Vector3(pool.cx + u, 0, pool.cz + side * (pool.W / 2 + 0.55));
-          dir.goTo(n, d.shotSpot, new THREE.Vector3(pool.cx + u * 0.3, 0, pool.cz));
+          // pick a ball and a line through it toward the far side, then stand behind it, outside the rails
+          // a ball within reach of a rail (one in the middle of the table would need the long bridge stick)
+          const near = dir.bar.poolBalls.filter((bl) => { const w = bl.getWorldPosition(new THREE.Vector3()); return Math.abs(w.x - pool.cx) > pool.L / 2 - 0.45 || Math.abs(w.z - pool.cz) > pool.W / 2 - 0.3; });
+          const balls = near.length ? near : dir.bar.poolBalls, ball = balls[Math.floor(Math.random() * balls.length)];
+          const bw = ball.getWorldPosition(new THREE.Vector3());
+          const aim0 = new THREE.Vector3(pool.cx + rr(-0.5, 0.5) - bw.x, 0, pool.cz + rr(-0.25, 0.25) - bw.z);
+          if (aim0.lengthSq() < 0.01) aim0.set(1, 0, 0);
+          aim0.normalize();
+          // behind the ball along the aim, clear of the table's walk-round margin; turn the shot if that spot is blocked
+          let spot = null;
+          for (const turn of [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05]) {
+            const aim = aim0.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), turn);
+            let back = 1.25, sp;
+            for (let i = 0; i < 30; i++) {
+              sp = bw.clone().addScaledVector(aim, -back); sp.y = 0;
+              if (Math.abs(sp.x - pool.cx) > pool.L / 2 + 0.62 || Math.abs(sp.z - pool.cz) > pool.W / 2 + 0.62) break;
+              back += 0.08;
+            }
+            if (!dir.player.blocked(sp.x, sp.z, p, 0.3)) { spot = sp; break; }
+          }
+          if (!spot) { s.data.turn = partner ? partner.data.idx : n.data.idx; return false; }   // no shot on: pass
+          d.shotSpot = spot; d.planBall = ball;
+          dir.goTo(n, d.shotSpot, bw.clone());
           d.shotPhase = 'walk';
-        } else if (d.shotPhase === 'walk' && dir.arrived(n)) { p.pose = 'lean'; d.shotPhase = 'aim'; d.aimT = rr(1.4, 2.6); p.headTarget = new THREE.Vector3(pool.cx, pool.y, pool.cz); }
-        else if (d.shotPhase === 'aim') {
-          d.aimT -= dt;
-          if (d.aimT <= 0) { p.strike(); d.shotPhase = 'hit'; d.aimT = 0.35; }
-        } else if (d.shotPhase === 'hit') {
-          d.aimT -= dt;
-          if (d.aimT <= 0) {
-            const balls = dir.bar.poolBalls; const ball = balls[Math.floor(Math.random() * balls.length)];
-            const a = Math.random() * Math.PI * 2, sp = rr(0.8, 2.2);
-            ball.userData.vel = { x: Math.cos(a) * sp, z: Math.sin(a) * sp };
+        } else if (d.shotPhase === 'walk' && dir.arrived(n) && Math.hypot(d.shotSpot.x - p.root.position.x, d.shotSpot.z - p.root.position.z) > 0.3) {
+          // never got to the spot (blocked): no shot this time
+          d.shotPhase = null; s.data.turn = partner ? partner.data.idx : n.data.idx; dir.goTo(n, d.rest, new THREE.Vector3(pool.cx, 0, pool.cz)); n.data.returning = true;
+        } else if (d.shotPhase === 'walk' && dir.arrived(n)) {
+          // down on a shot at the ball nearest the rail here: the cue comes off the shoulder onto the line
+          const balls = dir.bar.poolBalls, at = p.root.position;
+          const ball = d.planBall || balls[0];                               // the ball they walked up to
+          d.ball = ball; d.bp = ball.getWorldPosition(new THREE.Vector3());
+          d.dir = new THREE.Vector3(d.bp.x - at.x, 0, d.bp.z - at.z).normalize();
+          d.feltY = d.bp.y - 0.028;
+          p.pose = 'lean'; d.shotPhase = 'aim'; d.aimT = rr(1.6, 2.6); d.shotT = 0; p.headTarget = d.bp.clone();
+          n.face = Math.atan2(d.dir.x, d.dir.z) - 0.35;                     // an open stance, left shoulder leading
+          at.addScaledVector(new THREE.Vector3(-d.dir.z, 0, d.dir.x), -0.1); // a step left: the cue runs under the right shoulder
+          const cue = d.cue || p.prop;
+          if (p.reachHand && cue && p.prop === cue) {
+            dir.fx.attach(cue); p.prop = null; d.lineCue = cue;
+            d.cueFrom = { p: cue.position.clone(), q: cue.quaternion.clone() };
+          }
+        } else if (d.shotPhase === 'aim' || d.shotPhase === 'hit' || d.shotPhase === 'watch') {
+          d.aimT -= dt; d.shotT += dt;
+          if (d.lineCue) {
+            // practice strokes while aiming, then a pull back and the strike, then hold the follow-through
+            let back;
+            if (d.shotPhase === 'aim') back = 0.1 + 0.07 * Math.sin(d.shotT * 3.4);
+            else if (d.shotPhase === 'hit') back = d.aimT > 0.2 ? 0.1 + (0.35 - d.aimT) / 0.15 * 0.1 : 0.2 - (0.2 - Math.max(0, d.aimT)) / 0.2 * 0.19;
+            else back = 0.01;
+            cueOnLine(d.lineCue, d.bp, d.dir, back, d.bp.y);
+            if (d.shotT < 0.5) {                                             // swinging down from the carry
+              const e = THREE.MathUtils.smoothstep(d.shotT / 0.5, 0, 1);
+              d.lineCue.position.lerpVectors(d.cueFrom.p, d.lineCue.position, e);
+              d.lineCue.quaternion.slerpQuaternions(d.cueFrom.q, d.lineCue.quaternion.clone(), e);
+            }
+            shotHands(p, d.lineCue, d.bp, d.dir, d.feltY);
+          }
+          if (d.shotPhase === 'aim' && d.aimT <= 0) { if (!d.lineCue) p.strike(); d.shotPhase = 'hit'; d.aimT = 0.35; }
+          else if (d.shotPhase === 'hit' && d.aimT <= 0) {
+            const ball = d.ball, sp = rr(0.8, 2.2);
+            ball.userData.vel = { x: d.dir.x * sp, z: d.dir.z * sp };
             if (Math.random() < 0.25) { p.cheer(); if (partner) partner.patron.stagger(); }
             else if (Math.random() < 0.25) p.react?.('lose');
-            d.shotPhase = 'watch'; d.aimT = 1.8; p.pose = 'idle';
-          }
-        } else if (d.shotPhase === 'watch') {
-          d.aimT -= dt;
-          if (d.aimT <= 0) { d.shotPhase = null; s.data.turn = partner ? partner.data.idx : n.data.idx; dir.goTo(n, d.rest, new THREE.Vector3(pool.cx, 0, pool.cz)); n.data.returning = true; }
+            d.shotPhase = 'watch'; d.aimT = 1.8;
+          } else if (d.shotPhase === 'watch' && d.aimT <= 1.2 && p.pose === 'lean') {
+            // stand up, cue back on the shoulder
+            p.pose = 'idle'; p.releaseHand?.(0); p.releaseHand?.(1); if (p.fist) p.fist[0] = p.fist[1] = 0;
+            if (d.lineCue) { p.hold(d.lineCue, 1, CUE_CARRY.pos, CUE_CARRY.rot); d.lineCue = null; }
+          } else if (d.shotPhase === 'watch' && d.aimT <= 0) { d.shotPhase = null; s.data.turn = partner ? partner.data.idx : n.data.idx; dir.goTo(n, d.rest, new THREE.Vector3(pool.cx, 0, pool.cz)); n.data.returning = true; }
         }
       }
       if (n.timer > n.data.until) return true;
@@ -596,13 +684,30 @@ const ACTS = {
       if (!dir.arrived(n)) return false;
       const partner = dir.partner(n);
       p.pose = 'foos';
-      const f = dir.bar.foos; p.headTarget = new THREE.Vector3(f.cx + rr(-0.3, 0.3), f.y - 0.1, f.cz);
-      if (chance(dt, 1.4)) { p.jerk(); const rods = dir.bar.foosRods.filter((r) => r.team === (n.data.side > 0 ? 'you' : 'bot')); const r = rods[Math.floor(Math.random() * rods.length)]; r.w = (Math.random() < 0.5 ? -1 : 1) * rr(6, 18); r.men.position.z = THREE.MathUtils.clamp(r.men.position.z + rr(-0.06, 0.06), -0.12, 0.12); }
-      if (chance(dt, 0.06)) { p.cheer(); if (partner) partner.patron.stagger(); }
-      if (chance(dt, 2)) { const ball = dir.bar.foosBall; ball.position.x = THREE.MathUtils.clamp(ball.position.x + rr(-0.12, 0.12), f.cx - 0.55, f.cx + 0.55); ball.position.z = THREE.MathUtils.clamp(ball.position.z + rr(-0.08, 0.08), f.cz - 0.3, f.cz + 0.3); }
+      const f = dir.bar.foos;
+      const ball = dir.bar.foosBall;
+      p.headTarget = ball.getWorldPosition(new THREE.Vector3());
+      const mine = dir.bar.foosRods.filter((r) => r.team === (n.data.side > 0 ? 'you' : 'bot'));
+      // hands on the handles of the two rods nearest the ball (they hop across as it moves); off them to celebrate
+      n.data.hands = n.data.hands || new FoosHands(p);
+      n.data.letGo = Math.max(0, (n.data.letGo || 0) - dt);
+      if (n.data.letGo <= 0 && p.reachHand) {
+        const axis = new THREE.Vector3(0, 0, n.data.side > 0 ? -1 : 1);
+        n.data.hands.update(dt, mine.map((r) => ({ pos: r.group.localToWorld(new THREE.Vector3(0, 0, r.handleZ)), axis, roll: r.men.rotation.z })), p.headTarget);
+      }
+      if (chance(dt, 1.4)) {
+        // a shot: one of the rods in hand slides and spins (the whole rod moves, handle and all)
+        const held = n.data.hands.hand.map((h) => mine[h.rod]).filter(Boolean);
+        const r = held.length ? held[Math.floor(Math.random() * held.length)] : mine[Math.floor(Math.random() * mine.length)];
+        r.w = (Math.random() < 0.5 ? -1 : 1) * rr(6, 18); r.group.position.z = THREE.MathUtils.clamp(r.group.position.z + rr(-0.06, 0.06), -0.12, 0.12);
+      }
+      if (chance(dt, 0.06)) { n.data.hands.release(); n.data.letGo = 1.6; p.cheer(); if (partner) partner.patron.stagger(); }
+      // the ball wanders (table coordinates: the decor sits in the table's group)
+      if (chance(dt, 2)) { ball.position.x = THREE.MathUtils.clamp(ball.position.x + rr(-0.12, 0.12), -0.55, 0.55); ball.position.z = THREE.MathUtils.clamp(ball.position.z + rr(-0.08, 0.08), -0.3, 0.3); }
       if (n.timer > n.data.until) return true;
       return false;
     },
+    exit(dir, n) { n.data.hands?.release(); },
   },
   contest: {
     enter(dir, n, opts) {

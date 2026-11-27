@@ -81,6 +81,9 @@ export class Darts extends MiniGame {
     this.bot = reskin.patron({ name: 'Fergus', shirt: 0x3d6b3a, height: 1.02, seed: 77 });
     this.bot.root.position.set(st.x + 1.0, 0, st.z + 1.05);
     this.bot.lookAt(new THREE.Vector3(b.pos.x, 0, b.pos.z));
+    // a darts stance: side-on, right shoulder leading, eyes on the board
+    this.bot.root.rotation.y += 0.6;
+    this.bot.headTarget = b.pos.clone();
     this.group.add(this.bot.root);
 
     this.darts = [];
@@ -137,16 +140,14 @@ export class Darts extends MiniGame {
   botThrow() {
     if (this.done) return;
     const pt = this.botDarts[this.throwIdx];
-    this.bot.throwDart();
-    const from = this.bot.root.position.clone().add(new THREE.Vector3(0.2, 1.4, -0.2));
-    this.after(0.35, () => this.flyDart(from, pt, 0xdd3333, () => {
+    this.fergusThrow(pt, () => {
       const s = scoreAt(pt.x, pt.y, this.R);
       this.bot.score += s.score;
       this.updateScore(`Fergus: ${s.label}`);
       this.throwIdx++;
       if (this.throwIdx < 3) this.after(0.9, () => this.botThrow());
       else this.after(1.2, () => this.endLeg());
-    }));
+    });
   }
   endLeg() {
     if (this.you > this.bot.score) return this.conclude(true);
@@ -206,9 +207,7 @@ export class Darts extends MiniGame {
   botThrow501() {
     if (this.done) return;
     const pt = this.botDarts[this.throwIdx];
-    this.bot.throwDart();
-    const from = this.bot.root.position.clone().add(new THREE.Vector3(0.2, 1.4, -0.2));
-    this.after(0.35, () => this.flyDart(from, pt, 0xdd3333, () => {
+    this.fergusThrow(pt, () => {
       const s = scoreAt(pt.x, pt.y, this.R);
       this.throwIdx++;
       if (s.score > this.rem.bot) {
@@ -223,7 +222,7 @@ export class Darts extends MiniGame {
       if (this.rem.bot === 0) return this.after(1.2, () => this.conclude(false, 'Fergus checks out'));
       if (this.throwIdx < this.botDarts.length) this.after(0.9, () => this.botThrow501());
       else this.after(1.2, () => this.startPlayerVisit());
-    }));
+    });
   }
   startPlayerVisit() {
     this.clearDarts();
@@ -241,7 +240,9 @@ export class Darts extends MiniGame {
 
   update(dt) {
     super.update(dt);
+    this.fergusArm(dt);       // where his throwing hand goes this frame
     this.bot.update(dt);
+    this.fergusDart();        // the dart in his fingers, where his hand now is
     const q = this.camBase.clone();
     const e = new THREE.Euler().setFromQuaternion(q, 'YXZ');
     e.x += Math.sin(this.t * 1.1) * 0.0012; e.y += Math.sin(this.t * 0.7) * 0.0009;
@@ -384,6 +385,70 @@ export class Darts extends MiniGame {
       }
     };
     this.darts.push(dart);
+  }
+
+  /**
+   * Fergus throws (Patron v2): a dart pinched in his right hand comes up to eye level, upper arm pointing at the
+   * board and forearm upright; he draws it back toward his face, snaps the forearm forward round a still elbow,
+   * lets go as it passes upright, and follows through at the board. v1: the old arm swing.
+   */
+  fergusThrow(pt, onLand) {
+    const p = this.bot;
+    if (!p.reachHand) {
+      p.throwDart();
+      const from = p.root.position.clone().add(new THREE.Vector3(0.2, 1.4, -0.2));
+      this.after(0.35, () => this.flyDart(from, pt, 0xdd3333, onLand));
+      return;
+    }
+    const dart = this.makeDart(0xdd3333); this.group.add(dart);
+    this.ft = { t: 0, pt, onLand, dart, released: false };
+  }
+  /** The throwing arm's keyframes, by time: forearm angle from upright (+ forward), wrist cock, fingers' pinch. */
+  fergusPhi(t) {
+    const keys = [[0, -0.3], [0.5, -0.15], [0.9, -0.12], [1.15, -0.9], [1.3, 0.55], [1.55, 1.05], [1.95, 1.0]];
+    for (let i = 1; i < keys.length; i++) {
+      if (t <= keys[i][0]) { const [t0, a] = keys[i - 1], [t1, b] = keys[i]; const k = (t - t0) / (t1 - t0); const e = i === 4 ? k * k : k * k * (3 - 2 * k); return a + (b - a) * e; }
+    }
+    return keys[keys.length - 1][1];
+  }
+  fergusArm(dt) {
+    const f = this.ft, p = this.bot;
+    if (!f) return;
+    f.t += dt;
+    if (f.t > 2.1) { p.releaseHand(0); p.fist[0] = 0; if (f.dart && !f.released) this.group.remove(f.dart); this.ft = null; return; }
+    p.root.updateMatrixWorld(true);
+    const up = new THREE.Vector3(0, 1, 0), B = this.boardPos;
+    const S = p.arms[0].pivot.getWorldPosition(new THREE.Vector3());
+    const fwd = new THREE.Vector3(B.x - S.x, 0, B.z - S.z).normalize(), right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+    // the elbow: the upper arm points at the board, a little below level, a touch to the outside
+    const h = p.height * (p.armScale || 1), upper = 0.3 * h, fore = 0.3 * h;
+    const E = S.clone().addScaledVector(new THREE.Vector3().subVectors(B, S).normalize().add(new THREE.Vector3(0, -0.35, 0)).addScaledVector(right, 0.12).normalize(), upper);
+    const phi = this.fergusPhi(f.t);
+    const hand = E.clone().addScaledVector(up, Math.cos(phi) * fore).addScaledVector(fwd, Math.sin(phi) * fore);
+    // fingers toward the board, cocked back with the draw and flicked through on release
+    const cock = -0.55 * Math.min(0, phi) + 0.35 * Math.max(0, phi) * -1 + 0.15;
+    const fingers = fwd.clone().applyAxisAngle(right, cock).normalize();     // +: tipped up
+    const palm = right.clone().negate().multiplyScalar(0.6).addScaledVector(up, -0.8).normalize();
+    p.reachHand(0, hand, { fingers, palm, pole: up.clone().negate().addScaledVector(right, 0.35), speed: f.t < 0.3 ? 6 : 30 });
+    p.fist[0] = f.released ? 0.15 : 0.45;   // a pinch, open once it's gone
+    // let go as the forearm passes just past upright on the way through
+    if (!f.released && f.t > 1.15 && phi > 0.3) {
+      f.released = true;
+      const from = f.dart.position.clone();
+      this.group.remove(f.dart); f.dart = null;
+      this.flyDart(from, f.pt, 0xdd3333, f.onLand);
+    }
+  }
+  /** The dart between his thumb and fingers, point toward the board. */
+  fergusDart() {
+    const f = this.ft, p = this.bot;
+    if (!f || !f.dart || f.released) return;
+    p.root.updateMatrixWorld(true);
+    const sock = p.arms[0].hand, q = sock.getWorldQuaternion(new THREE.Quaternion());
+    const fingers = new THREE.Vector3(0, -1, 0).applyQuaternion(q);              // the hand's finger direction
+    const pos = sock.getWorldPosition(new THREE.Vector3()).addScaledVector(fingers, 0.06 * p.height);
+    f.dart.position.copy(pos);
+    f.dart.lookAt(pos.clone().add(fingers));                                        // point first
   }
 
   clearDarts() { for (const d of this.darts) this.group.remove(d); this.darts = []; }

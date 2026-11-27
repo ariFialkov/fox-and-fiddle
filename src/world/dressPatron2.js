@@ -47,11 +47,13 @@ function hairCards(mat) {
  * the arm swings the forearm through an arc: it reads as a long, curved, rubbery arm. This moves each elbow (and the
  * forearm-twist helper between elbow and wrist) to the centre of the arm's cross-section, and updates the inverse
  * binds to match, so the rest pose is unchanged and every bend happens inside the arm.
- * It also lets the upper arm's sleeve follow the arm (see below). The skin weights are changed in place, once.
+ * It also lets the upper arm's sleeve follow the arm, and shortens long arms a little (see below). The skin
+ * weights are changed in place, once.
  * Computed once per GLB: { inverses: Matrix4[] for the skin's bones, local: { boneName: Vector3 } rest offsets }.
  */
 const elbowFix = new WeakMap();
 const ARM_BONES = ['Arm', 'ForeArm', 'ForeArmTwist', 'Hand'];
+const ARM_RATIO = 0.525, ARM_MAX_SHORTEN = 0.09;
 function fixElbows(gltf, src) {
   if (elbowFix.has(gltf)) return elbowFix.get(gltf);
   const sk = src.skeleton, bones = sk.bones, inv = sk.boneInverses.map((m) => m.clone());
@@ -59,8 +61,9 @@ function fixElbows(gltf, src) {
   const idx = (n) => bones.findIndex((b) => b.name === n);
   const node = (n) => gltf.scene.getObjectByName(n);
   gltf.scene.updateMatrixWorld(true);
-  const res = { inverses: inv, local: {} };
+  const res = { inverses: inv, local: {}, armScale: 1 };
   let released = 0;
+  const sides = [];
   for (const side of ['Left', 'Right']) {
     const ids = Object.fromEntries(ARM_BONES.map((n) => [n, idx(side + n)]));
     if (Object.values(ids).some((i) => i < 0) || !node(side + 'ForeArm')) continue;
@@ -116,13 +119,60 @@ function fixElbows(gltf, src) {
       released++;
     }
     // rest offsets (parent-local, metres): ForeArm under Arm, Twist and Hand under ForeArm
-    if (d.lengthSq() > 0) {
-      res.local[side + 'ForeArm'] = toM(E2.clone().sub(S));
-      res.local[side + 'ForeArmTwist'] = toM(T2.clone().sub(E2));
-      res.local[side + 'Hand'] = toM(W.clone().sub(E2));
+    const T = d.lengthSq() > 0 ? T2 : J(ids.ForeArmTwist);
+    res.local[side + 'ForeArm'] = toM(E2.clone().sub(S));
+    res.local[side + 'ForeArmTwist'] = toM(T.clone().sub(E2));
+    res.local[side + 'Hand'] = toM(W.clone().sub(E2));
+    // arm length: shoulder joint to fingertip, over shoulder height (the lowest hand vertex; the floor is the
+    // mesh's lowest point)
+    const hand = new Set(bones.map((b, i) => (b.name === side + 'Hand' || b.name.startsWith(side + 'HandFingers') ? i : -1)).filter((i) => i >= 0));
+    let tip = Infinity;
+    for (let k = 0; k < pos.count; k++) {
+      let h = 0; for (let q = 0; q < 4; q++) if (hand.has(ji.getComponent(k, q))) h += wi.getComponent(k, q);
+      if (h > 0.5) tip = Math.min(tip, pos.getY(k));
     }
+    if (tip < Infinity) sides.push({ side, S, W, tip });
   }
   if (released) { ji.needsUpdate = true; wi.needsUpdate = true; }
+  // The torso's own size, slice by slice from below the hips to the chest (metres, from the hip joint): how wide
+  // and how far forward and back the body is, so arms can be kept out of it (Patron2 clearArms).
+  const hipsI = idx('Hips');
+  if (hipsI >= 0) {
+    const Hj = new THREE.Vector3().setFromMatrixPosition(inv[hipsI].clone().invert());
+    const S0 = idx('LeftArm') >= 0 ? new THREE.Vector3().setFromMatrixPosition(inv[idx('LeftArm')].clone().invert()) : null;
+    const unit = S0 && idx('LeftForeArm') >= 0 ? S0.distanceTo(new THREE.Vector3().setFromMatrixPosition(inv[idx('LeftForeArm')].clone().invert())) / (node('LeftForeArm')?.position.length() || 1) : 0;
+    if (unit > 0) {
+      const torso = new Set(['Hips', 'Spine', 'Spine1', 'Spine2', 'LeftUpLeg', 'RightUpLeg'].map(idx).filter((i) => i >= 0));
+      const slices = [];
+      for (let y = -0.05; y <= 0.5001; y += 0.05) slices.push({ y, w: 0, front: -1, back: 1, n: 0 });   // hips to chest (skirts below are left alone)
+      const v = new THREE.Vector3();
+      for (let k = 0; k < pos.count; k++) {
+        let a = 0; for (let q = 0; q < 4; q++) if (torso.has(ji.getComponent(k, q))) a += wi.getComponent(k, q);
+        if (a < 0.7) continue;
+        v.fromBufferAttribute(pos, k).sub(Hj).divideScalar(unit);
+        const i = Math.round((v.y + 0.05) / 0.05);
+        const sl = slices[i];
+        if (!sl || Math.abs(v.y - sl.y) > 0.025) continue;
+        sl.w = Math.max(sl.w, Math.abs(v.x)); sl.front = Math.max(sl.front, v.z); sl.back = Math.min(sl.back, v.z); sl.n++;
+      }
+      res.torso = slices.filter((sl) => sl.n > 8);
+    }
+  }
+  // Arm length. Shoulder-to-fingertip over shoulder height is about 0.54 for people; the cast runs 0.53-0.57, and
+  // arms held out in poses read longer still. Shorten the upper arm and forearm (not the hand) toward 0.525, by at
+  // most 9 %, the same on both sides. The bones move and the inverse binds stay, so the mesh follows: the sleeve
+  // and forearm compress a little and the hand keeps its size.
+  if (sides.length) {
+    let floor = Infinity; for (let k = 0; k < pos.count; k++) floor = Math.min(floor, pos.getY(k));
+    let scale = 0;
+    for (const { S, W, tip } of sides) {
+      const sh = S.y - floor, ratio = (S.y - tip) / sh, excess = (ratio - ARM_RATIO) * sh;
+      scale += THREE.MathUtils.clamp(1 - excess / (S.y - W.y), 1 - ARM_MAX_SHORTEN, 1);
+    }
+    scale /= sides.length;
+    res.armScale = scale;
+    if (scale < 0.999) for (const { side } of sides) for (const n of ['ForeArm', 'ForeArmTwist', 'Hand']) res.local[side + n].multiplyScalar(scale);
+  }
   elbowFix.set(gltf, res);
   return res;
 }
@@ -138,6 +188,8 @@ export function dressPatron2(p, gltf) {
   gltf.scene.traverse((o) => { const b = p.bones[o.name]; if (b && !o.isMesh) b.position.copy(o.position); });
   const elbows = fixElbows(gltf, srcs[0]);
   for (const [n, v] of Object.entries(elbows.local)) p.bones[n].position.copy(v);
+  p.armScale = elbows.armScale;
+  p.torsoProfile = elbows.torso || null;
   p.restHipsY = p.bones.Hips.position.y;
   p._lg = null;   // leg proportions changed
   for (const a of p.arms) a.socketRest.copy(a.hand.position);

@@ -16,6 +16,7 @@ import { Patron } from './Patron.js';
 import { Patron as Patron2 } from './Patron2.js';
 
 import { reskin, INVISIBLE } from './reskin.js';
+import { foosMaterials, makeFoosRod, FOOS_HANDLE_Z } from './foosRods.js';
 
 export const ROOM = { minX: -8, maxX: 8, minZ: -5.5, maxZ: 5.5, height: 3.4 };
 
@@ -417,19 +418,16 @@ export class Bar {
     for (const s of [-1, 1]) this.box(0.02, 0.08, 0.2, M.black, s * (L / 2 + 0.03), y - 0.09, 0, { group: g });
     for (const [lx, lz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(0.08, y - 0.22, 0.08, M.metal, lx * (L / 2 - 0.1), (y - 0.22) / 2, lz * (Wd / 2 - 0.05), { group: g });
     this.addCollider(cx, cz, L + 0.5, Wd + 0.6);
-    this.foosDecor = new THREE.Group(); g.add(this.foosDecor);
+    this.foosDecor = new THREE.Group(); this.foosDecor.name = 'foosDecor'; g.add(this.foosDecor);   // the reskin keeps it by name
     this.foosRods = [];
-    const rodMat = new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.9, roughness: 0.3 });
+    // the same rods, handles and figures as the foosball game (the background players hold the handles)
+    const fm = foosMaterials();
     const rows = [[-0.525, 'you', 3], [-0.375, 'you', 2], [-0.225, 'bot', 3], [-0.075, 'you', 5], [0.075, 'bot', 5], [0.225, 'you', 3], [0.375, 'bot', 2], [0.525, 'bot', 3]];
     const offs = { 1: [0], 2: [-0.12, 0.12], 3: [-0.18, 0, 0.18], 5: [-0.24, -0.12, 0, 0.12, 0.24] };
-    const manMat = { you: new THREE.MeshStandardMaterial({ color: 0x2b5fd9 }), bot: new THREE.MeshStandardMaterial({ color: 0xd93b2b }) };
     for (const [rx, team, n] of rows) {
-      const rg = new THREE.Group(); rg.position.set(rx, y - 0.06, 0); this.foosDecor.add(rg);
-      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, Wd + 0.36, 8), rodMat);
-      rod.rotation.x = Math.PI / 2; rod.position.z = team === 'you' ? 0.18 : -0.18; rg.add(rod);
-      const men = new THREE.Group(); rg.add(men);
-      for (const o of offs[n]) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.07, 0.026), manMat[team]); m.position.set(0, -0.04, o); men.add(m); }
-      this.foosRods.push({ team, men, w: 0 });
+      const built = makeFoosRod(team, offs[n], fm);
+      const rg = built.group; rg.position.set(rx, y - 0.06, 0); this.foosDecor.add(rg);
+      this.foosRods.push({ team, men: built.menGroup, w: 0, group: rg, handleZ: (team === 'you' ? 1 : -1) * FOOS_HANDLE_Z });
     }
     this.foosBall = new THREE.Mesh(new THREE.SphereGeometry(0.017, 10, 8), new THREE.MeshStandardMaterial({ color: 0xf4efe0 }));
     this.foosBall.position.set(0.1, y - 0.129 + 0.017, 0.05); this.foosDecor.add(this.foosBall);
@@ -618,16 +616,16 @@ export class Bar {
     for (const o of [{ name: 'Earl', height: 0.97 }, { name: 'Marge', female: true, height: 0.95 }, { name: 'Lou' }, { name: 'Benny' },
       { name: 'Vic', shirt: 0x9a6a2a, height: 1.02 }, { name: 'Pearl', female: true, shirt: 0x2a6b6b, height: 0.96 }, { name: 'Rudy', shirt: 0x7a3a6b, height: 0.99 },
       { name: 'Gus', shirt: 0x4a4a4a, height: 1.0 }, { name: 'Nell', female: true, shirt: 0x8a2b2b, height: 0.94 }, { name: 'Frank', height: 1.03 }]) add(o, 0, 0, 0, 1);
-    // Big Mick and his mates, standing mid-room
-    this.mick = add({ name: 'Big Mick', shirt: 0x4a4a4a, skin: 0xd9a278, height: 1.12 }, 1.0, -0.6, 1.0, 3);
+    // Big Mick and his mates, standing mid-room in a horseshoe (Npc.js MICK_CIRCLE)
+    this.mick = add({ name: 'Big Mick', shirt: 0x4a4a4a, skin: 0xd9a278, height: 1.12 }, 1.4, -1.57, 1.4, 3);
     this.mates = [
-      add({ name: 'Tiny', shirt: 0x8a2b2b, height: 1.0 }, 2.0, -1.0, 1.0, -0.6),
-      add({ name: 'Doug', shirt: 0x2c4a7a, height: 1.04 }, 0.1, -1.3, 1.0, -0.6),
-      add({ name: 'Sharkey', shirt: 0x3d6b3a, height: 1.06 }, 2.9, -0.2, 1.0, -0.6),
+      add({ name: 'Tiny', shirt: 0x8a2b2b, height: 1.0 }, 0.78, -1.0, 1.4, -0.95),
+      add({ name: 'Doug', shirt: 0x2c4a7a, height: 1.04 }, 1.84, -0.51, 1.4, -0.95),
+      add({ name: 'Sharkey', shirt: 0x3d6b3a, height: 1.06 }, 2.02, -1.0, 1.4, -0.95),
     ];
     this.stations.push({
       id: 'barfight', gameId: 'barfight', label: 'Pick a fight with Big Mick', blurb: 'He has been eyeing your stool all night. His mates may or may not stay out of it.',
-      pos: new THREE.Vector3(1.0, 0, 1.0), look: new THREE.Vector3(1.0, 1.5, -0.6), radius: 1.4, patron: this.mick, patrons: [this.mick, ...this.mates],
+      pos: new THREE.Vector3(1.3, 0, 0.6), look: new THREE.Vector3(1.4, 1.55, -1.57), radius: 1.4, patron: this.mick, patrons: [this.mick, ...this.mates],
     });
     // Rose by the jukebox
     this.rose = add({ name: 'Rose', female: true, shirt: 0x7a3a6b, hair: 0x8a1a1a, height: 0.97 }, 6.35, 4.1, 7.15, 4.75);

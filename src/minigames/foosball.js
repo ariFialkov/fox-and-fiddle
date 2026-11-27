@@ -6,6 +6,8 @@
 import * as THREE from 'three';
 import { MiniGame } from './base.js';
 import { reskin } from '../world/reskin.js';
+import { FoosHands } from '../world/foosHands.js';
+import { foosMaterials, makeFoosFigure, makeFoosRod } from '../world/foosRods.js';
 
 const L = 1.2, W = 0.7, R = 0.017, GOAL = 0.1, LEG = 0.065;
 const ROWS = [
@@ -19,62 +21,8 @@ const ROWS = [
   { x: 0.525, team: 'bot', n: 3, slide: 0.13 },
 ];
 const OFFSETS = { 1: [0], 2: [-0.12, 0.12], 3: [-0.18, 0, 0.18], 5: [-0.24, -0.12, 0, 0.12, 0.24] };
-/** Materials shared by the foosball rods and figures. */
-export function foosMaterials() {
-  return {
-    rodMat: new THREE.MeshStandardMaterial({ color: 0xbbbbbb, metalness: 0.9, roughness: 0.3 }),
-    youMat: new THREE.MeshStandardMaterial({ color: 0x2b5fd9, roughness: 0.5 }),
-    botMat: new THREE.MeshStandardMaterial({ color: 0xd93b2b, roughness: 0.5 }),
-    handleMat: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 }),
-    skinMat: new THREE.MeshStandardMaterial({ color: 0xf1c9a5 }),
-  };
-}
-
-/**
- * One foosball figure. Origin = where the rod passes through the chest; the feet hang 7cm below.
- * Reskin: a cavalry trooper for the player, an outlaw for the opponent (same origin and size).
- */
-export function makeFoosFigure(teamMat, mats) {
-  const glb = reskin.model(teamMat === mats.youMat ? 'foosball-figure-cavalry.glb' : 'foosball-figure-outlaw.glb');
-  if (glb) return glb;
-  const m = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.045, 0.026), teamMat);
-  body.position.y = -0.03;
-  const legs = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.03, 0.02), mats.handleMat);
-  legs.position.y = -0.062;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), mats.skinMat);
-  head.position.y = 0.0;
-  m.add(body, legs, head);
-  return m;
-}
-
-/**
- * One rod: steel bar, rubber handle on its owner's side, and a figure at each offset.
- * The group's origin is the rod axis at the table's centre line; z runs across the table.
- */
-export function makeFoosRod(team, offsets, mats) {
-  const group = new THREE.Group();
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, W + 0.36, 8), mats.rodMat);
-  rod.rotation.x = Math.PI / 2; rod.position.z = team === 'you' ? 0.18 : -0.18; group.add(rod);
-  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.1, 10), mats.handleMat);
-  handle.rotation.x = Math.PI / 2; handle.position.z = team === 'you' ? W / 2 + 0.3 : -(W / 2 + 0.3); group.add(handle);
-  const menGroup = new THREE.Group(); group.add(menGroup);
-  const men = [];
-  for (const off of offsets) {
-    const m = makeFoosFigure(team === 'you' ? mats.youMat : mats.botMat, mats);
-    m.position.z = off;
-    menGroup.add(m); men.push(m);
-  }
-  // reskin: the modelled rod replaces the steel bar and black handle, handle on its owner's side
-  const rodModel = reskin.model('foosball-rod.glb');
-  if (rodModel) {
-    rod.visible = false; handle.visible = false;
-    rodModel.position.z = team === 'you' ? 0.18 : -0.18;
-    rodModel.rotation.y = team === 'you' ? 0 : Math.PI;
-    group.add(rodModel);
-  }
-  return { group, rod, handle, menGroup, men, rodModel };
-}
+// rod and figure builders live in world/foosRods.js (the bar's own table uses them too); re-exported for the catalog
+export { foosMaterials, makeFoosFigure, makeFoosRod };
 
 const KEYS = { Digit1: 'fwd', Digit2: 'mid', Digit3: 'def', Digit4: 'goalie', Numpad1: 'fwd', Numpad2: 'mid', Numpad3: 'def', Numpad4: 'goalie' };
 
@@ -108,6 +56,9 @@ export class Foosball extends MiniGame {
     this.opp = reskin.patron({ name: 'Nadia', female: true, shirt: 0xd93b2b, height: 0.98, seed: 909 });
     this.opp.root.position.set(this.cx + 0.1, 0, this.cz - W / 2 - 0.55);
     this.opp.lookAt(new THREE.Vector3(this.cx, 0, this.cz)); this.opp.pose = 'foos'; this.group.add(this.opp.root);
+    this.oppHome = this.opp.root.position.x;
+    this.oppHands = new FoosHands(this.opp);
+    this.oppLetGo = 0;                  // s with her hands off the rods (celebrating, sulking)
 
     this.placeCamera();
     this.onResize = () => this.placeCamera(); addEventListener('resize', this.onResize);
@@ -164,6 +115,7 @@ export class Foosball extends MiniGame {
 
   update(dt) {
     super.update(dt);
+    this.nadia(dt);
     this.opp.update(dt);
     if (this.phaseOver) return;
     this.clock += dt; this.sinceGoal += dt;
@@ -177,6 +129,23 @@ export class Foosball extends MiniGame {
     }
     if (this.frozen > 0) this.frozen -= dt; else this.physics(dt);
     this.sync();
+  }
+
+  /** Nadia's hands on her rod handles (moving to the pair nearest the ball), her weight over them, eyes on the ball. */
+  nadia(dt) {
+    const p = this.opp, ball = new THREE.Vector3(this.cx + this.ball.x, this.ty + R, this.cz + this.ball.z);
+    p.headTarget = ball;
+    if (this.oppLetGo > 0) { this.oppLetGo -= dt; if (this.oppLetGo <= 0) this.oppHands.pair = -1; return; }
+    const handles = this.rods.filter((r) => r.team === 'bot').map((r) => ({
+      pos: r.group.localToWorld(new THREE.Vector3(0, 0, -(W / 2 + 0.3) + r.s)), axis: new THREE.Vector3(0, 0, 1), roll: r.th,
+    }));
+    this.oppHands.update(dt, handles, ball);
+    // step her weight toward the rods in her hands (part of the way: the arms do the rest)
+    const hs = this.oppHands.hand.map((h) => handles[h.rod]).filter(Boolean);
+    if (hs.length === 2) {
+      const mid = (hs[0].pos.x + hs[1].pos.x) / 2;
+      p.root.position.x = THREE.MathUtils.damp(p.root.position.x, this.oppHome + (mid - this.oppHome) * 0.55, 3, dt);
+    }
   }
 
   handleInput(dt) {
@@ -324,7 +293,9 @@ export class Foosball extends MiniGame {
     const you = who === 'you';
     this.updateScore(you ? 'GOAL!' : 'Nadia scores');
     this.hud.showToast(you ? 'GOAL!' : 'Nadia scores', `${this.score.you} - ${this.score.bot}`, 1400);
-    if (you) this.opp.stagger(); else this.opp.punch();
+    // hands off the rods for a moment: a sulk or a celebration
+    this.oppHands.release(); this.oppLetGo = 1.4;
+    if (you) { if (!this.opp.react?.('lose')) this.opp.stagger(); } else if (!this.opp.react?.('win')) this.opp.cheer();
     if (this.score[who] >= this.target) {
       this.phaseOver = true;
       this.ball.vx = this.ball.vz = 0;

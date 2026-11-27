@@ -11,6 +11,7 @@ import { MiniGame } from './base.js';
 import { turnToward } from '../engine/Player.js';
 import * as P from './poolPhysics.js';
 import { reskin } from '../world/reskin.js';
+import { makeCue, shotHands, CUE_CARRY } from '../world/poolHands.js';
 
 const BALL_COLORS = { 1: 0xf2c200, 2: 0x1d4fd8, 3: 0xd62828, 4: 0x6a1b9a, 5: 0xf57c00, 6: 0x1b7a3f, 7: 0x7b1e1e, 8: 0x111111 };
 const texCache = {};
@@ -35,17 +36,8 @@ export function ballTexture(id) {
   return t;
 }
 
-export function makeCue() {
-  const g = new THREE.Group();
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.013, 1.45, 10), new THREE.MeshStandardMaterial({ color: 0xc9a46a, roughness: 0.5 }));
-  shaft.rotation.x = Math.PI / 2; shaft.position.z = -(0.725 + 0.03);
-  const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.02, 8), new THREE.MeshStandardMaterial({ color: 0x3a6bb0 }));
-  tip.rotation.x = Math.PI / 2; tip.position.z = -0.02;
-  const butt = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, 0.4, 10), new THREE.MeshStandardMaterial({ color: 0x2a1a10, roughness: 0.6 }));
-  butt.rotation.x = Math.PI / 2; butt.position.z = -(1.45 + 0.03 + 0.2);
-  g.add(shaft, tip, butt);
-  return g; // tip at the origin, stick extends along -z
-}
+// the cue and the hands on a shot live in world/poolHands.js (the bar's own players use them too); re-exported
+export { makeCue };
 
 /**
  * First-person viewmodel while it is not your shot: your cue held low in the right hand, tip up
@@ -127,8 +119,7 @@ export class Billiards extends MiniGame {
     this.shark.root.position.copy(this.sharkRest);
     this.sharkYaw = Math.atan2(this.cx - this.sharkRest.x, this.cz - this.sharkRest.z);
     this.shark.root.rotation.set(0, this.sharkYaw, 0);
-    this.shark.hold(this.sharkCue, 1, [0, -0.05, 0.02], [0, 0, 0]); // resting upright in hand (tip up: stick along -z in cue space -> rotate)
-    this.sharkCue.rotation.set(-Math.PI / 2, 0, 0); this.sharkCue.position.set(0, -0.05, 0.02);
+    this.shark.hold(this.sharkCue, 1, CUE_CARRY.pos, CUE_CARRY.rot); // carried upright, tip up, hand 0.9 m down from the tip
     this.shark.pose = 'idle';
     this.group.add(this.shark.root);
     this.sharkState = 'rest';
@@ -200,8 +191,8 @@ export class Billiards extends MiniGame {
 
   update(dt) {
     super.update(dt);
+    this.updateShark(dt);   // first: it sets where his hands go this frame
     this.shark.update(dt);
-    this.updateShark(dt);
     if (this.phase === 'aim') this.updateAim(dt);
     else if (this.phase === 'rolling') this.updateRolling(dt);
     if (this.phase === 'aim') {
@@ -423,7 +414,7 @@ export class Billiards extends MiniGame {
     const pick = P.botShot(this.state, this.skill, this.mustWin);
     this.botShotPlan = pick;
     const cue = this.ball(0);
-    this.sharkSpot = this.standSpot(cue, pick.shot.angle, 0.8);
+    this.sharkSpot = this.standSpot(cue, pick.shot.angle, 1.25);
     this.sharkPath = this.ringPath(this.shark.root.position, this.sharkSpot);
     this.sharkState = 'approach'; this.sharkT = 0;
     this.shark.pose = 'idle';
@@ -454,7 +445,8 @@ export class Billiards extends MiniGame {
       s.root.rotation.set(0, this.sharkYaw, 0);
       return false;
     };
-    const faceBall = () => { const b = this.cueBallWorld(); this.sharkYaw = turnToward(this.sharkYaw, Math.atan2(b.x - pos.x, b.z - pos.z), 4 * dt); s.root.rotation.set(0, this.sharkYaw, 0); };
+    // facing the cue ball; down on a shot he opens his stance (turned to his right, left shoulder leading)
+    const faceBall = () => { const b = this.cueBallWorld(); this.sharkYaw = turnToward(this.sharkYaw, Math.atan2(b.x - pos.x, b.z - pos.z) - 0.35 * (this.sharkStance || 0), 4 * dt); s.root.rotation.set(0, this.sharkYaw, 0); };
     if (st === 'rest') { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); faceBall(); return; }
     this.sharkT += dt;
     if (st === 'approach') {
@@ -468,7 +460,10 @@ export class Billiards extends MiniGame {
     const bp = this.world(cue.u, cue.v);
     if (st === 'settle') {
       faceBall();
-      if (this.sharkT > 0.35) { this.sharkState = 'lean'; this.sharkT = 0; s.pose = 'lean'; this.group.attach(this.sharkCue); }
+      if (this.sharkT > 0.35) {
+        this.sharkState = 'lean'; this.sharkT = 0; s.pose = 'lean'; this.group.attach(this.sharkCue);
+        this.cueFrom = { p: this.sharkCue.position.clone(), q: this.sharkCue.quaternion.clone() };
+      }
       return;
     }
     if (st === 'lean' || st === 'pull' || st === 'strike' || st === 'watch') {
@@ -485,12 +480,20 @@ export class Billiards extends MiniGame {
       this.sharkCue.position.copy(tip);
       this.sharkCue.lookAt(bp.clone().setY(tipY + 0.002));
       this.sharkCue.rotateX(0.05);
+      // the first moments of the lean: the cue swings down from where he carried it onto the line
+      if (st === 'lean' && this.cueFrom && this.sharkT < 0.5) {
+        const e = THREE.MathUtils.smoothstep(this.sharkT / 0.5, 0, 1);
+        this.sharkCue.position.lerpVectors(this.cueFrom.p, this.sharkCue.position, e);
+        this.sharkCue.quaternion.slerpQuaternions(this.cueFrom.q, this.sharkCue.quaternion.clone(), e);
+      }
+      this.sharkHands(bp, dir, dt);
       return;
     }
     if (st === 'standup') {
+      this.sharkStance = THREE.MathUtils.damp(this.sharkStance || 0, 0, 6, dt); this.placeShark();
       if (this.sharkT > 0.5) {
-        s.hold(this.sharkCue, 1, [0, -0.05, 0.02], [0, 0, 0]);
-        this.sharkCue.rotation.set(-Math.PI / 2, 0, 0); this.sharkCue.position.set(0, -0.05, 0.02);
+        s.releaseHand?.(0); s.releaseHand?.(1); if (s.fist) s.fist[0] = s.fist[1] = 0;
+        s.hold(this.sharkCue, 1, CUE_CARRY.pos, CUE_CARRY.rot);
         this.sharkState = 'retreat'; this.sharkT = 0; this.sharkPath = this.ringPath(pos, this.sharkRest);
       }
       return;
@@ -499,6 +502,22 @@ export class Billiards extends MiniGame {
       const next = this.sharkPath[0];
       if (moveTo(next, 1.0)) { this.sharkPath.shift(); if (!this.sharkPath.length) this.sharkState = 'rest'; }
     }
+  }
+
+  /**
+   * Shark down on a shot: his left hand bridges on the felt behind the cue ball, palm down, the cue resting on it;
+   * his right hand wraps the cue 1.1 m back from the tip, elbow up behind him, and moves with it as he strokes.
+   * He stands a little left of the line, so the cue runs under his chin and right shoulder.
+   */
+  sharkHands(bp, dir, dt) {
+    this.sharkStance = THREE.MathUtils.damp(this.sharkStance || 0, 1, 5, dt); this.placeShark();
+    shotHands(this.shark, this.sharkCue, bp, dir, this.ty);
+  }
+  /** Shark's root: his spot, stepped to the left of the shot line by the stance amount. */
+  placeShark() {
+    if (!this.sharkSpot || !this.botShotPlan) return;
+    const a = this.botShotPlan.shot.angle, right = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a));
+    this.shark.root.position.copy(this.sharkSpot).addScaledVector(right, -0.1 * (this.sharkStance || 0));
   }
 
   dispose() {
