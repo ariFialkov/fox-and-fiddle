@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { unpackAll, MODEL_EXT } from './unpack-glb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(__dirname, '..', 'dist');
@@ -38,4 +39,7 @@ for (const d of ['preview', 'screens', '__MACOSX']) fs.rmSync(path.join(dist, 'w
 const refused = /\.(md|webmanifest)$/i;
 const sweep = (dir) => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = path.join(dir, e.name); if (e.isDirectory()) sweep(f); else if (refused.test(e.name)) fs.rmSync(f, { force: true }); } };
 sweep(dist);
+// hosts that refuse .glb: every model as glTF JSON plus its texture images (lossless; see unpack-glb.js)
+const conv = unpackAll(path.join(dist, 'western'));
+if (conv.files) console.log(`models: ${conv.files} .glb -> .${MODEL_EXT} + images (${(conv.before / 1e6).toFixed(1)} MB -> ${(conv.after / 1e6).toFixed(1)} MB)`);
 console.log(`inlined ${used.length} file(s) into index.html (${(fs.statSync(htmlPath).size / 1024).toFixed(0)} KB)`);

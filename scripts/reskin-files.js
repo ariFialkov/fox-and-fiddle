@@ -5,6 +5,7 @@
 // path that sorts last wins and a warning is printed.
 import fs from 'node:fs';
 import path from 'node:path';
+import { MODEL_EXT } from './unpack-glb.js';
 
 const VIRTUAL = 'virtual:reskin-files';
 const RESOLVED = '\0' + VIRTUAL;
@@ -34,15 +35,21 @@ export function scanReskin(root) {
 }
 
 export default function reskinFiles() {
-  let root = process.cwd();
+  let root = process.cwd(), building = false;
   return {
     name: 'reskin-files',
-    configResolved(cfg) { root = cfg.root; },
+    configResolved(cfg) { root = cfg.root; building = cfg.command === 'build'; },
     resolveId(id) { return id === VIRTUAL ? RESOLVED : null; },
     load(id) {
       if (id !== RESOLVED) return null;
       const scan = scanReskin(root);
       for (const w of scan.warnings) this.warn(`reskin: two files share a name, ${w}`);
+      // a build ships the models as glTF JSON (scripts/unpack-glb.js): same names to ask for, new files to fetch
+      if (building) {
+        const ext = '.' + MODEL_EXT;
+        scan.files = scan.files.map((f) => f.replace(/\.glb$/i, ext));
+        for (const k of Object.keys(scan.byName)) scan.byName[k] = scan.byName[k].replace(/\.glb$/i, ext);
+      }
       return `export default ${JSON.stringify({ files: scan.files, byName: scan.byName })};`;
     },
   };
