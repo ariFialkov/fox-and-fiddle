@@ -34,4 +34,8 @@ const assetsDir = path.join(dist, 'assets');
 if (fs.existsSync(assetsDir) && fs.readdirSync(assetsDir).length === 0) fs.rmdirSync(assetsDir);
 // review material unpacked with the art drops is not part of the game
 for (const d of ['preview', 'screens', '__MACOSX']) fs.rmSync(path.join(dist, 'western', d), { recursive: true, force: true });
+// file types some hosting platforms refuse: notes (.md) and web manifests are not loaded by the game
+const refused = /\.(md|webmanifest)$/i;
+const sweep = (dir) => { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const f = path.join(dir, e.name); if (e.isDirectory()) sweep(f); else if (refused.test(e.name)) fs.rmSync(f, { force: true }); } };
+sweep(dist);
 console.log(`inlined ${used.length} file(s) into index.html (${(fs.statSync(htmlPath).size / 1024).toFixed(0)} KB)`);
