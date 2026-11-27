@@ -11,7 +11,7 @@ import { MiniGame } from './base.js';
 import { turnToward } from '../engine/Player.js';
 import * as P from './poolPhysics.js';
 import { reskin } from '../world/reskin.js';
-import { makeCue, shotHands, CUE_CARRY } from '../world/poolHands.js';
+import { makeCue, shotHands, CUE_CARRY, CueRest } from '../world/poolHands.js';
 
 const BALL_COLORS = { 1: 0xf2c200, 2: 0x1d4fd8, 3: 0xd62828, 4: 0x6a1b9a, 5: 0xf57c00, 6: 0x1b7a3f, 7: 0x7b1e1e, 8: 0x111111 };
 const texCache = {};
@@ -120,6 +120,7 @@ export class Billiards extends MiniGame {
     this.sharkYaw = Math.atan2(this.cx - this.sharkRest.x, this.cz - this.sharkRest.z);
     this.shark.root.rotation.set(0, this.sharkYaw, 0);
     this.shark.hold(this.sharkCue, 1, CUE_CARRY.pos, CUE_CARRY.rot); // carried upright, tip up, hand 0.9 m down from the tip
+    this.sharkRestCue = new CueRest(this.shark, this.sharkCue, this.group);   // and stood on its butt while he waits
     this.shark.pose = 'idle';
     this.group.add(this.shark.root);
     this.sharkState = 'rest';
@@ -413,6 +414,7 @@ export class Billiards extends MiniGame {
     if (this.done) return;
     const pick = P.botShot(this.state, this.skill, this.mustWin);
     this.botShotPlan = pick;
+    this.sharkRestCue?.carry();                                       // cue back in his hand to walk to the shot
     const cue = this.ball(0);
     this.sharkSpot = this.standSpot(cue, pick.shot.angle, 1.25);
     this.sharkPath = this.ringPath(this.shark.root.position, this.sharkSpot);
@@ -447,7 +449,7 @@ export class Billiards extends MiniGame {
     };
     // facing the cue ball; down on a shot he opens his stance (turned to his right, left shoulder leading)
     const faceBall = () => { const b = this.cueBallWorld(); this.sharkYaw = turnToward(this.sharkYaw, Math.atan2(b.x - pos.x, b.z - pos.z) - 0.35 * (this.sharkStance || 0), 4 * dt); s.root.rotation.set(0, this.sharkYaw, 0); };
-    if (st === 'rest') { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); faceBall(); return; }
+    if (st === 'rest') { s.walk = THREE.MathUtils.damp(s.walk, 0, 8, dt); faceBall(); if (s.walk < 0.1) this.sharkRestCue?.plant(dt); return; }
     this.sharkT += dt;
     if (st === 'approach') {
       const next = this.sharkPath[0];
@@ -478,7 +480,7 @@ export class Billiards extends MiniGame {
       const tipY = this.ty + P.R;
       const tip = bp.clone().addScaledVector(dir, -back); tip.y = tipY + 0.005;
       this.sharkCue.position.copy(tip);
-      this.sharkCue.lookAt(bp.clone().setY(tipY + 0.002));
+      this.sharkCue.lookAt(tip.clone().addScaledVector(dir, 1).setY(tipY + 0.002));   // down the line, not at the ball (that tilts it once the tip is on it)
       this.sharkCue.rotateX(0.05);
       // the first moments of the lean: the cue swings down from where he carried it onto the line
       if (st === 'lean' && this.cueFrom && this.sharkT < 0.5) {
@@ -522,6 +524,7 @@ export class Billiards extends MiniGame {
 
   dispose() {
     super.dispose();
+    const sh = this.shark; if (sh?.releaseHand) { sh.releaseHand(0); sh.releaseHand(1); sh.fist[0] = sh.fist[1] = 0; }
     this.camera.remove(this.handCue); this.camera.remove(this.handL);
     this.bar.poolDecor.visible = true;
     if (this.tableCollider) this.bar.colliders.push(this.tableCollider);

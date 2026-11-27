@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { Patron } from './Patron.js';
 import { wrap, turnToward } from '../engine/Player.js';
 import { FoosHands } from './foosHands.js';
-import { makeCue, CUE_CARRY, shotHands, cueOnLine } from './poolHands.js';
+import { makeCue, CUE_CARRY, shotHands, cueOnLine, CueRest } from './poolHands.js';
 
 const NODES = [
   [-5.0, 4.0], [-3.2, 2.6], [-6.0, 1.5], [-6.3, -0.8], [-3.0, -1.6], [-1.0, -2.3], [1.5, -2.4], [3.9, -2.6],
@@ -300,12 +300,19 @@ export class NpcDirector {
     this.t += dt;
     for (const n of this.npcs) {
       if (n.patron.busy) continue;
-      if (!n.activity) { this.choose(n); continue; }
-      n.timer += dt;
-      if (this.yieldTo(n, dt)) { this.walk(n, dt); continue; }
-      this.walk(n, dt);
-      const done = ACTS[n.activity].update(this, n, dt);
-      if (done) { this.end(n); this.choose(n); }
+      // one patron's error stays with that patron (logged once per activity): everyone else keeps moving
+      try {
+        if (!n.activity) { this.choose(n); continue; }
+        n.timer += dt;
+        if (this.yieldTo(n, dt)) { this.walk(n, dt); continue; }
+        this.walk(n, dt);
+        const done = ACTS[n.activity].update(this, n, dt);
+        if (done) { this.end(n); this.choose(n); }
+      } catch (e) {
+        this.errs = this.errs || new Set();
+        if (!this.errs.has(n.activity)) { this.errs.add(n.activity); console.error(`npc ${n.patron.name} (${n.activity}):`, e); }
+        try { this.end(n); this.choose(n); } catch { /* leave them be */ }
+      }
     }
     // dart flights
     if (this.flights) {
@@ -541,9 +548,13 @@ const ACTS = {
     update(dir, n, dt) {
       const p = n.patron, s = n.session, pool = dir.bar.pool;
       if (!s) return true;
-      if (!p.prop && dir.arrived(n)) dir.cueFor(n);
+      if (!p.prop && !n.data.cue && dir.arrived(n)) dir.cueFor(n);   // one cue each: while it's on a shot line the hand is empty
       const partner = dir.partner(n);
       const myTurn = s.data.turn === n.data.idx;
+      // waiting: the cue stands on its butt by their foot, a hand on it; walking: carried
+      if (n.data.cue && !n.data.cueRest) n.data.cueRest = new CueRest(p, n.data.cue, dir.fx);
+      const resting = !myTurn && dir.arrived(n) && !n.data.returning;
+      if (n.data.cueRest) { if (resting) n.data.cueRest.plant(dt); else if (!n.data.lineCue) n.data.cueRest.carry(); }
       if (!myTurn) {
         if (dir.arrived(n) && !n.data.returning) { p.pose = 'idle'; p.headTarget = partner ? dir.headAt(partner.patron) : null; }
         if (dir.arrived(n)) n.data.returning = false;
@@ -694,6 +705,7 @@ const ACTS = {
       if (n.data.letGo <= 0 && p.reachHand) {
         const axis = new THREE.Vector3(0, 0, n.data.side > 0 ? -1 : 1);
         n.data.hands.update(dt, mine.map((r) => ({ pos: r.group.localToWorld(new THREE.Vector3(0, 0, r.handleZ)), axis, roll: r.men.rotation.z })), p.headTarget);
+        n.data.hands.follow(dt);   // the body follows the hands along the table
       }
       if (chance(dt, 1.4)) {
         // a shot: one of the rods in hand slides and spins (the whole rod moves, handle and all)

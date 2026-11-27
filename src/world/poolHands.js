@@ -59,9 +59,54 @@ export function shotHands(p, cue, bp, dir, feltY) {
 /** Lay a cue on a shot line: tip `back` m behind the ball's centre, the butt raised a touch. parent: the cue's parent. */
 export function cueOnLine(cue, bp, dir, back, tipY) {
   const tip = bp.clone().addScaledVector(dir, -back); tip.y = tipY + 0.005;
-  cue.parent.worldToLocal(tip);
-  cue.position.copy(tip);
-  const aim = bp.clone().setY(tipY + 0.002);
+  // aim at a point well down the line (aiming at the ball itself tilts the cue wildly once the tip is on it)
+  const aim = tip.clone().addScaledVector(dir, 1).setY(tipY + 0.002);
+  cue.position.copy(cue.parent.worldToLocal(tip.clone()));
   cue.lookAt(aim);              // lookAt takes a world point
-  cue.rotateX(0.05);
+  cue.rotateX(0.05);            // the butt a touch higher than the tip
+}
+
+/**
+ * A cue at rest while its player waits: butt on the floor beside their foot, leaning in a touch, their hand round
+ * the shaft at chest height (Patron v2). plant(dt) every frame while they stand; carry() puts it back in the hand
+ * to walk with. world: the group the planted cue lives in.
+ */
+export class CueRest {
+  constructor(p, cue, world, arm = 1) { this.p = p; this.cue = cue; this.world = world; this.arm = arm; this.planted = false; this.t = 0; }
+  plant(dt) {
+    const p = this.p, cue = this.cue;
+    if (!p.reachHand) return;
+    p.root.updateMatrixWorld(true);
+    const up = new THREE.Vector3(0, 1, 0), q = p.root.quaternion, side = p.arms[this.arm].side;
+    const out = new THREE.Vector3(side, 0, 0).applyQuaternion(q), fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
+    // where it stands: the butt by the foot, the tip leaning in toward the shoulder
+    const butt = p.root.position.clone().addScaledVector(out, 0.3 * p.height).addScaledVector(fwd, 0.12); butt.y = 0.01;
+    const lean = up.clone().addScaledVector(out, -0.06).addScaledVector(fwd, 0.04).normalize();
+    const tip = butt.clone().addScaledVector(lean, 1.49);
+    if (!this.planted) {
+      this.planted = true; this.t = 0;
+      this.world.attach(cue);                                   // out of the hand, where it was
+      this.from = { p: cue.position.clone(), q: cue.quaternion.clone() };
+      p.prop = null;
+    }
+    this.t += dt;
+    // stand it: tip at `tip`, the stick (-z) running down to the butt
+    cue.position.copy(this.world.worldToLocal(tip.clone()));
+    cue.lookAt(tip.clone().add(lean));
+    if (this.t < 0.45) {
+      const e = THREE.MathUtils.smoothstep(this.t / 0.45, 0, 1);
+      cue.position.lerpVectors(this.from.p, cue.position.clone(), e);
+      cue.quaternion.slerpQuaternions(this.from.q, cue.quaternion.clone(), e);
+    }
+    // the hand round the shaft at about chest height, palm on its inner side, fingers wrapped round the front
+    const grip = tip.clone().addScaledVector(lean, -(1.49 - 1.08 * p.height)).addScaledVector(out, 0.03);
+    p.reachHand(this.arm, grip, { fingers: fwd.clone(), palm: out.clone().negate(), pole: out.clone().add(new THREE.Vector3(0, -1, -0.4).applyQuaternion(q)), speed: 6 });
+    p.fist[this.arm] = 0.8;
+  }
+  carry() {
+    if (!this.planted) return;
+    this.planted = false;
+    this.p.hold(this.cue, this.arm, CUE_CARRY.pos, CUE_CARRY.rot);
+    this.p.releaseHand(this.arm); this.p.fist[this.arm] = 0;
+  }
 }

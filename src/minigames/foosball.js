@@ -140,12 +140,8 @@ export class Foosball extends MiniGame {
       pos: r.group.localToWorld(new THREE.Vector3(0, 0, -(W / 2 + 0.3) + r.s)), axis: new THREE.Vector3(0, 0, 1), roll: r.th,
     }));
     this.oppHands.update(dt, handles, ball);
-    // step her weight toward the rods in her hands (part of the way: the arms do the rest)
-    const hs = this.oppHands.hand.map((h) => handles[h.rod]).filter(Boolean);
-    if (hs.length === 2) {
-      const mid = (hs[0].pos.x + hs[1].pos.x) / 2;
-      p.root.position.x = THREE.MathUtils.damp(p.root.position.x, this.oppHome + (mid - this.oppHome) * 0.55, 3, dt);
-    }
+    // her whole body moves with her hands: centred between the rods she holds, a comfortable reach behind them
+    this.oppHands.follow(dt);
   }
 
   handleInput(dt) {
