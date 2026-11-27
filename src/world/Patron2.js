@@ -65,9 +65,96 @@ export function loadPatronClips(json) {
     for (let i = 0; i < q.length; i++) qf[i] = q[i] / json.quatScale;
     for (let i = 0; i < h.length; i++) hf[i] = h[i] / json.hipsScale;
     lib.clips[name] = { name, fps: c.fps, frames: c.frames, duration: (c.frames - 1) / c.fps, q: qf, hips: hf };
+    levelClip(lib.clips[name], json.bones);
   }
   Patron.clips = lib;
   return lib;
+}
+
+/**
+ * Posture fix for the library clips. Retargeted to this skeleton, the standing clips keep both thighs swung back
+ * (5-10 degrees net of the pelvis tilt), the talking clips bend the chest forward 10-18 degrees, and the head
+ * tips down 10-20 degrees, so everyone stands with their feet behind their hips, stooped, staring at the floor.
+ * Per clip, this removes the average backward slope of the legs (the feet keep their angle to the floor), the
+ * chest's average forward bend beyond 3 degrees (8 seated) and the head's average downward tilt beyond 5. The
+ * motion around those averages is untouched. Seated clips keep their legs (the chair has them).
+ */
+const LEVEL_HEAD_KEEP = 5 * Math.PI / 180;
+const LEVEL_TRUNK_KEEP = 3 * Math.PI / 180, LEVEL_TRUNK_KEEP_SEATED = 8 * Math.PI / 180;
+function levelClip(clip, names) {
+  const nb = names.length, Q = clip.q, at = (n) => names.indexOf(n);
+  const L = restLayout(false), v3 = (a) => new THREE.Vector3().fromArray(a);
+  const get = (f, b, out) => out.set(Q[(f * nb + b) * 4], Q[(f * nb + b) * 4 + 1], Q[(f * nb + b) * 4 + 2], Q[(f * nb + b) * 4 + 3]).normalize();
+  const put = (f, b, q) => { const i = (f * nb + b) * 4; Q[i] = q.x; Q[i + 1] = q.y; Q[i + 2] = q.z; Q[i + 3] = q.w; };
+  const H = new THREE.Quaternion(), U = new THREE.Quaternion(), K = new THREE.Quaternion(), F = new THREE.Quaternion(), N = new THREE.Quaternion(), Hd = new THREE.Quaternion();
+  const R = new THREE.Quaternion(), t = new THREE.Quaternion(), a = new THREE.Vector3(), j = new THREE.Vector3(), X = new THREE.Vector3(1, 0, 0);
+  const hips = at('Hips'), legs = ['Left', 'Right'].map((s) => ({ up: at(s + 'UpLeg'), knee: at(s + 'Leg'), foot: at(s + 'Foot'), off: v3(L[s + 'UpLeg']) }));
+  const shin = v3(L.LeftFoot), thigh = v3(L.LeftLeg);
+  // legs: mean slope of hip-to-ankle, from straight down (positive = feet behind)
+  if (!clip.name.startsWith('sit') && hips >= 0 && legs.every((l) => l.up >= 0 && l.knee >= 0 && l.foot >= 0)) {
+    let sum = 0, n = 0;
+    for (let f = 0; f < clip.frames; f++) {
+      get(f, hips, H);
+      for (const l of legs) {
+        get(f, l.up, U); get(f, l.knee, K);
+        a.copy(shin).applyQuaternion(K).add(thigh).applyQuaternion(U).applyQuaternion(H);   // hip joint -> ankle, body frame
+        sum += Math.atan2(-a.z, -a.y); n++;
+      }
+    }
+    const slope = n ? sum / n : 0;
+    if (Math.abs(slope) > 0.017) {
+      R.setFromAxisAngle(X, -slope);
+      for (let f = 0; f < clip.frames; f++) {
+        get(f, hips, H);
+        for (const l of legs) {
+          get(f, l.up, U); get(f, l.knee, K); get(f, l.foot, F);
+          // thigh' = H^-1 R H thigh: swing the whole leg about the hip joint in the body frame
+          const U2 = t.copy(H).invert().multiply(R).multiply(H).multiply(U).clone();
+          // foot' = (U2 K)^-1 (U K) F: the foot keeps its angle to the floor
+          const F2 = U2.clone().multiply(K).invert().multiply(U.clone().multiply(K)).multiply(F);
+          put(f, l.up, U2); put(f, l.foot, F2.normalize());
+        }
+      }
+    }
+  }
+  // trunk: mean forward bend of the chest (Hips x Spine x Spine1 x Spine2) beyond a natural few degrees; the whole
+  // upper body turns back about the lower spine (in the body frame), so the arms keep their place on the chest
+  const sp = ['Spine', 'Spine1', 'Spine2'].map(at), S = new THREE.Quaternion();
+  if (hips >= 0 && sp.every((b) => b >= 0)) {
+    let sum = 0;
+    for (let f = 0; f < clip.frames; f++) {
+      get(f, hips, H);
+      for (const b of sp) H.multiply(get(f, b, S));
+      j.set(0, 1, 0).applyQuaternion(H);
+      sum += Math.atan2(j.z, j.y);
+    }
+    const lean = sum / clip.frames - (clip.name.startsWith('sit') ? LEVEL_TRUNK_KEEP_SEATED : LEVEL_TRUNK_KEEP);
+    if (lean > 0.017) {
+      R.setFromAxisAngle(X, -lean);
+      for (let f = 0; f < clip.frames; f++) {
+        get(f, hips, H); get(f, sp[0], S);
+        put(f, sp[0], t.copy(H).invert().multiply(R).multiply(H).multiply(S).normalize());
+      }
+    }
+  }
+  // head: mean downward tilt of the face relative to the chest (Neck x Head), beyond a natural few degrees
+  const nk = at('Neck'), hd = at('Head');
+  if (nk >= 0 && hd >= 0) {
+    let sum = 0;
+    for (let f = 0; f < clip.frames; f++) {
+      get(f, nk, N); get(f, hd, Hd);
+      j.set(0, 0, 1).applyQuaternion(Hd).applyQuaternion(N);
+      sum += Math.atan2(-j.y, j.z);
+    }
+    const down = sum / clip.frames - LEVEL_HEAD_KEEP;
+    if (down > 0.017) {
+      R.setFromAxisAngle(X, -down);
+      for (let f = 0; f < clip.frames; f++) {
+        get(f, nk, N); get(f, hd, Hd);
+        put(f, hd, t.copy(N).invert().multiply(R).multiply(N).multiply(Hd).normalize());
+      }
+    }
+  }
 }
 
 // ambient clip sets by pose: picked at random, one after another, cross-faded
@@ -484,7 +571,7 @@ export class Patron {
         tg.rx = -1.0; tg.rf = -0.5; tg.lx = 0.2; tg.lf = -0.8; tg.torsoX = 0.15; tg.torsoZ = -0.08;
         break;
       case 'bartend':
-        tg.lx = tg.rx = -0.6; tg.lf = tg.rf = -1.2; tg.torsoX = 0.2;
+        tg.lx = tg.rx = -0.6; tg.lf = tg.rf = -1.2; tg.torsoX = 0.07;   // stands at the counter, hands forward (v1 stooped 0.2)
         break;
       case 'talk':
         tg.lx = -0.3; tg.lf = -1.2; tg.rx = -0.4; tg.rf = -1.0; tg.lz = 0.3; tg.rz = -0.3;

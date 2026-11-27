@@ -116,6 +116,8 @@ The built GLBs had two arm problems that made every character's arms look stretc
 - **Sleeves tied to the spine.** Some upper-arm vertices carried up to a third of their weight on Spine/Spine1. Past 40-55% of the way from shoulder to elbow, a vertex that is mostly arm now follows the arm only.
 - **Collarbones turning too far.** The library clips turn the clavicle 20-40° in ordinary motions (over 70° in `cheerBothHands`). Our clavicle runs from the spine to the shoulder joint (about 0.23 m), so those angles threw the shoulder joint 10-28 cm. While clips play, `Patron2.applyClips` keeps 35% of the clavicle turn (`CLAV_KEEP`) and gives the rest to the upper arm, which keeps each arm pointing where the clip puts it.
 
+- **Clips stooping forward.** Retargeted to this skeleton, the standing clips keep both thighs swung back (5-10° net), the talking clips bend the chest forward 10-18° (`chat`, `listen`, `agree`, `talkHandsOpen`), and the head tips down 10-20°, so the cast stood tipped forward, stooped, looking at the floor. `levelClip` in Patron2.js removes, per clip at load, the average backward slope of the legs (feet keep their angle to the floor), the chest's average forward bend beyond 3° (8° seated) and the head's average downward tilt beyond 5°. The motion around those averages is kept. Worth checking the retarget's rest-pose match when the clips are next exported.
+
 For future builds, place the elbow joint in the middle of the arm, keep upper-arm vertices off the spine bones, and start the clavicle nearer the shoulder (Mixamo's is about 0.12 m long). Then the load-time elbow and sleeve fixes find nothing to change.
 
 ## Switching characters to v2
